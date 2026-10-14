@@ -68,7 +68,7 @@ Filter g_videoFilter = kStretch2x;
 int g_videoStretch = -1;
 UiCanvas *g_menuCanvas = 0;
 
-bool fileExists(const std::string &path)
+bool pathExists(const std::string &path)
 {
   return GetFileAttributes(path.c_str()) != (DWORD)-1;
 }
@@ -78,7 +78,7 @@ void ensureDir(const std::string &path)
   std::string p = path;
   while (!p.empty() && (p[p.size() - 1] == '\\' || p[p.size() - 1] == '/'))
     p.erase(p.size() - 1);
-  if (!p.empty() && !fileExists(p))
+  if (!p.empty() && !pathExists(p))
     CreateDirectory(p.c_str(), NULL);
 }
 
@@ -271,7 +271,7 @@ public:
     return true;
   }
 
-  virtual bool fileExists(const std::string &path) { return ::fileExists(path); }
+  virtual bool fileExists(const std::string &path) { return pathExists(path); }
   virtual std::string emulatorDir() { return xboxEmulatorDir(); }
   virtual std::string currentRom() { return g_rom; }
 
@@ -280,7 +280,7 @@ public:
     std::string path = xboxStatePath(slot);
     DeleteFile(path.c_str());
     sdlWriteState(slot);
-    if (!::fileExists(path))
+    if (!pathExists(path))
       return false;
     saveFrameThumb(xboxStateThumbPath(slot));
     return true;
@@ -288,13 +288,13 @@ public:
 
   virtual bool loadState(int slot)
   {
-    if (!::fileExists(xboxStatePath(slot)))
+    if (!pathExists(xboxStatePath(slot)))
       return false;
     sdlReadState(slot);
     return true;
   }
 
-  virtual bool stateExists(int slot) { return ::fileExists(xboxStatePath(slot)); }
+  virtual bool stateExists(int slot) { return pathExists(xboxStatePath(slot)); }
   virtual std::string stateThumbPath(int slot) { return xboxStateThumbPath(slot); }
 
   virtual bool takeScreenshot(std::string &savedTo)
@@ -303,11 +303,11 @@ public:
       char suffix[16];
       sprintf(suffix, "-%03d", n);
       std::string path = uiGameFile(xboxEmulatorDir(), "screenshots", g_rom, suffix, ".png");
-      if (::fileExists(path))
+      if (pathExists(path))
         continue;
       emulator.emuWritePNG(path.c_str());
       savedTo = path;
-      return ::fileExists(path);
+      return pathExists(path);
     }
     return false;
   }
@@ -534,7 +534,7 @@ void xboxOnGameLoading(const char *romPath)
 
   // Optional real BIOS (needed by a few games, nicer boot logo).
   std::string bios = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "bios"), "gba_bios.bin");
-  useBios = g_cfg.useBios && fileExists(bios);
+  useBios = g_cfg.useBios && pathExists(bios);
   strcpy(biosFileName, useBios ? bios.c_str() : "");
 
   // Game Boy patches are applied inside gbLoadRom().
@@ -544,7 +544,7 @@ void xboxOnGameLoading(const char *romPath)
     static const char *exts[] = { ".bps", ".ups", ".ips" };
     for (int i = 0; i < 3; i++) {
       std::string p = uiStripExtension(g_rom) + exts[i];
-      if (fileExists(p)) {
+      if (pathExists(p)) {
         gbPatch = p;
         gbPendingPatch = gbPatch.c_str();
         break;
@@ -581,13 +581,13 @@ void xboxOnGameStarted()
 {
   // Cheats saved for this game
   std::string cheats = xboxCheatListPath();
-  if (fileExists(cheats)) {
+  if (pathExists(cheats)) {
     if (cartridgeType == 1)
       gbCheatsLoadCheatList(cheats.c_str());
     else
       cheatsLoadCheatList(cheats.c_str());
   }
-  if (g_cfg.autoLoadState && fileExists(xboxStatePath(0)))
+  if (g_cfg.autoLoadState && pathExists(xboxStatePath(0)))
     sdlReadState(0);
   g_waitRelease = true;
   g_prevPads = 0;
