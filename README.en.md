@@ -2,7 +2,7 @@
 
 🌐 **English** · [Español](README.md)
 
-**Game Boy Advance emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG).
+**Game Boy Advance and Game Boy emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG).
 Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
 **[⬇️ Download the latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
@@ -42,7 +42,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - Typed with an **on-screen keyboard** or **imported** from `.cht` / `.txt` files (RetroArch format too). Saved per game.
 
 **Settings**
-- **Video:** filter (sharp, smooth, Scale2x, LQ2x), original 3:2 size or full screen, **black or custom-image borders**, FPS counter and frame skip.
+- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen or **integer** (pixel perfect: GBA x4, GB x5); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (9 Super Game Boy-style palettes: gray, classic green, Pocket, sepia, blue…); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
 - **Audio:** sound and mute during fast forward.
 - **Emulation:** fast forward speed and mode, optional real BIOS and format of 16-digit codes.
 - **Saving:** save and state folders (next to the ROM or in the emulator folder), save state on exit and resume where you left off.
@@ -80,9 +80,9 @@ Pokemon Unbound.bps
 
 When you open the ROM, the patch is applied automatically, in memory. Note: patched games may have performance drops (see [Known issues](#known-issues)); if that happens, use a pre-patched ROM.
 
-## Border image
+## Screen background
 
-In **Settings → Video → Screen borders** you can choose **Black** or **Image**. To use an image, put it in the `borders\` folder next to `default.xex` named `border.png` (`.jpg` or `.bmp` also work), at 1280×720. The game is drawn on top, so only the sides show. There is an example in [`extras/borders/border.png`](extras/borders/border.png).
+By default the area around the game is **black**. To use an image, put it in the `borders\` folder next to `default.xex` (you can keep several, with any name) and pick it in **Settings → Video → Screen background**. Formats: **PNG, JPG, BMP, TGA and DDS** (not WebP). 1280×720 is ideal, but **Background fit** can keep it **Centered** (whole image in the middle), **Fill** the screen or **Stretch** it. The game is drawn on top, so only the sides show. There is an example in [`extras/borders/border.png`](extras/borders/border.png).
 
 ## Folders the emulator creates
 
@@ -90,12 +90,11 @@ Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 
 ## Limitations
 
-- **Game Boy Advance games only.** Game Boy and Game Boy Color games are not supported.
+- **Game Boy Advance and Game Boy; not Game Boy Color.** Game Boy (`.gb`) games work. Cartridges made for both consoles ("black" `.gbc` carts) start in Game Boy mode with the chosen palette. Games made **only** for the Game Boy Color (such as Pokémon Crystal or Super Mario Bros. Deluxe) are not supported.
 - **Games with sensors in the cartridge don't work**, such as *Boktai* (solar sensor), *WarioWare: Twisted!* (gyroscope) or *Yoshi Topsy-Turvy* and *Koro Koro Puzzle* (tilt). That hardware was built into the cartridge itself and the console doesn't have it; this port's core (a 2009 VBA-M snapshot) predates VBA-M's support for it.
 
 ## Known issues
 
-- **Letters on the black borders:** with **Screen borders → Black**, a letter from the controls can sometimes show up on the side bars. It doesn't happen with **Image**.
 - **Performance with patches:** games loaded with a **UPS / IPS / BPS** patch applied on the fly can have FPS drops. Pre-patched `.gba` hacks don't have this problem.
 
 ## Status

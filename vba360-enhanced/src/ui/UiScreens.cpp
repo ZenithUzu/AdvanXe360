@@ -46,8 +46,7 @@ const char *romKind(const std::string &name)
 {
   std::string e = uiExtension(name);
   if (e == ".gba" || e == ".agb" || e == ".bin" || e == ".mb") return "GBA";
-  if (e == ".gbc" || e == ".cgb") return "GBC";
-  if (e == ".gb" || e == ".dmg" || e == ".sgb") return "GB";
+  if (e == ".gb" || e == ".gbc" || e == ".cgb" || e == ".dmg" || e == ".sgb") return "GB";
   if (e == ".zip") return "ZIP";
   if (e == ".7z") return "7Z";
   return "";

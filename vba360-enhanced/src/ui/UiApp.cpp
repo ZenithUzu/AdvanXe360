@@ -1,6 +1,7 @@
 #include "UiApp.h"
 #include "UiScreens.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +14,7 @@ enum
   Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
 
-  V_FILTER = 1, V_STRETCH, V_BORDER, V_FPS, V_FRAMESKIP,
+  V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   A_SOUND = 1, A_MUTE_FF,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
@@ -45,6 +46,40 @@ int wrapIndex(int v, int delta, int count)
   while (v < 0) v += count;
   while (v >= count) v -= count;
   return v;
+}
+
+std::string lowerStr(std::string s)
+{
+  for (size_t i = 0; i < s.size(); i++)
+    s[i] = (char)tolower((unsigned char)s[i]);
+  return s;
+}
+
+// Image files in the emulator's borders\ folder (background choices).
+std::vector<std::string> borderImages(UiHost &host)
+{
+  std::vector<UiDirEntry> entries;
+  std::vector<std::string> names;
+  host.listDir(uiJoinPath(host.emulatorDir(), "borders"), entries);
+  for (size_t i = 0; i < entries.size(); i++)
+    if (!entries[i].isDir && uiIsImageFile(entries[i].name))
+      names.push_back(entries[i].name);
+  return names;
+}
+
+// 0 = black, 1..n = borders\ image n-1 (matching the saved settings).
+int borderChoice(const UiConfig &cfg, const std::vector<std::string> &images)
+{
+  if (!cfg.border)
+    return 0;
+  for (size_t i = 0; i < images.size(); i++)
+    if (lowerStr(images[i]) == lowerStr(cfg.borderImage))
+      return (int)i + 1;
+  // Older settings: border.png / .jpg / ...
+  for (size_t i = 0; i < images.size(); i++)
+    if (lowerStr(uiStripExtension(images[i])) == "border")
+      return (int)i + 1;
+  return images.empty() ? 0 : 1;
 }
 
 } // namespace
@@ -397,21 +432,35 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(V_FILTER, ITEM_OPTION, tr("Filtro de imagen", "Image filter"), filters[m_cfg.filter],
           tr("N\xedtido: p\xedxeles definidos. Suave: bilineal. Scale2x/LQ2x: suavizan bordes.",
              "Sharp: crisp pixels. Smooth: bilinear. Scale2x/LQ2x: smooth the edges."));
-    const char *stretch[2] = { tr("Original (3:2)", "Original (3:2)"), tr("Pantalla completa", "Full screen") };
+    const char *stretch[SIZE_COUNT] = {
+      tr("Original", "Original"), tr("Pantalla completa", "Full screen"), tr("Entera (p\xedxel exacto)", "Integer (pixel perfect)") };
     m.add(V_STRETCH, ITEM_OPTION, tr("Tama\xf1o de imagen", "Picture size"), stretch[m_cfg.stretch],
-          tr("Original mantiene la proporci\xf3n de la consola.", "Original keeps the console's proportions."));
+          tr("Original: proporci\xf3n de la consola (GBA 3:2, GB 10:9). Entera: zoom exacto (GBA x4, GB x5).",
+             "Original: console proportions (GBA 3:2, GB 10:9). Integer: exact zoom (GBA x4, GB x5)."));
+    const char *effects[EFFECT_COUNT] = {
+      tr("Ninguno", "None"), tr("L\xedneas (CRT)", "Scanlines (CRT)"), tr("Rejilla (LCD)", "Grid (LCD)") };
+    m.add(V_EFFECT, ITEM_OPTION, tr("Efecto de pantalla", "Screen effect"), effects[m_cfg.screenEffect],
+          tr("L\xedneas imita una TV antigua; Rejilla, la pantalla de la consola. Mejor con tama\xf1o Entera.",
+             "Scanlines imitate an old TV; Grid, the handheld's screen. Best with Integer size."));
+    m.add(V_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
+          uiGbPaletteNames[m_cfg.gbPalette][m_cfg.language ? 1 : 0],
+          tr("Paleta para juegos de Game Boy, al estilo de Super Game Boy.",
+             "Palette for Game Boy games, in the style of the Super Game Boy."));
     {
-      // Border image: borders\border.png / .jpg / .bmp next to default.xex
-      bool found = false;
-      static const char *names[] = { "border.png", "border.jpg", "border.bmp" };
-      for (int i = 0; i < 3 && !found; i++)
-        found = m_host.fileExists(uiJoinPath(uiJoinPath(m_host.emulatorDir(), "borders"), names[i]));
-      std::string value = !m_cfg.border ? std::string(tr("Negro", "Black"))
-                        : found ? std::string(tr("Imagen", "Image"))
-                                : std::string(tr("Imagen (no encontrada)", "Image (not found)"));
-      m.add(V_BORDER, ITEM_OPTION, tr("Bordes de la pantalla", "Screen borders"), value,
-            tr("Imagen: pon border.png (1280x720) en la carpeta borders\\ del emulador.",
-               "Image: put border.png (1280x720) in the emulator's borders\\ folder."));
+      // Background: black, or an image from borders\ next to default.xex
+      std::vector<std::string> images = borderImages(m_host);
+      int choice = borderChoice(m_cfg, images);
+      std::string value = choice == 0 ? std::string(tr("Negro", "Black")) : images[choice - 1];
+      m.add(V_BORDER, ITEM_OPTION, tr("Fondo de la pantalla", "Screen background"), value,
+            tr("Negro o una imagen de la carpeta borders\\ (PNG, JPG, BMP, TGA, DDS).",
+               "Black or an image from the borders\\ folder (PNG, JPG, BMP, TGA, DDS)."));
+      if (choice != 0) {
+        const char *fits[FIT_COUNT] = {
+          tr("Centrada", "Centered"), tr("Rellenar", "Fill"), tr("Estirar", "Stretch") };
+        m.add(V_BORDER_FIT, ITEM_OPTION, tr("Ajuste del fondo", "Background fit"), fits[m_cfg.borderFit],
+              tr("Centrada: imagen completa al centro. Rellenar: cubre la pantalla. Estirar: deforma.",
+                 "Centered: whole image in the middle. Fill: covers the screen. Stretch: distorts."));
+      }
     }
     m.add(V_FPS, ITEM_OPTION, tr("Mostrar FPS", "Show FPS"), yesNo[m_cfg.showFps]);
     const char *skip[5] = { tr("Autom\xe1tico", "Automatic"), "0", "1", "2", "3" };
@@ -490,8 +539,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
   case MENU_ABOUT:
     m.title = tr("Acerca de", "About");
     m.subtitle = "VBA360 enhanced-ai";
-    m.addInfo(tr("Emulador de Game Boy Advance, Game Boy y Game Boy Color.",
-                 "Game Boy Advance, Game Boy and Game Boy Color emulator."));
+    m.addInfo(tr("Emulador de Game Boy Advance y Game Boy.",
+                 "Game Boy Advance and Game Boy emulator."));
     m.addInfo(tr("Basado en VisualBoyAdvance-M y VBA360 (licencia GPL).",
                  "Based on VisualBoyAdvance-M and VBA360 (GPL license)."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA.",
@@ -746,8 +795,16 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     break;
   case MENU_SETTINGS_VIDEO:
     if (id == V_FILTER) m_cfg.filter = wrapIndex(m_cfg.filter, delta, FILTER_COUNT);
-    else if (id == V_STRETCH) m_cfg.stretch ^= 1;
-    else if (id == V_BORDER) m_cfg.border ^= 1;
+    else if (id == V_STRETCH) m_cfg.stretch = wrapIndex(m_cfg.stretch, delta, SIZE_COUNT);
+    else if (id == V_EFFECT) m_cfg.screenEffect = wrapIndex(m_cfg.screenEffect, delta, EFFECT_COUNT);
+    else if (id == V_GB_COLORS) m_cfg.gbPalette = wrapIndex(m_cfg.gbPalette, delta, GB_PALETTE_COUNT);
+    else if (id == V_BORDER_FIT) m_cfg.borderFit = wrapIndex(m_cfg.borderFit, delta, FIT_COUNT);
+    else if (id == V_BORDER) {
+      std::vector<std::string> images = borderImages(m_host);
+      int choice = wrapIndex(borderChoice(m_cfg, images), delta, (int)images.size() + 1);
+      m_cfg.border = choice != 0;
+      m_cfg.borderImage = choice != 0 ? images[choice - 1] : std::string();
+    }
     else if (id == V_FPS) m_cfg.showFps ^= 1;
     else if (id == V_FRAMESKIP) m_cfg.frameSkip = wrapIndex(m_cfg.frameSkip, delta, 5);
     break;

@@ -106,6 +106,59 @@ struct private_yuvhwdata {
    (NULL = black bars). */
 void (*XBOX_BackgroundHook)(void) = NULL;
 
+/* Set by the emulator: where the game picture goes on the 1280x720 screen
+   (left, top, right, bottom), used when XBOX_UseCustomRect is non-zero. */
+int XBOX_UseCustomRect = 0;
+int XBOX_CustomRect[4] = { 0, 0, 1280, 720 };
+
+/* Effect drawn over the game picture: 0 = none, 1 = scanlines (CRT),
+   2 = LCD grid. XBOX_EffectSource is the picture size in console pixels,
+   so there is one line per console line whatever the filter's zoom. */
+int XBOX_ScreenEffect = 0;
+float XBOX_EffectSource[2] = { 240.0f, 160.0f };
+static D3DPixelShader *g_pEffectShader = NULL;
+static const char *g_strEffectShader =
+    " sampler detail : register(s0);                                      "
+    " float4 params : register(c0);                                       "
+    " float4 main( float2 uv : TEXCOORD0 ) : COLOR                        "
+    " {                                                                   "
+    "     float4 c = tex2D( detail, uv );                                 "
+    "     float fy = frac( uv.y * params.y );                             "
+    "     float fx = frac( uv.x * params.x );                             "
+    "     float k = 1.0 - step( 0.75, fy ) * params.w;                    "
+    "     k *= 1.0 - step( 0.75, fx ) * params.z * params.w;              "
+    "     return float4( c.rgb * k, c.a );                                "
+    " }                                                                   ";
+
+/* Pixel shader for the game picture: plain, or with the screen effect. */
+static void XBOX_SetGamePixelShader(void)
+{
+	if (XBOX_ScreenEffect && !g_pEffectShader)
+	{
+		LPD3DXBUFFER code = NULL;
+		if (SUCCEEDED(D3DXCompileShader(g_strEffectShader, (UINT)strlen(g_strEffectShader),
+		                                NULL, NULL, "main", "ps_2_0", 0, &code, NULL, NULL)) && code)
+		{
+			g_pEffectShader = D3DDevice_CreatePixelShader((DWORD *)code->lpVtbl->GetBufferPointer(code));
+			code->lpVtbl->Release(code);
+		}
+	}
+	if (XBOX_ScreenEffect && g_pEffectShader)
+	{
+		float params[4];
+		params[0] = XBOX_EffectSource[0];
+		params[1] = XBOX_EffectSource[1];
+		params[2] = XBOX_ScreenEffect == 2 ? 1.0f : 0.0f;   /* columns too */
+		params[3] = XBOX_ScreenEffect == 2 ? 0.30f : 0.45f;  /* darkness */
+		D3DDevice_SetPixelShader(D3D_Device, g_pEffectShader);
+		IDirect3DDevice9_SetPixelShaderConstantF(D3D_Device, 0, params, 1);
+	}
+	else
+	{
+		D3DDevice_SetPixelShader(D3D_Device, g_pPixelShader);
+	}
+}
+
 int have_vertexbuffer=0;
 int have_direct3dtexture=0;
 
@@ -451,7 +504,14 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
   
 	IDirect3DVertexBuffer9_Lock(vertexBuffer, 0, 0, (BYTE **)&pLockedVertexBuffer, 0L );	 
 
-	if ( flags & SDL_RESIZABLE)
+	if (XBOX_UseCustomRect)
+	{
+		drawRect.left = XBOX_CustomRect[0];
+		drawRect.top = XBOX_CustomRect[1];
+		drawRect.right = XBOX_CustomRect[2];
+		drawRect.bottom = XBOX_CustomRect[3];
+	}
+	else if ( flags & SDL_RESIZABLE)
 	{
 		screenAspect = (float)(float)width /height;
 
@@ -572,7 +632,7 @@ static int XBOX_RenderSurface(_THIS, SDL_Surface *surface)
     // Render the image
 
 	D3DDevice_SetVertexShader(D3D_Device, g_pGradientVertexShader );
-	D3DDevice_SetPixelShader(D3D_Device, g_pPixelShader);
+	XBOX_SetGamePixelShader();
 	D3DDevice_SetVertexDeclaration(D3D_Device, g_pGradientVertexDecl);
 
 	/* Paint the bars around the game picture every frame; otherwise they
@@ -652,7 +712,7 @@ static void XBOX_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
     // Render the image
 
 	D3DDevice_SetVertexShader(D3D_Device, g_pGradientVertexShader );
-	D3DDevice_SetPixelShader(D3D_Device, g_pPixelShader);
+	XBOX_SetGamePixelShader();
 	D3DDevice_SetVertexDeclaration(D3D_Device, g_pGradientVertexDecl);
 
 	/* Paint the bars around the game picture every frame; otherwise they
@@ -687,7 +747,7 @@ void XBOX_RestoreVideoState(void)
 
 	D3DDevice_SetRenderState(D3D_Device, D3DRS_VIEWPORTENABLE, FALSE);
 	D3DDevice_SetVertexShader(D3D_Device, g_pGradientVertexShader);
-	D3DDevice_SetPixelShader(D3D_Device, g_pPixelShader);
+	XBOX_SetGamePixelShader();
 	D3DDevice_SetVertexDeclaration(D3D_Device, g_pGradientVertexDecl);
 	IDirect3DDevice9_SetTexture(D3D_Device, 0, (D3DBaseTexture *)video->hidden->SDL_primary);
 	IDirect3DDevice9_SetStreamSource(D3D_Device, 0, vertexBuffer, 0, sizeof(VERTEX));

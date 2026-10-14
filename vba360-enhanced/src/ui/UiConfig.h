@@ -30,6 +30,19 @@ enum UiAction
 };
 
 enum UiFilter { FILTER_SHARP = 0, FILTER_SMOOTH, FILTER_SCALE2X, FILTER_LQ2X, FILTER_COUNT };
+// Picture size: console proportions, fill the screen, or whole-number zoom.
+enum UiPictureSize { SIZE_ORIGINAL = 0, SIZE_FULL, SIZE_INTEGER, SIZE_COUNT };
+// How the background image is fitted: whole image centered, cover, stretch.
+enum UiBorderFit { FIT_CENTER = 0, FIT_FILL, FIT_STRETCH, FIT_COUNT };
+// Screen effect drawn over the game picture.
+enum UiScreenEffect { EFFECT_NONE = 0, EFFECT_SCANLINES, EFFECT_GRID, EFFECT_COUNT };
+// Colors for (original, non-color) Game Boy games.
+enum { GB_PALETTE_COUNT = 9 };
+extern const char *const uiGbPaletteNames[GB_PALETTE_COUNT][2];   // [i][0] = Spanish, [i][1] = English
+// 4 shades (lightest first) per palette, 0xRRGGBB.
+extern const unsigned int uiGbPalettes[GB_PALETTE_COUNT][4];
+// Background images the emulator can load (D3DX formats).
+bool uiIsImageFile(const std::string &name);
 enum UiSaveTypeOverride { SAVE_AUTO = 0, SAVE_EEPROM, SAVE_SRAM, SAVE_FLASH64, SAVE_FLASH128, SAVE_NONE, SAVE_TYPE_COUNT };
 enum UiTriState { TRI_AUTO = 0, TRI_ON, TRI_OFF };
 enum UiDirMode { DIR_NEXT_TO_ROM = 0, DIR_EMULATOR = 1 };
@@ -43,8 +56,12 @@ struct UiConfig
 
   // Video
   int filter;            // UiFilter
-  int stretch;           // 0 = keep 3:2, 1 = fill screen
-  int border;            // around the picture: 0 = black, 1 = borders\border.png
+  int stretch;           // UiPictureSize
+  int border;            // around the picture: 0 = black, 1 = image from the borders folder
+  std::string borderImage;  // file name inside borders\ ("" = border.png/.jpg/...)
+  int borderFit;         // UiBorderFit
+  int screenEffect;      // UiScreenEffect
+  int gbPalette;         // index into uiGbPalettes
   int showFps;
   int frameSkip;         // 0 = auto, 1..4 = fixed 0..3
 

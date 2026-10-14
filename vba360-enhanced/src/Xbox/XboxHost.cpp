@@ -54,6 +54,11 @@ extern bool wasPaused;                 // sdl/SDL.cpp: skip one frame-skip measu
 extern u32 autoFrameSkipLastTime;
 extern u32 throttleLastTime;
 extern u8 *rom;
+extern u16 systemGbPalette[24];         // sdl/SDL.cpp
+extern u16 gbPalette[128];              // gb/gbGlobals.cpp
+extern int gbPaletteOption;
+extern int gbCgbMode;
+extern int gbSgbMode;
 extern int CPUGetRomSize();             // gba/GBA.cpp
 extern u8 *gbRom;                      // gb/gbGlobals.cpp
 extern int gbRomSize;
@@ -198,6 +203,10 @@ void applySampler()
   D3DTEXTUREFILTERTYPE f = g_cfg.filter == FILTER_SHARP ? D3DTEXF_POINT : D3DTEXF_LINEAR;
   pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, f);
   pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, f);
+  // Clamp: with the default wrap mode the smooth filter blends the
+  // opposite edge of the picture in (stray lines / letters at the sides).
+  pDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+  pDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 }
 
 void applySoundFlags()
@@ -822,14 +831,21 @@ void xboxApplyGameSampler()
   applySampler();
 }
 
-// Border image: borders\border.png / .jpg / .bmp in the emulator folder.
+// Background image: the file chosen in Video settings, inside the borders folder
+// next to default.xex (older settings: border.png / .jpg / .bmp).
 static std::string g_borderLoaded;
+static bool g_borderReady = false;
 
 std::string xboxBorderImagePath()
 {
-  static const char *names[] = { "border.png", "border.jpg", "border.bmp" };
-  for (int i = 0; i < 3; i++) {
-    std::string p = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "borders"), names[i]);
+  std::string dir = uiJoinPath(xboxEmulatorDir(), "borders");
+  if (!g_cfg.borderImage.empty()) {
+    std::string p = uiJoinPath(dir, g_cfg.borderImage);
+    return pathExists(p) ? p : std::string();
+  }
+  static const char *names[] = { "border.png", "border.jpg", "border.bmp", "border.tga", "border.dds" };
+  for (int i = 0; i < 5; i++) {
+    std::string p = uiJoinPath(dir, names[i]);
     if (pathExists(p))
       return p;
   }
@@ -839,15 +855,84 @@ std::string xboxBorderImagePath()
 static void applyBorder()
 {
   std::string wanted = g_cfg.border ? xboxBorderImagePath() : std::string();
-  if (wanted == g_borderLoaded)
+  if (g_borderReady && wanted == g_borderLoaded) {
+    xboxSetBorderFit(g_cfg.borderFit);
     return;
-  g_borderLoaded = xboxSetBorderImage(wanted.c_str()) ? wanted : std::string();
+  }
+  g_borderReady = true;
+  g_borderLoaded = xboxSetBorderImage(wanted.c_str(), g_cfg.borderFit) ? wanted : std::string();
+}
+
+// --- Picture position, screen effect, Game Boy colors -----------------------------
+
+extern "C" int XBOX_UseCustomRect;
+extern "C" int XBOX_CustomRect[4];
+extern "C" int XBOX_ScreenEffect;
+extern "C" float XBOX_EffectSource[2];
+
+void xboxSetupPicture(int srcW, int srcH)
+{
+  const int sw = 1280, sh = 720;
+  if (srcW <= 0 || srcH <= 0) {
+    XBOX_UseCustomRect = 0;
+    return;
+  }
+  int w, h;
+  if (g_cfg.stretch == SIZE_FULL) {
+    // Fill the screen, leaving the TV-safe margins the original port used.
+    w = sw - 160;
+    h = sh - 80;
+  } else if (g_cfg.stretch == SIZE_INTEGER) {
+    // Biggest whole-number zoom that fits: every console pixel gets the
+    // same size (GBA x4 = 960x640, Game Boy x5 = 800x720).
+    int k = sh / srcH;
+    if (sw / srcW < k)
+      k = sw / srcW;
+    if (k < 1)
+      k = 1;
+    w = srcW * k;
+    h = srcH * k;
+  } else {
+    // Console proportions (GBA 3:2, Game Boy 10:9), as big as fits.
+    h = sh;
+    w = (srcW * sh + srcH / 2) / srcH;
+    if (w > sw) {
+      w = sw;
+      h = (srcH * sw + srcW / 2) / srcW;
+    }
+  }
+  XBOX_CustomRect[0] = (sw - w) / 2;
+  XBOX_CustomRect[1] = (sh - h) / 2;
+  XBOX_CustomRect[2] = XBOX_CustomRect[0] + w;
+  XBOX_CustomRect[3] = XBOX_CustomRect[1] + h;
+  XBOX_UseCustomRect = 1;
+  XBOX_EffectSource[0] = (float)srcW;
+  XBOX_EffectSource[1] = (float)srcH;
+  XBOX_ScreenEffect = g_cfg.screenEffect;
+}
+
+static void applyGbPalette()
+{
+  // 15-bit BGR colors, lightest first, the same 4 shades for the
+  // background and the sprites.
+  const unsigned int *p = uiGbPalettes[g_cfg.gbPalette];
+  for (int i = 0; i < 8; i++) {
+    unsigned int c = p[i & 3];
+    systemGbPalette[i] = (u16)(((c >> 19) & 0x1F) | (((c >> 11) & 0x1F) << 5) | (((c >> 3) & 0x1F) << 10));
+  }
+  gbPaletteOption = 0;
+  // A Game Boy game is running: recolor it right away.
+  if (emulating && cartridgeType == 1 && !gbCgbMode && !gbSgbMode)
+    for (int i = 0; i < 8; i++)
+      gbPalette[i] = systemGbPalette[i];
 }
 
 void xboxApplySettings()
 {
   applySoundFlags();
   applyBorder();
+  applyGbPalette();
+  XBOX_ScreenEffect = g_cfg.screenEffect;
   showSpeed = g_cfg.showFps ? 2 : 0;
   if (g_cfg.frameSkip == 0) {
     autoFrameSkip = 1;

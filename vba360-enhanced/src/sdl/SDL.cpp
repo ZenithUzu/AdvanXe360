@@ -1073,11 +1073,8 @@ void sdlInitVideo() {
     screenHeight = destHeight;
   }
 
-  // SDL_RESIZABLE makes the Xbox SDL driver keep the aspect ratio.
-  if (!g_cfg.stretch)
-  {
-	flags |=  SDL_RESIZABLE;
-  }
+  // Picture position on the TV (size setting) and screen effect.
+  xboxSetupPicture(srcWidth, srcHeight);
 
   surface = SDL_SetVideoMode(screenWidth, screenHeight, 0, flags);
 
@@ -1620,6 +1617,9 @@ int gba_main(char *path, char *fname)
     cartridgeType = (int)type;
 
     if(type == IMAGE_GB) {
+      // Game Boy only (no Game Boy Color mode): games made for both run
+      // in their Game Boy mode, with the palette from the settings.
+      gbEmulatorType = 3;
       failed = !gbLoadRom(szFile);
       if(!failed) {
         gbGetHardwareType();

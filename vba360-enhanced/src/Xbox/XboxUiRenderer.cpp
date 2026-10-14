@@ -44,23 +44,33 @@ bool compile(const char *src, const char *profile, ID3DXBuffer **code)
 }
 
 IDirect3DTexture9 *g_border = 0;
+int g_borderW = 0, g_borderH = 0;   // size of the image file
+int g_borderFit = 0;                // UiBorderFit
 
-// Fills the screen behind the game picture: black, then the border image
-// (the game is drawn on top, so only the edges of the image show).
-// Called by libSDLx360 right before it draws each game frame.
+// Fills the screen behind the game picture: black, then the background
+// image (the game is drawn on top, so only the edges of the image show).
+// Called by libSDLx360 right before it draws each game frame; always
+// installed, so the area around the picture never shows leftovers.
 void drawGameBackground()
 {
   pDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
-  if (g_border && g_vs) {
-    D3DVIEWPORT9 vp;
-    pDevice->GetViewport(&vp);
-    float sw = vp.Width ? (float)vp.Width : 1280.0f;
-    float sh = vp.Height ? (float)vp.Height : 720.0f;
+  if (g_border && g_vs && g_borderW > 0 && g_borderH > 0) {
+    const float sw = 1280.0f, sh = 720.0f;
+    float w = sw, h = sh;
+    if (g_borderFit != 2) {
+      // 0: whole image, centered (black bars if the shapes differ)
+      // 1: cover the screen, centered (the edges of the image are cut)
+      float sx = sw / g_borderW, sy = sh / g_borderH;
+      float scale = g_borderFit == 1 ? (sx > sy ? sx : sy) : (sx < sy ? sx : sy);
+      w = g_borderW * scale;
+      h = g_borderH * scale;
+    }
+    float x0 = (sw - w) * 0.5f - 0.5f, y0 = (sh - h) * 0.5f - 0.5f;
     UiVertex v[4] = {
-      { -0.5f,     -0.5f,     0, 1, 0, 0 },
-      { sw - 0.5f, -0.5f,     0, 1, 1, 0 },
-      { -0.5f,     sh - 0.5f, 0, 1, 0, 1 },
-      { sw - 0.5f, sh - 0.5f, 0, 1, 1, 1 }
+      { x0,     y0,     0, 1, 0, 0 },
+      { x0 + w, y0,     0, 1, 1, 0 },
+      { x0,     y0 + h, 0, 1, 0, 1 },
+      { x0 + w, y0 + h, 0, 1, 1, 1 }
     };
     pDevice->SetRenderState(D3DRS_VIEWPORTENABLE, FALSE);
     pDevice->SetVertexDeclaration(g_decl);
@@ -69,6 +79,8 @@ void drawGameBackground()
     pDevice->SetTexture(0, g_border);
     pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
     pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+    pDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+    pDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
     pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(UiVertex));
   }
   // Give the game picture its texture, vertex buffer and filter back.
@@ -80,24 +92,36 @@ void drawGameBackground()
 
 extern "C" void (*XBOX_BackgroundHook)(void);
 
-bool xboxSetBorderImage(const char *path)
+bool xboxSetBorderImage(const char *path, int fit)
 {
-  XBOX_BackgroundHook = NULL;   // black bars (drawn by libSDLx360)
+  g_borderFit = fit;
+  if (pDevice && (g_vs || xboxUiRendererInit()))
+    XBOX_BackgroundHook = drawGameBackground;   // black at least
   if (g_border) {
     pDevice->SetTexture(0, NULL);
     pDevice->BlockUntilIdle();
     g_border->Release();
     g_border = 0;
   }
-  if (!path || !*path || !pDevice || (!g_vs && !xboxUiRendererInit()))
+  g_borderW = g_borderH = 0;
+  if (!path || !*path || !pDevice || !g_vs)
     return false;
-  // D3DX reads PNG, JPG, BMP and DDS.
+  // D3DX reads PNG, JPG, BMP, TGA, DDS and DIB.
+  D3DXIMAGE_INFO info;
+  if (FAILED(D3DXGetImageInfoFromFileA(path, &info)) || !info.Width || !info.Height)
+    return false;
   if (FAILED(D3DXCreateTextureFromFileA(pDevice, path, &g_border))) {
     g_border = 0;
     return false;
   }
-  XBOX_BackgroundHook = drawGameBackground;
+  g_borderW = (int)info.Width;
+  g_borderH = (int)info.Height;
   return true;
+}
+
+void xboxSetBorderFit(int fit)
+{
+  g_borderFit = fit;
 }
 
 bool xboxUiRendererInit()

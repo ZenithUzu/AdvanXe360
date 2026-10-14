@@ -2,7 +2,7 @@
 
 🌐 [English](README.en.md) · **Español**
 
-Emulador de **Game Boy Advance para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG).
+Emulador de **Game Boy Advance y Game Boy para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG).
 Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
 **[⬇️ Descargar la última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
@@ -42,7 +42,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Se escriben con un **teclado en pantalla** o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
 
 **Ajustes**
-- **Video:** filtro (nítido, suave, Scale2x, LQ2x), tamaño original 3:2 o pantalla completa, **bordes negros o con imagen propia**, mostrar FPS y salto de cuadros.
+- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa o **entero** (píxel exacto: GBA x4, GB x5); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (9 paletas al estilo Super Game Boy: gris, verde clásico, Pocket, sepia, azul…); **fondo negro o con imagen propia** (centrada, rellenar o estirar); mostrar FPS y salto de cuadros.
 - **Audio:** sonido y silenciar durante el avance rápido.
 - **Emulación:** velocidad y modo del avance rápido, BIOS original opcional y formato de los códigos de 16 dígitos.
 - **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir y continuar donde lo dejaste.
@@ -80,9 +80,9 @@ Pokemon Unbound.bps
 
 Al abrir la ROM, el parche se aplica solo, en memoria. Ojo: con parches puede haber caídas de rendimiento (ver [Errores conocidos](#errores-conocidos)); si te pasa, usa la ROM ya parchada.
 
-## Imagen de borde
+## Fondo de la pantalla
 
-En **Ajustes → Video → Bordes de la pantalla** puedes elegir **Negro** o **Imagen**. Para usar una imagen, ponla en la carpeta `borders\` junto a `default.xex` con el nombre `border.png` (también sirve `.jpg` o `.bmp`), de 1280×720. El juego se dibuja encima, así que solo se ven los lados. Hay un ejemplo en [`extras/borders/border.png`](extras/borders/border.png).
+Por defecto el fondo alrededor del juego es **negro**. Para usar una imagen, ponla en la carpeta `borders\` junto a `default.xex` (puedes tener varias, con cualquier nombre) y elígela en **Ajustes → Video → Fondo de la pantalla**. Formatos: **PNG, JPG, BMP, TGA y DDS** (WebP no). Lo ideal es 1280×720, pero con **Ajuste del fondo** puedes dejarla **Centrada** (completa, al centro), **Rellenar** (cubre toda la pantalla) o **Estirar**. El juego se dibuja encima, así que solo se ven los lados. Hay un ejemplo en [`extras/borders/border.png`](extras/borders/border.png).
 
 ## Carpetas que crea el emulador
 
@@ -90,12 +90,11 @@ Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 
 ## Limitaciones
 
-- **Solo juegos de Game Boy Advance.** No ejecuta juegos de Game Boy ni de Game Boy Color.
+- **Game Boy Advance y Game Boy; no Game Boy Color.** Los juegos de Game Boy (`.gb`) funcionan. Los cartuchos compatibles con ambas consolas (`.gbc` "negros") arrancan en modo Game Boy, con la paleta elegida. Los juegos **solo** para Game Boy Color (como Pokémon Cristal o Super Mario Bros. Deluxe) no son compatibles.
 - **No funcionan los juegos con sensores en el cartucho**, como *Boktai* (sensor solar), *WarioWare: Twisted!* (giroscopio) o *Yoshi Topsy-Turvy* y *Koro Koro Puzzle* (inclinación). Ese hardware venía dentro del propio cartucho y la consola no lo tiene; el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M lo emulara.
 
 ## Errores conocidos
 
-- **Letras en los bordes negros:** con **Bordes de la pantalla → Negro** a veces se alcanza a ver una letra de los controles en las barras de los lados. Con **Imagen** no pasa.
 - **Rendimiento con parches:** los juegos que se cargan con un parche **UPS / IPS / BPS** aplicado al vuelo pueden tener bajones de FPS. Los hacks ya parchados en `.gba` no tienen este problema.
 
 ## Estado
@@ -117,7 +116,7 @@ La lista completa de créditos y librerías está en el [README original](#origi
 
 # Original README (vba360-enhanced)
 
-> Texto original del proyecto en el que se basa este fork (en inglés) Algunas funciones que menciona, como Game Boy / Game Boy Color, no funcionan en este fork; ver [Limitaciones](#limitaciones).
+> Texto original del proyecto en el que se basa este fork (en inglés) Algunas funciones que menciona, como Game Boy Color, no funcionan en este fork; ver [Limitaciones](#limitaciones).
 
 An enhanced Xbox 360 port of VisualBoyAdvance-M (VBA-M), a Game Boy and Game Boy Advance emulator.
 
