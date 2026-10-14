@@ -1,24 +1,24 @@
 # vba360-enhanced-ai
 
+🌐 [English](README.en.md) · **Español**
+
 Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG).
-Fork de / Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
+Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
-**[⬇️ Descargar la última versión / Download the latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
-
-## 🇲🇽 Español
+**[⬇️ Descargar la última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
 
 > 🤖 **Aviso:** los cambios de este fork fueron hechos con ayuda de inteligencia artificial (Claude, de Anthropic). Lo mantengo por **pasatiempo**, sin fines de lucro y sin ninguna garantía.
 
 Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los términos de la licencia GPL del proyecto original. Todo el crédito del emulador y del port es de sus autores originales (ver más abajo).
 
-### Instalación
+## Instalación
 
 1. Descarga el `.zip` de la [última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest).
 2. Copia la carpeta `VBA360` a tu consola (por ejemplo `Hdd1:\Emulators\VBA360\`) por FTP o USB.
 3. Ábrela desde Aurora (`default.xex`). Las demás carpetas se crean solas.
 4. Pon tus ROMs donde quieras (disco duro o USB) y búscalas desde el explorador del emulador.
 
-### Funciones
+## Funciones
 
 **Interfaz**
 - Interfaz propia, simple y rápida, dibujada por el emulador (ya no usa las escenas XUI originales).
@@ -48,7 +48,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir y continuar donde lo dejaste.
 - **Controles:** todos los botones reasignables (también turbo A/B, avance rápido, menú, guardado y carga rápida). Puedes elegir de la lista o simplemente presionar el botón nuevo.
 
-### Capturas
+## Capturas
 
 **Pokémon SoulGold (hack) con imagen de borde y contador de FPS:**
 
@@ -65,7 +65,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 | ![Audio](docs/screenshots/settings-audio.png) | ![Acerca de](docs/screenshots/about.png) |
 | ![Interfaz (español)](docs/screenshots/settings-interface-es.png) | ![Interface (English)](docs/screenshots/settings-interface-en.png) |
 
-### Cómo usar un hack
+## Cómo usar un hack
 
 Pon la ROM limpia y el parche en la misma carpeta, con **el mismo nombre**:
 
@@ -76,15 +76,15 @@ Pokemon Unbound.bps
 
 Al abrir la ROM, el parche se aplica solo, en memoria.
 
-### Imagen de borde
+## Imagen de borde
 
 En **Ajustes → Video → Bordes de la pantalla** puedes elegir **Negro** o **Imagen**. Para usar una imagen, ponla en la carpeta `borders\` junto a `default.xex` con el nombre `border.png` (también sirve `.jpg` o `.bmp`), de 1280×720. El juego se dibuja encima, así que solo se ven los lados. Hay un ejemplo en [`extras/borders/border.png`](extras/borders/border.png).
 
-### Carpetas que crea el emulador
+## Carpetas que crea el emulador
 
 Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
 
-### Juegos con sensores
+## Juegos con sensores
 
 Algunos cartuchos de GBA traían **hardware extra dentro del cartucho**: sensor de luz solar (*Boktai*), giroscopio (*WarioWare: Twisted!*), sensor de inclinación (*Yoshi Topsy-Turvy*, *Koro Koro Puzzle*) o vibración (*Drill Dozer*). Ese hardware no existe en la consola: el emulador tiene que imitarlo, y el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M agregara el sensor solar y el giroscopio. Por eso:
 
@@ -92,40 +92,15 @@ Algunos cartuchos de GBA traían **hardware extra dentro del cartucho**: sensor 
 - ***WarioWare: Twisted!:*** no es jugable (necesita el giroscopio).
 - ***Yoshi Topsy-Turvy*** y ***Koro Koro Puzzle:*** la inclinación se controla con el **stick derecho** (soporte experimental).
 
-### Estado
+## Estado
 
 Probado en consola (BadUpdate + Aurora) y en Xenia. Proyecto en desarrollo: si encuentras errores, abre un *issue*.
-
-## 🇺🇸 English
-
-> 🤖 **Notice:** the changes in this fork were made with the help of AI (Claude, by Anthropic). I maintain it as a **hobby**, non-commercial and with no warranty of any kind.
-
-You are **free to use it or not**, and to copy, modify and share it under the GPL terms of the original project. All credit for the emulator and the port goes to their original authors (see below).
-
-### Install
-
-Download the `.zip` from the [latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest), copy the `VBA360` folder to your console (e.g. `Hdd1:\Emulators\VBA360\`) and launch `default.xex` from Aurora. Put your ROMs anywhere and browse to them.
-
-### Features
-
-- **New interface** drawn by the emulator itself: Games · Recent · Favorites · Settings tabs, a drive and folder browser with game previews, Spanish or English.
-- **In-game menu** (right stick click, remappable): 9 save-state slots with thumbnails, fast forward (2x–8x or maximum, hold or toggle), cheats, game options, settings, screenshots, restart and quit.
-- **ROM hack friendly:** automatic BPS/UPS/IPS patching (GBA and GB/GBC, up to 32 MB); save type and RTC detected by reading the ROM, not the cartridge ID; per-game options keyed by file name; `.zip` / `.7z` ROMs.
-- **Cheats:** GameShark, Action Replay, CodeBreaker and VBA codes for GBA; GameShark and Game Genie for GB/GBC; on-screen keyboard or `.cht` / `.txt` import (RetroArch format too); saved per game.
-- **Settings:** filters (sharp, smooth, Scale2x, LQ2x), original or full-screen picture, black or custom-image screen borders (`borders\border.png`, 1280×720), FPS, frame skip, sound, optional real BIOS, save/state folders, save on exit and resume.
-- **Remappable controls**, including turbo, fast forward, menu and quick save/load.
-
-### Sensor games
-
-Some GBA cartridges carried extra hardware (solar sensor in *Boktai*, gyroscope in *WarioWare: Twisted!*, tilt sensor in *Yoshi Topsy-Turvy*, rumble in *Drill Dozer*). This port's core (a 2009 VBA-M snapshot) predates VBA-M's solar and gyro support: *Boktai* boots (the clock is enabled automatically) but the sun gauge stays empty, *WarioWare: Twisted!* is not playable, and tilt games are mapped to the right stick (experimental).
-
-### Status
-
-Tested on console (BadUpdate + Aurora) and Xenia. Work in progress: please open an issue if you find bugs.
 
 ---
 
 # Original README (vba360-enhanced)
+
+> Texto original del proyecto en el que se basa este fork (en inglés).
 
 An enhanced Xbox 360 port of VisualBoyAdvance-M (VBA-M), a Game Boy and Game Boy Advance emulator.
 
