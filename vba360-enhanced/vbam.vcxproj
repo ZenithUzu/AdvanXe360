@@ -345,7 +345,9 @@
     </Deploy>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\zlib\infcodes.c" />
+    <ClCompile Include="..\zlib\infcodes.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="src\Util.cpp" />
     <ClCompile Include="src\apu\Blip_Buffer.cpp" />
     <ClCompile Include="src\apu\Effects_Buffer.cpp" />
@@ -353,7 +355,9 @@
     <ClCompile Include="src\apu\Gb_Apu_State.cpp" />
     <ClCompile Include="src\apu\Gb_Oscs.cpp" />
     <ClCompile Include="src\apu\Multi_Buffer.cpp" />
-    <ClCompile Include="src\common\memgzio.c" />
+    <ClCompile Include="src\common\memgzio.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="src\common\Patch.cpp" />
     <ClCompile Include="src\common\SoundSDL.cpp" />
     <ClCompile Include="src\filters\2xSaI.cpp">
@@ -410,9 +414,15 @@
     <ClCompile Include="src\gba\Sram.cpp" />
     <ClCompile Include="src\sdl\dummy.cpp" />
     <ClCompile Include="src\sdl\filters.cpp" />
-    <ClCompile Include="src\sdl\getopt.c" />
-    <ClCompile Include="src\sdl\getopt1.c" />
-    <ClCompile Include="src\sdl\gl_fakegl.c" />
+    <ClCompile Include="src\sdl\getopt.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="src\sdl\getopt1.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="src\sdl\gl_fakegl.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="src\sdl\inputSDL.cpp" />
     <ClCompile Include="src\sdl\SDL.cpp" />
     <ClCompile Include="src\sdl\text.cpp" />
@@ -430,41 +440,111 @@
     <ClCompile Include="src\ui\UiConfig.cpp" />
     <ClCompile Include="src\ui\UiScreens.cpp" />
     <ClCompile Include="src\ui\UiThumb.cpp" />
-    <ClCompile Include="..\libPNG\src\png.c" />
-    <ClCompile Include="..\libPNG\src\pngerror.c" />
-    <ClCompile Include="..\libPNG\src\pnggccrd.c" />
-    <ClCompile Include="..\libPNG\src\pngget.c" />
-    <ClCompile Include="..\libPNG\src\pngmem.c" />
-    <ClCompile Include="..\libPNG\src\pngpread.c" />
-    <ClCompile Include="..\libPNG\src\pngread.c" />
-    <ClCompile Include="..\libPNG\src\pngrio.c" />
-    <ClCompile Include="..\libPNG\src\pngrtran.c" />
-    <ClCompile Include="..\libPNG\src\pngrutil.c" />
-    <ClCompile Include="..\libPNG\src\pngset.c" />
-    <ClCompile Include="..\libPNG\src\pngtrans.c" />
-    <ClCompile Include="..\libPNG\src\pngvcrd.c" />
-    <ClCompile Include="..\libPNG\src\pngwio.c" />
-    <ClCompile Include="..\libPNG\src\pngwrite.c" />
-    <ClCompile Include="..\libPNG\src\pngwtran.c" />
-    <ClCompile Include="..\libPNG\src\pngwutil.c" />
-    <ClCompile Include="..\zlib\adler32.c" />
-    <ClCompile Include="..\zlib\compress.c" />
-    <ClCompile Include="..\zlib\deflate.c" />
-    <ClCompile Include="..\zlib\crc32.c" />
-    <ClCompile Include="..\zlib\emucrc32.c" />
-    <ClCompile Include="..\zlib\gzio.c" />
-    <ClCompile Include="..\zlib\infblock.c" />
-    <ClCompile Include="..\zlib\inffast.c" />
-    <ClCompile Include="..\zlib\inflate.c" />
-    <ClCompile Include="..\zlib\inftrees.c" />
-    <ClCompile Include="..\zlib\infutil.c" />
-    <ClCompile Include="..\zlib\trees.c" />
-    <ClCompile Include="..\zlib\uncompr.c" />
-    <ClCompile Include="..\zlib\unzip.c" />
-    <ClCompile Include="..\zlib\explode.c" />
-    <ClCompile Include="..\zlib\unreduce.c" />
-    <ClCompile Include="..\zlib\unshrink.c" />
-    <ClCompile Include="..\zlib\zutil.c" />
+    <ClCompile Include="..\libPNG\src\png.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngerror.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pnggccrd.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngget.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngmem.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngpread.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngread.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngrio.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngrtran.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngrutil.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngset.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngtrans.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngvcrd.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwio.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwrite.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwtran.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwutil.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\adler32.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\compress.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\deflate.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\crc32.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\emucrc32.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\gzio.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\infblock.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inffast.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inflate.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inftrees.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\infutil.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\trees.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\uncompr.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\unzip.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\explode.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\unreduce.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\unshrink.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="..\zlib\zutil.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libSDLx360\SDL\include\SDL.h" />

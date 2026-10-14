@@ -292,54 +292,150 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="SDL\src\cdrom\xbox\SDL_syscdrom.c" />
-    <ClCompile Include="SDL\src\thread\xbox\SDL_syscond.c" />
-    <ClCompile Include="SDL\src\joystick\xbox\SDL_sysjoystick.c" />
-    <ClCompile Include="SDL\src\thread\xbox\SDL_sysmutex.c" />
-    <ClCompile Include="SDL\src\thread\xbox\SDL_syssem.c" />
-    <ClCompile Include="SDL\src\thread\xbox\SDL_systhread.c" />
-    <ClCompile Include="SDL\src\timer\xbox\SDL_systimer.c" />
-    <ClCompile Include="SDL\src\audio\xbox\SDL_xboxaudio.c" />
-    <ClCompile Include="SDL\src\video\xbox\SDL_xboxevents.c" />
-    <ClCompile Include="SDL\src\video\xbox\SDL_xboxmouse.c" />
-    <ClCompile Include="SDL\src\video\xbox\SDL_xboxvideo.c" />
-    <ClCompile Include="SDL\SDL.c" />
-    <ClCompile Include="SDL\src\events\SDL_active.c" />
-    <ClCompile Include="SDL\src\audio\SDL_audio.c" />
-    <ClCompile Include="SDL\src\audio\SDL_audiocvt.c" />
-    <ClCompile Include="SDL\src\audio\SDL_audiomem.c" />
-    <ClCompile Include="SDL\src\video\SDL_blit.c" />
-    <ClCompile Include="SDL\src\video\SDL_blit_0.c" />
-    <ClCompile Include="SDL\src\video\SDL_blit_1.c" />
-    <ClCompile Include="SDL\src\video\SDL_blit_A.c" />
-    <ClCompile Include="SDL\src\video\SDL_blit_N.c" />
-    <ClCompile Include="SDL\src\video\SDL_bmp.c" />
-    <ClCompile Include="SDL\src\cdrom\SDL_cdrom.c" />
-    <ClCompile Include="SDL\src\cpuinfo\SDL_cpuinfo.c" />
-    <ClCompile Include="SDL\src\video\SDL_cursor.c" />
-    <ClCompile Include="SDL\src\endian\SDL_endian.c" />
-    <ClCompile Include="SDL\SDL_error.c" />
-    <ClCompile Include="SDL\src\events\SDL_events.c" />
-    <ClCompile Include="SDL\src\events\SDL_expose.c" />
-    <ClCompile Include="SDL\SDL_fatal.c" />
-    <ClCompile Include="SDL\src\video\SDL_gamma.c" />
-    <ClCompile Include="SDL\src\joystick\SDL_joystick.c" />
-    <ClCompile Include="SDL\src\events\SDL_keyboard.c" />
-    <ClCompile Include="SDL\src\audio\SDL_mixer.c" />
-    <ClCompile Include="SDL\src\events\SDL_mouse.c" />
-    <ClCompile Include="SDL\src\video\SDL_pixels.c" />
-    <ClCompile Include="SDL\src\events\SDL_quit.c" />
-    <ClCompile Include="SDL\src\events\SDL_resize.c" />
-    <ClCompile Include="SDL\src\video\SDL_RLEaccel.c" />
-    <ClCompile Include="SDL\src\file\SDL_rwops.c" />
-    <ClCompile Include="SDL\src\video\SDL_stretch.c" />
-    <ClCompile Include="SDL\src\video\SDL_surface.c" />
-    <ClCompile Include="SDL\src\thread\SDL_thread.c" />
-    <ClCompile Include="SDL\src\timer\SDL_timer.c" />
-    <ClCompile Include="SDL\src\video\SDL_video.c" />
-    <ClCompile Include="SDL\src\audio\SDL_wave.c" />
-    <ClCompile Include="SDL\src\video\SDL_yuv.c" />
-    <ClCompile Include="SDL\src\video\SDL_yuv_sw.c" />
+    <ClCompile Include="SDL\src\cdrom\xbox\SDL_syscdrom.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\thread\xbox\SDL_syscond.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\joystick\xbox\SDL_sysjoystick.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\thread\xbox\SDL_sysmutex.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\thread\xbox\SDL_syssem.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\thread\xbox\SDL_systhread.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\timer\xbox\SDL_systimer.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\audio\xbox\SDL_xboxaudio.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\xbox\SDL_xboxevents.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\xbox\SDL_xboxmouse.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\xbox\SDL_xboxvideo.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\SDL.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\events\SDL_active.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\audio\SDL_audio.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\audio\SDL_audiocvt.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\audio\SDL_audiomem.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_blit.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_blit_0.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_blit_1.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_blit_A.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_blit_N.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_bmp.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\cdrom\SDL_cdrom.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\cpuinfo\SDL_cpuinfo.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_cursor.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\endian\SDL_endian.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\SDL_error.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\events\SDL_events.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\events\SDL_expose.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\SDL_fatal.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_gamma.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\joystick\SDL_joystick.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\events\SDL_keyboard.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\audio\SDL_mixer.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\events\SDL_mouse.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_pixels.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\events\SDL_quit.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\events\SDL_resize.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_RLEaccel.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\file\SDL_rwops.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_stretch.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_surface.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\thread\SDL_thread.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\timer\SDL_timer.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_video.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\audio\SDL_wave.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_yuv.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="SDL\src\video\SDL_yuv_sw.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
