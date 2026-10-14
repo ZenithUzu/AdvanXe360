@@ -212,12 +212,9 @@ static void XboxDX_PlayAudio(_THIS)
 		
 	while (1) {
 				
-#ifdef XAUDIO2_VOICE_NOSAMPLESPLAYED
-		/* Newer SDKs added a flags argument (0 = full state). */
+		/* The Xbox 360 SDK (21256 and later) takes a Flags argument;
+		   0 = return the full voice state. */
 		IXAudio2SourceVoice_GetState(mixbuf, &state, 0);
-#else
-		IXAudio2SourceVoice_GetState(mixbuf, &state);
-#endif
 		xa2buffer.Flags = XAUDIO2_END_OF_STREAM;
          if (state.BuffersQueued < NUM_BUFFERS - 1) {
             if (state.BuffersQueued == 0) {
