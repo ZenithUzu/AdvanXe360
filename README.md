@@ -96,6 +96,17 @@ Algunos cartuchos de GBA traían **hardware extra dentro del cartucho**: sensor 
 
 Probado en consola (BadUpdate + Aurora) y en Xenia. Proyecto en desarrollo: si encuentras errores, abre un *issue*.
 
+## Créditos
+
+- **Autores originales del emulador:** Forgotten (VisualBoyAdvance) y el **equipo de VBA-M**, además del equipo de **VBA-GX**, cuyo código usa el port.
+- **Port original a Xbox 360:** los autores de **VBA360** y la librería **libSDLx360**, con apoyo de **Team Avalaunch** y **Team XeLove**.
+- **Fork vba360-enhanced:** [**frankischilling**](https://github.com/frankischilling), que arregló la compilación del port y es la base de este proyecto.
+- **Este fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, pruebas en consola y en Xenia, compilación y capturas.
+- **Programación con IA:** **Claude** (de [Anthropic](https://www.anthropic.com)). Escribió los cambios de código y la documentación de este fork.
+- **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
+
+La lista completa de créditos y librerías está en el [README original](#original-readme-vba360-enhanced).
+
 ---
 
 # Original README (vba360-enhanced)

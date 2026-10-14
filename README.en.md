@@ -96,8 +96,17 @@ Some GBA cartridges carried **extra hardware inside the cartridge**: a solar lig
 
 Tested on console (BadUpdate + Aurora) and in Xenia. Work in progress: if you find bugs, please open an *issue*.
 
-## Credits and license
+## Credits
 
-Based on VisualBoyAdvance-M and the VBA360 port. The full credits, third-party libraries, build instructions and technical notes of the original project are in the [original README](README.md#original-readme-vba360-enhanced).
+- **Original emulator authors:** Forgotten (VisualBoyAdvance) and the **VBA-M team**, plus the **VBA-GX** team, whose code the port uses.
+- **Original Xbox 360 port:** the authors of **VBA360** and the **libSDLx360** library, with support from **Team Avalaunch** and **Team XeLove**.
+- **vba360-enhanced fork:** [**frankischilling**](https://github.com/frankischilling), who fixed the port's build and whose work this project is based on.
+- **This fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, console and Xenia testing, builds and screenshots.
+- **AI programming:** **Claude** (by [Anthropic](https://www.anthropic.com)). Wrote the code changes and documentation of this fork.
+- **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
+
+The full list of credits and libraries is in the [original README](README.md#original-readme-vba360-enhanced).
+
+## License
 
 This program is free software under the **GNU General Public License v2 or later**, distributed WITHOUT ANY WARRANTY. Users are responsible for having the legal right to use any ROM with this emulator. Not affiliated with Nintendo or Microsoft.
