@@ -48,6 +48,11 @@ extern const char *gbPendingPatch;     // gb/GB.cpp
 extern bool soundMuted;                // common/SoundSDL.cpp
 extern bool soundNoThrottle;
 FilterFunc initFilter(const Filter f, const int colorDepth, const int srcWidth);
+extern bool wasPaused;                 // sdl/SDL.cpp: skip one frame-skip measurement
+extern u32 autoFrameSkipLastTime;
+extern u32 throttleLastTime;
+extern u8 *rom;
+u32 systemGetClock();
 void systemScreenMessage(const char *msg);
 
 UiConfig g_cfg;
@@ -429,6 +434,8 @@ public:
 
 XboxHost g_host;
 
+void resetFrameTiming();
+
 // Opens the in-game menu and runs it until the player resumes or quits.
 void runInGameMenu()
 {
@@ -453,8 +460,20 @@ void runInGameMenu()
   g_waitRelease = true;
   g_prevPads = 0;
   xboxApplySettings();
+  resetFrameTiming();
   if (emulating)
     soundResume();
+}
+
+// Time spent outside emulation (menu, file I/O, video rebuild) must not
+// count as slow emulation, or auto frame skip jumps to 9 and only slowly
+// comes back down (low FPS for a while after closing the menu).
+void resetFrameTiming()
+{
+  wasPaused = true;
+  autoFrameSkipLastTime = throttleLastTime = systemGetClock();
+  if (g_cfg.frameSkip == 0)
+    systemFrameSkip = 0;
 }
 
 bool padDown(unsigned int pads, int action)
@@ -558,11 +577,48 @@ bool xboxPatchAllowed()
   return g_gameCfg.patch != 0;
 }
 
+// Cartridges with extra hardware the ROM scan can't detect (what VBA's
+// vba-over.ini used to provide). Matched on the first 3 letters of the game
+// code so every region (and hacks that keep the code) is covered.
+struct SpecialCart
+{
+  const char *code3;
+  int saveType;   // -1 = keep detected, 4 = EEPROM + tilt sensor
+  int rtc;        // -1 = keep detected, 1 = force the clock on
+};
+
+const SpecialCart kSpecialCarts[] = {
+  { "U3I", -1, 1 },   // Boktai: The Sun Is in Your Hand
+  { "U32", -1, 1 },   // Boktai 2: Solar Boy Django
+  { "U33", -1, 1 },   // Shin Bokura no Taiyou
+  { "BR4", -1, 1 },   // Rockman EXE 4.5 Real Operation
+  { "BKA", -1, 1 },   // Sennen Kazoku
+  { "KYG",  4, -1 },  // Yoshi Topsy-Turvy (tilt)
+  { "KHP",  4, -1 },  // Koro Koro Puzzle Happy Panechu! (tilt)
+};
+
+static void applySpecialCart()
+{
+  if (!rom)
+    return;
+  char code[4] = { (char)rom[0xAC], (char)rom[0xAD], (char)rom[0xAE], 0 };
+  for (size_t i = 0; i < sizeof(kSpecialCarts) / sizeof(kSpecialCarts[0]); i++) {
+    if (strncmp(code, kSpecialCarts[i].code3, 3) != 0)
+      continue;
+    if (kSpecialCarts[i].saveType >= 0)
+      cpuSaveType = kSpecialCarts[i].saveType;
+    if (kSpecialCarts[i].rtc == 1)
+      rtcEnable(true);
+    return;
+  }
+}
+
 void xboxApplyGameOverrides(bool isGba)
 {
   g_isGba = isGba;
   if (!isGba)
     return;
+  applySpecialCart();
   switch (g_gameCfg.saveType) {
   case SAVE_EEPROM: cpuSaveType = 1; break;
   case SAVE_SRAM: cpuSaveType = 2; break;
@@ -663,11 +719,13 @@ void xboxPollEvents()
     systemScreenMessage(ok ? (g_cfg.language ? "State saved" : "Estado guardado")
                            : (g_cfg.language ? "Save failed" : "Error al guardar"));
     if (g_ui) g_ui->invalidateThumb(xboxStateThumbPath(g_cfg.stateSlot));
+    resetFrameTiming();
   }
   if (g_cfg.map[ACT_QUICK_LOAD] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(g_cfg.map[ACT_QUICK_LOAD]))) {
     bool ok = g_host.loadState(g_cfg.stateSlot);
     systemScreenMessage(ok ? (g_cfg.language ? "State loaded" : "Estado cargado")
                            : (g_cfg.language ? "Empty slot" : "Ranura vacia"));
+    resetFrameTiming();
   }
 
   // Menu: the configured button, or BACK + START as a fallback that always works.

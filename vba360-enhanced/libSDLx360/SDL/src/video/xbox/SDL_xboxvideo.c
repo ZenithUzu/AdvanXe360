@@ -362,7 +362,7 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
  
 	/* The emulator calls SDL_SetVideoMode again when the filter or the
 	   picture size changes: free the previous surface instead of leaking it. */
-	if (this->hidden->SDL_primary || vertexBuffer || g_pPixelShader)
+	if (this->hidden->SDL_primary || vertexBuffer)
 	{
 		IDirect3DDevice9_SetTexture(D3D_Device, 0, NULL);
 		IDirect3DDevice9_SetStreamSource(D3D_Device, 0, NULL, 0, 0);
@@ -378,11 +378,6 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 			IDirect3DVertexBuffer9_Release(vertexBuffer);
 			vertexBuffer = NULL;
 		}
-		if (g_pPixelShader)
-		{
-			D3DPixelShader_Release(g_pPixelShader);
-			g_pPixelShader = NULL;
-		}
 	}
 
 	ret = IDirect3DDevice9_CreateTexture(D3D_Device,width,height,1, 0,pixel_mode, D3DUSAGE_CPU_CACHED_MEMORY, (D3DTexture**)&this->hidden->SDL_primary, NULL);
@@ -395,8 +390,10 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 	}
 
  
-   // Compile pixel shader.
-
+   // Compile the pixel shader once and keep it: compiling on the console
+   // takes long enough to make every filter change stutter.
+   if (NULL == g_pPixelShader)
+   {
    D3DXCompileShader( g_strPixelShaderProgram,
                             ( UINT )strlen( g_strPixelShaderProgram ),
                             NULL,
@@ -407,9 +404,10 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
                             &pPixelShaderCode,
                             &pPixelErrorMsg,
                             NULL );
-    
+
     // Create pixel shader.
 	g_pPixelShader = D3DDevice_CreatePixelShader( ( DWORD* )pPixelShaderCode->lpVtbl->GetBufferPointer(pPixelShaderCode));
+   }
 	 
 	    // Create vertex declaration
     if( NULL == g_pGradientVertexDecl )
@@ -438,7 +436,8 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
         IDirect3DDevice9_CreateVertexShader(D3D_Device,( DWORD* )pShaderCode->lpVtbl->GetBufferPointer(pShaderCode), &g_pGradientVertexShader);
     }
  	 
-	IDirect3DDevice9_CreateVertexDeclaration(D3D_Device,decl,&vertexDeclaration);
+	if (NULL == vertexDeclaration)
+		IDirect3DDevice9_CreateVertexDeclaration(D3D_Device,decl,&vertexDeclaration);
 	IDirect3DDevice9_CreateVertexBuffer(D3D_Device,sizeof(triangleStripVertices), D3DUSAGE_CPU_CACHED_MEMORY,0L, D3DPOOL_DEFAULT, &vertexBuffer, NULL );
 
 	D3DDevice_SetVertexShader(D3D_Device, g_pGradientVertexShader );
