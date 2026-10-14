@@ -154,10 +154,10 @@ UiRequest UiApp::takeRequest(std::string &romPath)
   return r;
 }
 
-void UiApp::toast(const std::string &msg, int frames)
+void UiApp::toast(const std::string &msg)
 {
   m_toast = msg;
-  m_toastFrames = frames;
+  m_toastFrames = 150;
 }
 
 void UiApp::launch(const std::string &rom)
@@ -439,8 +439,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
                          uiButtonName(*this, m_cfg.map[ACT_FAST_FORWARD]);
     m.add(E_FF_MODE, ITEM_OPTION, tr("Modo de avance r\xe1pido", "Fast-forward mode"), modes[m_cfg.ffToggle], ffHelp);
     m.add(E_BIOS, ITEM_OPTION, tr("Usar BIOS original", "Use original BIOS"), yesNo[m_cfg.useBios],
-          tr("Requiere bios\\gba_bios.bin. Se salta la animaci\xf3n de inicio.",
-             "Needs bios\\gba_bios.bin. The boot animation is skipped."));
+          tr("Requiere bios\\gba_bios.bin en la carpeta del emulador.",
+             "Needs bios\\gba_bios.bin in the emulator folder."));
     const char *gsa[2] = { "GameShark v1/v2", "GameShark v3 / Action Replay" };
     m.add(E_GSA, ITEM_OPTION, tr("C\xf3""digos de 16 d\xedgitos", "16-digit codes"), gsa[m_cfg.gsaV3],
           tr("Formato de los trucos XXXXXXXX YYYYYYYY que agregues.",

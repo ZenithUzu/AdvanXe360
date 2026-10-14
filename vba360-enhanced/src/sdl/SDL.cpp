@@ -207,7 +207,6 @@ int autoFrameSkip = 1;
 int frameskipadjust = 0;
 int showRenderedFrames = 0;
 int renderedFrames = 0;
-static bool sdlFirstFrameLogged = false;
 
 u32 throttleLastTime = 0;
 u32 autoFrameSkipLastTime = 0;
@@ -1623,12 +1622,10 @@ int gba_main(char *path, char *fname)
       failed = !gbLoadRom(szFile);
       if(!failed) {
         gbGetHardwareType();
-        fprintf(stdout, "GB ROM loaded: size=%d type=%02x romsize=%02x ramsize=%02x cgbflag=%02x hardware=%d\n",
-                gbRomSize, gbRom[0x147], gbRom[0x148], gbRom[0x149], gbRom[0x143], gbHardware);
 
-        // used for the handling of the gb Boot Rom
-        if (gbHardware & 5)
-          gbCPUInit(gbBiosFileName, gbBiosFileName[0] != 0);
+        // No boot ROM for GB/GBC games: the GBA BIOS option does not apply
+        // to them (this also clears useBios for the GB core).
+        gbCPUInit(gbBiosFileName, false);
 
         cartridgeType = IMAGE_GB;
         emulator = GBSystem;
@@ -1829,8 +1826,6 @@ int gba_main(char *path, char *fname)
   // Cheats, automatic state, video settings
   xboxOnGameStarted();
 
-  sdlFirstFrameLogged = false;
-  fprintf(stdout, "Emulation loop starting (%dx%d)\n", srcWidth, srcHeight);
   while(emulating) {
      emulator.emuMain(emulator.emuCount);
      sdlPollEvents();
@@ -1894,14 +1889,7 @@ void systemMessage(int num, const char *msg, ...)
   vsprintf(buffer, msg, valist);
 
   fprintf(stderr, "%s\n", buffer);
-  fprintf(stdout, "MESSAGE: %s\n", buffer);
   va_end(valist);
-
-  // Keep the first message of a game load so the menu can show it.
-  if (!xboxLoadMessage[0]) {
-    strncpy(xboxLoadMessage, buffer, sizeof(xboxLoadMessage) - 1);
-    xboxLoadMessage[sizeof(xboxLoadMessage) - 1] = 0;
-  }
 }
 
 void drawScreenMessage(u8 *screen, int pitch, int x, int y, unsigned int duration)
@@ -1942,10 +1930,6 @@ void systemDrawScreen()
   u8 *screen;
 
   renderedFrames++;
-  if (!sdlFirstFrameLogged) {
-    sdlFirstFrameLogged = true;
-    fprintf(stdout, "First frame drawn\n");
-  }
 
   screen = (u8*)surface->pixels;
   SDL_LockSurface(surface);

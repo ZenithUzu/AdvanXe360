@@ -36,9 +36,6 @@ void xboxOnGameStarted();
 void xboxOnGameExiting();
 // True if the last gba_main call could not open the ROM.
 extern bool xboxGameLoadFailed;
-// First core message (systemMessage) since the game started loading; tells
-// the user why a ROM could not be opened.
-extern char xboxLoadMessage[256];
 
 // --- Per frame -------------------------------------------------------------------
 // Reads controllers, handles hotkeys and opens the in-game menu when asked.

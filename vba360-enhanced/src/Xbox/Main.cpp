@@ -63,11 +63,6 @@ VOID __cdecl main()
 
   xboxCreateFolders();
 
-  // Diagnostic log (core messages, load steps) next to default.xex.
-  std::string logPath = uiJoinPath(xboxEmulatorDir(), "vba360.log");
-  if (freopen(logPath.c_str(), "w", stdout))
-    setvbuf(stdout, NULL, _IONBF, 0);
-
   UiApp ui(xboxHost(), g_cfg);
   g_cfg.load(ui.configPath());
   g_ui = &ui;
@@ -100,19 +95,8 @@ VOID __cdecl main()
     gba_main(dirBuf, fileBuf);
 
     ui.openHome(rom);
-    if (xboxGameLoadFailed) {
-      std::string msg = ui.tr("No se pudo abrir el juego", "The game could not be opened");
-      std::string why = xboxLoadMessage;
-      // Drop the folder part of any path in the message; keep it short.
-      size_t slash = why.find_last_of("\\/");
-      if (slash != std::string::npos)
-        why = why.substr(0, why.find_last_of(' ', slash) + 1) + why.substr(slash + 1);
-      if (why.size() > 70)
-        why = why.substr(0, 67) + "...";
-      if (!why.empty())
-        msg += ": " + why;
-      ui.toast(msg, 360);
-    }
+    if (xboxGameLoadFailed)
+      ui.toast(ui.tr("No se pudo abrir el juego", "The game could not be opened"));
     waitForRelease(canvas, ui);
   }
 }
