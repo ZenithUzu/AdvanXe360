@@ -17,7 +17,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Explorador de **unidades y carpetas** (disco duro, USB, carpeta del emulador), con vista previa del juego y aviso si tiene parche.
 - Todo en **español o inglés**, con una línea de ayuda en cada opción.
 
-**Menú dentro del juego** (clic del stick derecho, o BACK + START):
+**Menú dentro del juego** (clic del stick derecho; se puede cambiar en Controles):
 - Guardar y cargar estado en **9 ranuras con miniatura**.
 - **Avance rápido** (2x, 3x, 4x, 6x, 8x o máximo; mantener o alternar).
 - **Trucos**, opciones del juego, ajustes, captura de pantalla, reiniciar y salir.
@@ -67,7 +67,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 ### What this fork adds
 
 - **New interface** drawn by the emulator itself (no more XUI scenes): Games · Recent · Favorites · Settings tabs, a drive and folder browser with game previews, Spanish or English.
-- **In-game menu** (right stick click, or BACK + START): 9 save-state slots with thumbnails, fast forward (2x–8x or maximum, hold or toggle), cheats, game options, settings, screenshots, restart and quit.
+- **In-game menu** (right stick click, remappable in Controls): 9 save-state slots with thumbnails, fast forward (2x–8x or maximum, hold or toggle), cheats, game options, settings, screenshots, restart and quit.
 - **Cheats:** GameShark, Action Replay, CodeBreaker and VBA codes for GBA; GameShark and Game Genie for GB/GBC. Type them with an on-screen keyboard or import a `.cht` / `.txt` list (RetroArch format too). Saved per game.
 - **Remappable controls**, including turbo, fast forward, menu and quick save/load.
 - **Settings:** filters (sharp, smooth, Scale2x, LQ2x), original or full-screen picture, black or custom-image screen borders (`borders\border.png`, 1280×720), FPS, frame skip, sound, optional real BIOS, save/state folders, save on exit and resume.

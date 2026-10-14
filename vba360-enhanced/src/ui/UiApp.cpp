@@ -497,8 +497,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA.",
                  "Hobby project, made with the help of AI."));
     m.addInfo(tr("Fuente Inter (SIL Open Font License).", "Inter typeface (SIL Open Font License)."));
-    m.addInfo(tr("Men\xfa en juego: clic del stick derecho o BACK + START.",
-                 "In-game menu: right stick click or BACK + START."));
+    m.addInfo(tr("Men\xfa en juego: clic del stick derecho (configurable en Controles).",
+                 "In-game menu: right stick click (configurable in Controls)."));
     break;
   }
 }
@@ -560,7 +560,7 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
     UiMenuItem &it = m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a),
                            uiButtonName(*this, m_cfg.map[a]));
     if (a == ACT_MENU)
-      it.help = tr("BACK + START siempre abre el men\xfa.", "BACK + START always opens the menu.");
+      it.help = tr("Este bot\xf3n no se puede dejar sin asignar.", "This button can't be left unassigned.");
     else if (a == ACT_FAST_FORWARD)
       it.help = tr("El modo (mantener o alternar) est\xe1 en Emulaci\xf3n.",
                    "The mode (hold or toggle) is under Emulation.");

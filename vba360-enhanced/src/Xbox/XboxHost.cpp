@@ -732,11 +732,10 @@ void xboxPollEvents()
     resetFrameTiming();
   }
 
-  // Menu: the configured button, or BACK + START as a fallback that always works.
-  bool combo = (pads & PAD_BIT(PAD_BACK)) && (pads & PAD_BIT(PAD_START)) &&
-               (pressed & (PAD_BIT(PAD_BACK) | PAD_BIT(PAD_START)));
+  // In-game menu: only the configured button (right stick click by
+  // default). Start + Select belong to the game (soft reset in many titles).
   int menuButton = g_cfg.map[ACT_MENU];
-  if (combo || (menuButton < PAD_BUTTON_COUNT && (pressed & PAD_BIT(menuButton))))
+  if (menuButton < PAD_BUTTON_COUNT && (pressed & PAD_BIT(menuButton)))
     runInGameMenu();
 }
 
@@ -745,10 +744,6 @@ u32 xboxReadJoypad()
   if (g_waitRelease)
     return 0;
   unsigned int pads = xboxReadPads(true);
-  // While BACK + START is held for the menu, don't press them in the game.
-  if ((pads & PAD_BIT(PAD_BACK)) && (pads & PAD_BIT(PAD_START)))
-    return 0;
-
   static const int bits[ACT_GBA_RIGHT + 1] = {
     1, 2, 512, 256, 8, 4,     // A, B, L, R, Start, Select
     64, 128, 32, 16           // Up, Down, Left, Right

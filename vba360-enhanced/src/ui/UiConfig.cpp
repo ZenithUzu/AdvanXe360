@@ -138,7 +138,11 @@ void UiConfig::resetControls()
 bool UiConfig::load(const std::string &path)
 {
   ConfigReader r(*this);
-  return readIni(path, r);
+  bool ok = readIni(path, r);
+  // The in-game menu must always be reachable.
+  if (map[ACT_MENU] >= PAD_BUTTON_COUNT)
+    map[ACT_MENU] = PAD_RS;
+  return ok;
 }
 
 bool UiConfig::save(const std::string &path) const
