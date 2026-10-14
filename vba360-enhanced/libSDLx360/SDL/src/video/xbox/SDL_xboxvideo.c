@@ -346,7 +346,10 @@ const static SDL_Rect *vid_modes[] = {
 
 SDL_Rect **XBOX_ListModes(_THIS, SDL_PixelFormat *format, Uint32 flags)
 {
-	return (SDL_Rect **)vid_modes;
+	/* Any size: the picture is a texture scaled onto the 1280x720 screen.
+	   With the fixed list a Game Boy picture (320x288) got a 400x300
+	   texture and only filled part of it (off-center, black strips). */
+	return (SDL_Rect **)-1;
 }
 
 SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
