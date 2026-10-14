@@ -43,7 +43,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - Typed with an **on-screen keyboard** or **imported** from `.cht` / `.txt` files (RetroArch format too). Saved per game.
 
 **Settings**
-- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen or **integer** (pixel perfect: GBA x4, GB x5); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (9 Super Game Boy-style palettes: gray, classic green, Pocket, sepia, blue…); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
+- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen or **integer** (pixel perfect: GBA x4, GB x5); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (37 palettes: gray, classic green, original Game Boy, Pocket, Light and the **32 official Super Game Boy palettes**, 1-A to 4-H); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
 - **Audio:** sound and mute during fast forward.
 - **Emulation:** fast forward speed and mode, optional real BIOS and format of 16-digit codes.
 - **Saving:** save and state folders (next to the ROM or in the emulator folder), save state on exit and resume where you left off.
@@ -126,6 +126,8 @@ Tested on console (BadUpdate + Aurora). Work in progress: if you find bugs, plea
 - **AI programming:** **Claude** (by [Anthropic](https://www.anthropic.com)). Wrote the code changes and documentation of this fork.
 - **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
 - **Screen effects:** adapted from [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* by Greg Hogan (GPL v2+) for CRT and *lcd3x* by Gigaherz (public domain) for LCD.
+- **Game Boy palettes:** taken from the [Gambatte libretro core](https://github.com/libretro/gambatte-libretro) (Sindre Aamås, GPL v2): original Game Boy, Pocket, Light and the 32 Super Game Boy presets.
+- **Game Boy sound and archive reading:** Gb_Apu, Blip_Buffer and File_Extractor by Shay Green (blargg).
 
 The full list of credits and libraries is in the [original README](README.md#original-readme-vba360-enhanced).
 

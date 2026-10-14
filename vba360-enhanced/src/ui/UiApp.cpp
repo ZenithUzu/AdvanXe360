@@ -543,13 +543,47 @@ void UiApp::buildMenu(UiMenuScreen &m)
                  "Game Boy Advance and Game Boy emulator."));
     m.addInfo(tr("No emula Game Boy Color ni juegos de GBA que usan aditamentos o hardware especial.",
                  "No Game Boy Color, nor GBA games that need add-ons or special hardware."));
-    m.addInfo(tr("Basado en VisualBoyAdvance-M y VBA360 (licencia GPL).",
-                 "Based on VisualBoyAdvance-M and VBA360 (GPL license)."));
-    m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA.",
-                 "Hobby project, made with the help of AI."));
-    m.addInfo(tr("Fuente Inter (SIL Open Font License).", "Inter typeface (SIL Open Font License)."));
+    m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA. Licencia GPL.",
+                 "Hobby project, made with the help of AI. GPL license."));
     m.addInfo(tr("Men\xfa en juego: clic del stick derecho (configurable en Controles).",
                  "In-game menu: right stick click (configurable in Controls)."));
+    m.addHeader(tr("Cr\xe9""ditos", "Credits"));
+    {
+      // role (es, en), who, details (es, en)
+      static const char *const credits[][5] = {
+        { "Este fork", "This fork", "Axel (axelconde7w7-gif)",
+          "Idea, pruebas en consola, compilaci\xf3n y capturas.", "Idea, console testing, builds and screenshots." },
+        { "Programaci\xf3n con IA", "AI programming", "Claude (Anthropic)",
+          "Cambios de c\xf3""digo y documentaci\xf3n de este fork.", "Code changes and documentation of this fork." },
+        { "Fork vba360-enhanced", "vba360-enhanced fork", "frankischilling",
+          "Arregl\xf3 la compilaci\xf3n del port; base de este proyecto.", "Fixed the port's build; base of this project." },
+        { "Port a Xbox 360", "Xbox 360 port", "Autores de VBA360",
+          "VBA360 y la librer\xed""a libSDLx360.", "VBA360 and the libSDLx360 library." },
+        { "Emulador original", "Original emulator", "Forgotten, equipo VBA",
+          "VisualBoyAdvance (1999-2004).", "VisualBoyAdvance (1999-2004)." },
+        { "N\xfa""cleo", "Core", "Equipo de VBA-M",
+          "VisualBoyAdvance-M; tambi\xe9n c\xf3""digo de VBA-GX.", "VisualBoyAdvance-M; also code from VBA-GX." },
+        { "Sonido de Game Boy", "Game Boy sound", "Shay Green (blargg)",
+          "Gb_Apu, Blip_Buffer y File_Extractor.", "Gb_Apu, Blip_Buffer and File_Extractor." },
+        { "Efecto CRT", "CRT effect", "Greg Hogan (SoltanGris42)",
+          "Adaptado de zfast_crt (libretro, GPL v2+).", "Adapted from zfast_crt (libretro, GPL v2+)." },
+        { "Efecto LCD", "LCD effect", "Gigaherz",
+          "Adaptado de lcd3x (libretro, dominio p\xfa""blico).", "Adapted from lcd3x (libretro, public domain)." },
+        { "Paletas de Game Boy", "Game Boy palettes", "Gambatte (Sindre Aam\xe5s)",
+          "Paletas DMG, Pocket, Light y Super Game Boy del core de libretro.",
+          "DMG, Pocket, Light and Super Game Boy palettes from the libretro core." },
+        { "Fuente", "Typeface", "Inter (Rasmus Andersson)",
+          "SIL Open Font License.", "SIL Open Font License." },
+        { "Librer\xed""as", "Libraries", "zlib, libpng, SDL",
+          "Jean-loup Gailly y Mark Adler; Glenn Randers-Pehrson; Sam Lantinga.",
+          "Jean-loup Gailly and Mark Adler; Glenn Randers-Pehrson; Sam Lantinga." },
+        { "Comunidad", "Community", "Team Avalaunch, Team XeLove",
+          "Herramientas y apoyo de la escena de Xbox 360.", "Tools and support from the Xbox 360 scene." },
+      };
+      int lang = m_cfg.language ? 1 : 0;
+      for (size_t i = 0; i < sizeof(credits) / sizeof(credits[0]); i++)
+        m.add((int)i + 1, ITEM_ACTION, credits[i][lang], credits[i][2], credits[i][3 + lang]);
+    }
     break;
   }
 }

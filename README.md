@@ -43,7 +43,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Se escriben con un **teclado en pantalla** o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
 
 **Ajustes**
-- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa o **entero** (píxel exacto: GBA x4, GB x5); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (9 paletas al estilo Super Game Boy: gris, verde clásico, Pocket, sepia, azul…); **fondo negro o con imagen propia** (centrada, rellenar o estirar); mostrar FPS y salto de cuadros.
+- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa o **entero** (píxel exacto: GBA x4, GB x5); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (37 paletas: gris, verde clásico, Game Boy original, Pocket, Light y las **32 paletas oficiales de Super Game Boy**, de la 1-A a la 4-H); **fondo negro o con imagen propia** (centrada, rellenar o estirar); mostrar FPS y salto de cuadros.
 - **Audio:** sonido y silenciar durante el avance rápido.
 - **Emulación:** velocidad y modo del avance rápido, BIOS original opcional y formato de los códigos de 16 dígitos.
 - **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir y continuar donde lo dejaste.
@@ -126,6 +126,8 @@ Probado en consola (BadUpdate + Aurora). Proyecto en desarrollo: si encuentras e
 - **Programación con IA:** **Claude** (de [Anthropic](https://www.anthropic.com)). Escribió los cambios de código y la documentación de este fork.
 - **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
 - **Efectos de pantalla:** adaptados de [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* de Greg Hogan (GPL v2+) para CRT y *lcd3x* de Gigaherz (dominio público) para LCD.
+- **Paletas de Game Boy:** tomadas del core [Gambatte de libretro](https://github.com/libretro/gambatte-libretro) (Sindre Aamås, GPL v2): Game Boy original, Pocket, Light y las 32 de Super Game Boy.
+- **Sonido de Game Boy y lectura de archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de Shay Green (blargg).
 
 La lista completa de créditos y librerías está en el [README original](#original-readme-vba360-enhanced).
 

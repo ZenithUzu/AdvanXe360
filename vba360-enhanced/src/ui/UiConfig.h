@@ -37,7 +37,7 @@ enum UiBorderFit { FIT_CENTER = 0, FIT_FILL, FIT_STRETCH, FIT_COUNT };
 // Screen effect drawn over the game picture.
 enum UiScreenEffect { EFFECT_NONE = 0, EFFECT_SCANLINES, EFFECT_GRID, EFFECT_COUNT };
 // Colors for (original, non-color) Game Boy games.
-enum { GB_PALETTE_COUNT = 9 };
+enum { GB_PALETTE_COUNT = 37 };
 extern const char *const uiGbPaletteNames[GB_PALETTE_COUNT][2];   // [i][0] = Spanish, [i][1] = English
 // 4 shades (lightest first) per palette, 0xRRGGBB.
 extern const unsigned int uiGbPalettes[GB_PALETTE_COUNT][4];
