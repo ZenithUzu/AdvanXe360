@@ -365,6 +365,9 @@ const char *const uiGbPaletteNames[GB_PALETTE_COUNT][2] = {
   { "Super Game Boy 4-F", "Super Game Boy 4-F" },
   { "Super Game Boy 4-G", "Super Game Boy 4-G" },
   { "Super Game Boy 4-H", "Super Game Boy 4-H" },
+  { "Sepia", "Sepia" },
+  { "Azul", "Blue" },
+  { "Rojo", "Red" },
 };
 
 // 4 shades, lightest first (0xRRGGBB). The Game Boy, Pocket, Light and the
@@ -408,6 +411,10 @@ const unsigned int uiGbPalettes[GB_PALETTE_COUNT][4] = {
   { 0xB8D0D0, 0xD880D8, 0x8000A0, 0x380000 },
   { 0xB0E018, 0xB82058, 0x281000, 0x008060 },
   { 0xF8F8C8, 0xB8C058, 0x808840, 0x405028 },
+  // Extras (not from any console)
+  { 0xF8F0D8, 0xC8A878, 0x806040, 0x302010 },
+  { 0xE0F8F8, 0x88C0F0, 0x4060A8, 0x102040 },
+  { 0xF8E0E0, 0xE08888, 0xA03030, 0x300808 },
 };
 
 bool uiIsImageFile(const std::string &name)
