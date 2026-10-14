@@ -375,7 +375,7 @@
 			<Tool
 				Name="VCX360LinkerTool"
 				AdditionalOptions="&quot;./Xbox 360/Release/File_Extractor.lib&quot;"
-				AdditionalDependencies="libSDLx360.lib xapilib.lib d3d9.lib d3dx9.lib xgraphics.lib xboxkrnl.lib xnet.lib xaudio2.lib xact3.lib x3daudio.lib xmcore.lib vcomp.lib xbdm.lib xuihtml.lib xmedia2.lib xuirender.lib xuivideo.lib xuirun.lib xonline.lib"
+				AdditionalDependencies="libSDLx360.lib xapilib.lib d3d9.lib d3dx9.lib xgraphics.lib xboxkrnl.lib xnet.lib xaudio2.lib xact3.lib x3daudio.lib xmcore.lib vcomp.lib xuihtml.lib xmedia2.lib xuirender.lib xuivideo.lib xuirun.lib xonline.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)libSDLx360\Release"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
@@ -463,7 +463,7 @@
 			<Tool
 				Name="VCX360LinkerTool"
 				AdditionalOptions="&quot;./Xbox 360/Release/File_Extractor.lib&quot;"
-				AdditionalDependencies="libSDLx360.lib xapilib.lib d3d9ltcg.lib d3dx9.lib xgraphics.lib xboxkrnl.lib xnet.lib xaudio2.lib xact3ltcg.lib x3daudioltcg.lib xmcoreltcg.lib vcomp.lib xbdm.lib xuihtml.lib xmedia2.lib xuirender.lib xuivideo.lib xuirun.lib xmp.lib xonline.lib"
+				AdditionalDependencies="libSDLx360.lib xapilib.lib d3d9ltcg.lib d3dx9.lib xgraphics.lib xboxkrnl.lib xnet.lib xaudio2.lib xact3ltcg.lib x3daudioltcg.lib xmcoreltcg.lib vcomp.lib xuihtml.lib xmedia2.lib xuirender.lib xuivideo.lib xuirun.lib xmp.lib xonline.lib"
 				AdditionalLibraryDirectories="$(ProjectDir)libSDLx360\Release_LTCG"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
