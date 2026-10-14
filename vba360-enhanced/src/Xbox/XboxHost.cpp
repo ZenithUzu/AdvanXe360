@@ -1,6 +1,8 @@
 // Xbox 360 implementation of the menu UI host, controller input, per-game
 // files and the in-game menu loop.
 #include <xtl.h>
+#include <stdio.h>
+#include <string.h>
 #include <algorithm>
 #include <string>
 #include <vector>

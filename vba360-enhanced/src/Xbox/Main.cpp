@@ -1,6 +1,8 @@
 // VBA360 entry point: sets up Direct3D and runs the menu UI. When the player
 // picks a game, gba_main() (sdl/SDL.cpp) runs it until they quit.
 #include <xtl.h>
+#include <stdio.h>
+#include <string.h>
 #include <string>
 
 #include "Main.h"
