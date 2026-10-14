@@ -1623,9 +1623,9 @@ int gba_main(char *path, char *fname)
       if(!failed) {
         gbGetHardwareType();
 
-        // No boot ROM for GB/GBC games: the GBA BIOS option does not apply
-        // to them (this also clears useBios for the GB core).
-        gbCPUInit(gbBiosFileName, false);
+        // used for the handling of the gb Boot Rom
+        if (gbHardware & 5)
+          gbCPUInit(gbBiosFileName, useBios);
 
         cartridgeType = IMAGE_GB;
         emulator = GBSystem;
