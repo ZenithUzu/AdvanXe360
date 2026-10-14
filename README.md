@@ -1,4 +1,70 @@
-# vba360-enhanced
+# vba360-enhanced-ai
+
+Fork de / Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
+
+## 🇲🇽 Español
+
+> 🤖 **Aviso:** los cambios de este fork fueron hechos con ayuda de inteligencia artificial (Claude, de Anthropic). Lo mantengo por **pasatiempo**, sin fines de lucro y sin ninguna garantía.
+
+Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los términos de la licencia GPL del proyecto original. Todo el crédito del emulador y del port es de sus autores originales (ver más abajo).
+
+### Qué cambia en este fork
+
+El objetivo es que funcionen los **hackroms** (sobre todo los de Pokémon):
+
+- **Detección automática del tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM y reloj RTC) leyendo la propia ROM. Antes todo arrancaba con Flash de 64 KB y sin RTC, así que FireRed, Emerald y sus hacks no podían guardar.
+- **Parches automáticos BPS / UPS / IPS** al cargar la ROM, en memoria, sin modificar tu archivo.
+- **Soporte para hacks expandidos a 32 MB.**
+- Corrección de un fallo que podía tumbar la consola al aplicar parches, y de un dato escrito con el orden de bytes incorrecto en la 360.
+
+### Cómo usar un hack
+
+Pon la ROM limpia y el parche en la misma carpeta, con **el mismo nombre**:
+
+```
+Pokemon Unbound.gba
+Pokemon Unbound.bps
+```
+
+Al abrir la ROM, el parche se aplica solo. Si el parche no corresponde a esa ROM base, el juego se carga sin parchear y aparece un aviso.
+
+### Estado
+
+Probado en PC (parcheo y detección de guardado). **Pendiente de probar en una Xbox 360 real** (BadUpdate + Aurora). Para compilar: ver la sección *Building* más abajo.
+
+## 🇺🇸 English
+
+> 🤖 **Notice:** the changes in this fork were made with the help of AI (Claude, by Anthropic). I maintain it as a **hobby**, non-commercial and with no warranty of any kind.
+
+You are **free to use it or not**, and to copy, modify and share it under the GPL terms of the original project. All credit for the emulator and the port goes to their original authors (see below).
+
+### What this fork changes
+
+The goal is to make **ROM hacks** work (especially Pokémon hacks):
+
+- **Automatic save type detection** (64/128 KB Flash, SRAM, EEPROM and RTC clock) by reading the ROM itself. Previously every game ran with 64 KB Flash and no RTC, so FireRed, Emerald and their hacks could not save.
+- **Automatic BPS / UPS / IPS patching** when a ROM is loaded, in memory, without modifying your file.
+- **Support for hacks expanded to 32 MB.**
+- Fixes a crash that could happen when applying patches, and a value written with the wrong byte order on the 360.
+
+### How to use a hack
+
+Put the clean ROM and the patch in the same folder, with **the same name**:
+
+```
+Pokemon Unbound.gba
+Pokemon Unbound.bps
+```
+
+The patch is applied automatically when the ROM is opened. If the patch does not match that base ROM, the game loads unpatched and a message is shown.
+
+### Status
+
+Tested on PC (patching and save detection). **Not yet tested on real Xbox 360 hardware** (BadUpdate + Aurora). To build it, see the *Building* section below.
+
+---
+
+# Original README (vba360-enhanced)
 
 An enhanced Xbox 360 port of VisualBoyAdvance-M (VBA-M), a Game Boy and Game Boy Advance emulator.
 
