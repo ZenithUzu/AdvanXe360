@@ -50,15 +50,20 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 
 ### Capturas
 
+**Pokémon SoulGold (hack) con imagen de borde y contador de FPS:**
+
 | | |
 |---|---|
-| ![Explorador](docs/screenshots/browser.png) | ![Menú en juego](docs/screenshots/ingame-menu.png) |
+| ![Gameplay 1](docs/screenshots/gameplay-soulgold-1.png) | ![Gameplay 2](docs/screenshots/gameplay-soulgold-2.png) |
+
+**Ajustes:**
+
+| | |
+|---|---|
 | ![Video](docs/screenshots/settings-video.png) | ![Controles](docs/screenshots/controls.png) |
 | ![Guardado](docs/screenshots/settings-saving.png) | ![Emulación](docs/screenshots/settings-emulation.png) |
-| ![Audio](docs/screenshots/settings-audio.png) | ![Trucos](docs/screenshots/cheats.png) |
+| ![Audio](docs/screenshots/settings-audio.png) | ![Acerca de](docs/screenshots/about.png) |
 | ![Interfaz (español)](docs/screenshots/settings-interface-es.png) | ![Interface (English)](docs/screenshots/settings-interface-en.png) |
-
-<sub>Capturas de ajustes tomadas en Xenia; el explorador, el menú en juego y los trucos son del simulador de la interfaz en PC.</sub>
 
 ### Cómo usar un hack
 
