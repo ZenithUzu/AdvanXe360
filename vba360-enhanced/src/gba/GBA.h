@@ -96,6 +96,7 @@ extern bool CPUWriteMemState(char *, int);
 extern bool CPUWriteState(const char *);
 extern int CPULoadRom(const char *);
 extern void CPUUpdateRomSize(int);
+extern int CPUGetRomSize();
 extern void doMirroring(bool);
 extern void CPUUpdateRegister(u32, u16);
 extern void applyTimer ();

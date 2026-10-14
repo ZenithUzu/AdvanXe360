@@ -36,6 +36,8 @@ void xboxOnGameStarted();
 void xboxOnGameExiting();
 // True if the last gba_main call could not open the ROM.
 extern bool xboxGameLoadFailed;
+// A soft patch was applied to the running game.
+extern bool xboxRomPatched;
 // First core message (systemMessage) since the game started loading; tells
 // the user why a ROM could not be opened.
 extern char xboxLoadMessage[256];

@@ -39,22 +39,6 @@ static int readInt2(FILE *f)
   return c + (res<<8);
 }
 
-static int readInt3(FILE *f)
-{
-  int res = 0;
-  int c = fgetc(f);
-  if(c == EOF)
-    return -1;
-  res = c;
-  c = fgetc(f);
-  if(c == EOF)
-    return -1;
-  res = c + (res<<8);
-  c = fgetc(f);
-  if(c == EOF)
-    return -1;
-  return c + (res<<8);
-}
 
 static s64 readInt4(FILE *f)
 {
@@ -88,19 +72,6 @@ static s64 readInt8(FILE *f)
   return res;
 }
 
-static s64 readVarPtr(FILE *f)
-{
-  s64 offset = 0, shift = 1;
-  for (;;) {
-    int c = fgetc(f);
-    if (c == EOF) return 0;
-    offset += (c & 0x7F) * shift;
-    if (c & 0x80) break;
-    shift <<= 7;
-    offset += shift;
-  }
-  return offset;
-}
 
 #ifndef MIN
 #define MIN(a,b) (((a)<(b))?(a):(b))
@@ -135,172 +106,175 @@ static bool patchGrowRom(u8 **rom, int *size, s64 newSize)
   return true;
 }
 
-static uLong computePatchCRC(FILE *f, unsigned int size)
-{
-  Bytef buf[4096];
-  long readed;
 
-  uLong crc = crc32(0L, Z_NULL, 0);
-  do {
-    readed = fread(buf, 1, MIN(size, sizeof(buf)), f);
-    crc = crc32(crc, buf, readed);
-    size -= readed;
-  } while (readed > 0);
-  return crc;
+// Reads a whole patch file into memory. Parsing from memory is much faster
+// on the Xbox 360 than reading the patch byte by byte with fgetc/ftell.
+static u8 *patchLoadFile(const char *patchname, size_t &len)
+{
+  len = 0;
+  FILE *f = fopen(patchname, "rb");
+  if (!f)
+    return NULL;
+  fseek(f, 0, SEEK_END);
+  long n = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if (n <= 0 || n > 0x4000000) {
+    fclose(f);
+    return NULL;
+  }
+  u8 *data = (u8 *)malloc((size_t)n);
+  if (data && fread(data, 1, (size_t)n, f) != (size_t)n) {
+    free(data);
+    data = NULL;
+  }
+  fclose(f);
+  if (data)
+    len = (size_t)n;
+  return data;
 }
 
 static bool patchApplyIPS(const char *patchname, u8 **r, int *s)
 {
   // from the IPS spec at http://zerosoft.zophar.net/ips.htm
-  FILE *f = fopen(patchname, "rb");
-  if(!f)
+  size_t len = 0;
+  u8 *p = patchLoadFile(patchname, len);
+  if (!p)
     return false;
 
   bool result = false;
-
   u8 *rom = *r;
   int size = *s;
-  if(fgetc(f) == 'P' &&
-     fgetc(f) == 'A' &&
-     fgetc(f) == 'T' &&
-     fgetc(f) == 'C' &&
-     fgetc(f) == 'H') {
-    int b;
-    int offset;
-    int len;
-
+  if (len >= 5 && memcmp(p, "PATCH", 5) == 0) {
     result = true;
-
-    for(;;) {
-      // read offset
-      offset = readInt3(f);
-      // if offset == EOF, end of patch
-      if(offset == 0x454f46 || offset == -1)
+    size_t pos = 5;
+    for (;;) {
+      // offset (3 bytes, big endian); "EOF" or the end of the file ends it
+      if (pos + 3 > len)
         break;
-      // read length
-      len = readInt2(f);
-      if(!len) {
-        // len == 0, RLE block
-        len = readInt2(f);
-        // byte to fill
-        int c = fgetc(f);
-        if(c == -1)
+      int offset = (p[pos] << 16) | (p[pos + 1] << 8) | p[pos + 2];
+      pos += 3;
+      if (offset == 0x454f46)
+        break;
+      if (pos + 2 > len)
+        break;
+      int count = (p[pos] << 8) | p[pos + 1];
+      pos += 2;
+      int fill = -1;
+      if (!count) {
+        // RLE block: length, then the byte to fill with
+        if (pos + 3 > len)
           break;
-        b = (u8)c;
-      } else
-        b= -1;
+        count = (p[pos] << 8) | p[pos + 1];
+        fill = p[pos + 2];
+        pos += 3;
+      } else if (pos + (size_t)count > len) {
+        break;
+      }
       // grow the ROM if this record writes past its end
-      if((offset + len) > size) {
-        if(!patchGrowRom(&rom, &size, (s64)offset + len)) {
+      if (offset + count > size) {
+        if (!patchGrowRom(&rom, &size, (s64)offset + count)) {
           result = false;
           break;
         }
         *r = rom;
         *s = size;
       }
-      if(b == -1) {
-        // normal block, just read the data
-        if(fread(&rom[offset], 1, len, f) != (size_t)len)
-          break;
+      if (fill < 0) {
+        memcpy(&rom[offset], p + pos, (size_t)count);
+        pos += (size_t)count;
       } else {
-        // fill the region with the given byte
-        while(len--) {
-          rom[offset++] = b;
-        }
+        memset(&rom[offset], fill, (size_t)count);
       }
     }
   }
-  // close the file
-  fclose(f);
-
+  free(p);
   return result;
+}
+
+static u32 upsRead32(const u8 *p)
+{
+  return p[0] | (p[1] << 8) | (p[2] << 16) | ((u32)p[3] << 24);
+}
+
+static s64 upsReadVar(const u8 *p, size_t end, size_t &pos)
+{
+  s64 offset = 0, shift = 1;
+  for (;;) {
+    if (pos >= end)
+      return 0;
+    u8 c = p[pos++];
+    offset += (c & 0x7F) * shift;
+    if (c & 0x80)
+      break;
+    shift <<= 7;
+    offset += shift;
+  }
+  return offset;
 }
 
 static bool patchApplyUPS(const char *patchname, u8 **rom, int *size)
 {
-  s64 srcCRC, dstCRC, patchCRC;
-
-  FILE *f = fopen(patchname, "rb");
-  if (!f)
+  size_t len = 0;
+  u8 *p = patchLoadFile(patchname, len);
+  if (!p)
     return false;
-
-  fseeko64(f, 0, SEEK_END);
-  __off64_t patchSize = ftello64(f);
-  if (patchSize < 20) {
-    fclose(f);
+  if (len < 20 || memcmp(p, "UPS1", 4) != 0) {
+    free(p);
     return false;
   }
 
-  fseeko64(f, 0, SEEK_SET);
-  if(fgetc(f) != 'U' || fgetc(f) != 'P' || fgetc(f) != 'S' || fgetc(f) != '1') {
-    fclose(f);
+  u32 srcCRC = upsRead32(p + len - 12);
+  u32 dstCRC = upsRead32(p + len - 8);
+  u32 patchCRC = upsRead32(p + len - 4);
+  if (crc32(crc32(0L, Z_NULL, 0), p, (uInt)(len - 4)) != patchCRC) {
+    free(p);
     return false;
   }
 
-  fseeko64(f, -12, SEEK_END);
-  srcCRC = readInt4(f);
-  dstCRC = readInt4(f);
-  patchCRC = readInt4(f);
-  if (srcCRC == -1 || dstCRC == -1 || patchCRC == -1) {
-    fclose(f);
-    return false;
-  }
-
-  fseeko64(f, 0, SEEK_SET);
-  u32 crc = computePatchCRC(f, patchSize-4);
-
-  if (crc != patchCRC) {
-    fclose(f);
-    return false;
-  }
-
-  crc = crc32(0L, Z_NULL, 0);
-  crc = crc32(crc, *rom, *size);
-
-  fseeko64(f, 4, SEEK_SET);
+  u32 crc = crc32(crc32(0L, Z_NULL, 0), *rom, *size);
+  size_t pos = 4;
+  const size_t end = len - 12;
+  s64 srcSize = upsReadVar(p, end, pos);
+  s64 dstSize = upsReadVar(p, end, pos);
   s64 dataSize;
-  s64 srcSize = readVarPtr(f);
-  s64 dstSize = readVarPtr(f);
-
-  if (crc == srcCRC) {
-    if (srcSize != *size) {
-      fclose(f);
-      return false;
-    }
-    dataSize = dstSize;
-  } else if (crc == dstCRC) {
-    if (dstSize != *size) {
-      fclose(f);
-      return false;
-    }
-    dataSize = srcSize;
+  if (crc == srcCRC && srcSize == *size) {
+    dataSize = dstSize;          // apply
+  } else if (crc == dstCRC && dstSize == *size) {
+    free(p);                     // the ROM is already patched: keep it
+    return true;
   } else {
-    fclose(f);
+    free(p);
     return false;
   }
   if (!patchGrowRom(rom, size, dataSize)) {
-    fclose(f);
+    free(p);
     return false;
   }
 
+  // Each block: distance to skip, then bytes to XOR up to a 0 terminator.
+  // Bytes past the output size are still consumed (when undoing a patch
+  // that grew the ROM); skipping them would misread the rest of the patch.
   s64 relative = 0;
-  u8 *mem;
-  while(ftello64(f) < patchSize - 12) {
-    relative += readVarPtr(f);
-    if (relative > dataSize) continue;
-    mem = *rom + relative;
-    for(s64 i = relative; i < dataSize; i++) {
-      int x = fgetc(f);
+  bool ok = true;
+  while (pos < end) {
+    relative += upsReadVar(p, end, pos);
+    if (relative < 0) {
+      ok = false;
+      break;
+    }
+    while (pos < end) {
+      u8 x = p[pos++];
+      if (relative < dataSize)
+        (*rom)[relative] ^= x;
       relative++;
-      if (!x) break;
-      if (i < dataSize) {
-        *mem++ ^= x;
-      }
+      if (!x)
+        break;
     }
   }
-
-  fclose(f);
-  return true;
+  if (ok && dataSize < *size)
+    *size = (int)dataSize;
+  free(p);
+  return ok;
 }
 
 // BPS (beat) patches, the most common format for modern ROM hacks.

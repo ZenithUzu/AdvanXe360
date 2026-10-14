@@ -19,7 +19,7 @@ enum
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR,
   C_RESET = 1, C_ACTION_BASE = 100,
-  G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY,
+  G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   CH_ADD = 1, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000
 };
 
@@ -585,6 +585,10 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
   const char *patch[2] = { tr("No aplicar", "Don't apply"), tr("Aplicar autom\xe1ticamente", "Apply automatically") };
   m.add(G_PATCH, ITEM_OPTION, tr("Parche .bps/.ups/.ips", "Patch .bps/.ups/.ips"), patch[m_gameCfg.patch],
         tr("Usa el parche con el mismo nombre que la ROM.", "Uses the patch with the same name as the ROM."));
+  if (m_inGame && m_host.romPatched())
+    m.add(G_SAVE_PATCHED, ITEM_ACTION, tr("Guardar ROM ya parchada", "Save patched ROM"), "",
+          tr("Crea una copia con el parche aplicado junto a la ROM; carga m\xe1s r\xe1pido.",
+             "Writes a copy with the patch applied next to the ROM; it loads faster."));
   if (m_inGame)
     m.addInfo(tr("Los cambios se aplican al reiniciar el juego.", "Changes apply when the game restarts."));
   else
@@ -705,6 +709,12 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     if (id == G_PLAY) {
       m_gameCfg.save(gameConfigPath(m_gameCfgRom));
       launch(m_gameCfgRom);
+    } else if (id == G_SAVE_PATCHED) {
+      std::string where;
+      if (m_host.savePatchedRom(where))
+        toast(std::string(tr("ROM guardada: ", "ROM saved: ")) + uiFileName(where));
+      else
+        toast(tr("No se pudo guardar la ROM", "Could not save the ROM"));
     }
     return;
 

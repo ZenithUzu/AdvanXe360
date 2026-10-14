@@ -54,12 +54,16 @@ extern bool wasPaused;                 // sdl/SDL.cpp: skip one frame-skip measu
 extern u32 autoFrameSkipLastTime;
 extern u32 throttleLastTime;
 extern u8 *rom;
+extern int CPUGetRomSize();             // gba/GBA.cpp
+extern u8 *gbRom;                      // gb/gbGlobals.cpp
+extern int gbRomSize;
 u32 systemGetClock();
 void systemScreenMessage(const char *msg);
 
 UiConfig g_cfg;
 UiApp *g_ui = 0;
 bool xboxGameLoadFailed = false;
+bool xboxRomPatched = false;
 char xboxLoadMessage[256] = "";
 
 namespace {
@@ -320,6 +324,36 @@ public:
     return false;
   }
 
+  virtual bool romPatched()
+  {
+    return xboxRomPatched && !g_rom.empty();
+  }
+
+  virtual bool savePatchedRom(std::string &savedTo)
+  {
+    if (!romPatched())
+      return false;
+    const u8 *data = cartridgeType == 1 ? gbRom : rom;
+    int size = cartridgeType == 1 ? gbRomSize : CPUGetRomSize();
+    if (!data || size <= 0)
+      return false;
+    std::string ext = ".gba";
+    if (cartridgeType == 1)
+      ext = (gbRom[0x143] & 0x80) ? ".gbc" : ".gb";
+    std::string name = uiSafeFileName(uiStripExtension(uiFileName(g_rom)) + " (patched)", ext);
+    std::string path = uiJoinPath(uiParentDir(g_rom), name);
+    FILE *f = fopen(path.c_str(), "wb");
+    if (!f)
+      return false;
+    bool ok = fwrite(data, 1, size, f) == (size_t)size;
+    if (fclose(f) != 0)
+      ok = false;
+    if (!ok)
+      DeleteFile(path.c_str());
+    savedTo = path;
+    return ok;
+  }
+
   virtual void resetGame()
   {
     emulator.emuReset();
@@ -557,6 +591,7 @@ void xboxOnGameLoading(const char *romPath)
   if (g_ui)
     g_ui->fastForward = false;
   xboxGameLoadFailed = false;
+  xboxRomPatched = false;
   xboxLoadMessage[0] = 0;
 
   // Optional real BIOS (needed by a few games, nicer boot logo).

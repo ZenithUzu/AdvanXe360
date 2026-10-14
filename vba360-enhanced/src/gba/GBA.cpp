@@ -1573,6 +1573,11 @@ void CPUUpdateRomSize(int size)
   romSize = size;
 }
 
+int CPUGetRomSize()
+{
+  return romSize;
+}
+
 void doMirroring (bool b)
 {
   u32 mirroredRomSize = (((romSize)>>20) & 0x3F)<<20;

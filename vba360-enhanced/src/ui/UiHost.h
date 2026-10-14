@@ -47,6 +47,10 @@ public:
   virtual void resetGame() = 0;
   // Last emulated frame, 32-bit 0x00RRGGBB; returns 0 if none.
   virtual const UiColor *gameFrame(int &w, int &h, int &pitch) = 0;
+  // True when a .bps/.ups/.ips patch was applied to the running game.
+  virtual bool romPatched() { return false; }
+  // Writes the patched ROM next to the original, e.g. "Game (patched).gba".
+  virtual bool savePatchedRom(std::string &savedTo) { return false; }
 
   // --- Cheats ------------------------------------------------------------
   virtual void listCheats(std::vector<UiCheatInfo> &out) = 0;

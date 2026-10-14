@@ -1663,6 +1663,7 @@ int gba_main(char *path, char *fname)
             continue;
           if (applyPatch(patchName, &rom, &size)) {
             CPUUpdateRomSize(size);
+            xboxRomPatched = true;
             systemScreenMessage("Patch applied");
           } else {
             systemScreenMessage("Patch failed (wrong base ROM?)");
