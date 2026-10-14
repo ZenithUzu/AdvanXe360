@@ -44,6 +44,7 @@ extern int systemColorDepth;
 extern IDirect3DDevice9 *pDevice;
 extern gbCheat gbCheatList[100];
 extern int gbCheatNumber;
+extern bool skipBios;                  // gba/Globals.cpp
 extern char gbBiosFileName[2048];      // sdl/SDL.cpp
 extern const char *gbPendingPatch;     // gb/GB.cpp
 extern bool soundMuted;                // common/SoundSDL.cpp
@@ -626,6 +627,11 @@ static void applySpecialCart()
 void xboxApplyGameOverrides(bool isGba)
 {
   g_isGba = isGba;
+  // With the real GBA BIOS, start the game directly instead of playing the
+  // boot animation: the BIOS checks the cartridge header there and hangs on
+  // many ROM hacks, and the intro showed garbage around the picture. The
+  // BIOS is still used for its system calls.
+  skipBios = isGba && useBios;
   if (!isGba)
     return;
   applySpecialCart();
