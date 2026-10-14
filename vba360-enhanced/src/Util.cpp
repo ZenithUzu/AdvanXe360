@@ -615,28 +615,33 @@ void utilGBAFindSave(const u8 *data, const int size)
   int flashSize = 0x10000;
   bool rtcFound = false;
 
+  // Values must match the cpuSaveType switch in CPUReset():
+  // 0 auto, 1 EEPROM, 2 SRAM, 3 FLASH, 4 EEPROM+sensor, 5 none.
+  // Leave room for the 8-byte memcmp at the end of the buffer.
+  end = (u32 *)(data + (size & ~3) - 8);
+
   while(p  < end) {
     u32 d = READ32LE(p);
 
     if(d == 0x52504545) {
       if(memcmp(p, "EEPROM_", 7) == 0) {
         if(saveType == 0)
-          saveType = 3;
+          saveType = 1;
       }
     } else if (d == 0x4D415253) {
       if(memcmp(p, "SRAM_", 5) == 0) {
         if(saveType == 0)
-          saveType = 1;
+          saveType = 2;
       }
     } else if (d == 0x53414C46) {
       if(memcmp(p, "FLASH1M_", 8) == 0) {
         if(saveType == 0) {
-          saveType = 2;
+          saveType = 3;
           flashSize = 0x20000;
         }
       } else if(memcmp(p, "FLASH", 5) == 0) {
         if(saveType == 0) {
-          saveType = 2;
+          saveType = 3;
           flashSize = 0x10000;
         }
       }
@@ -646,10 +651,8 @@ void utilGBAFindSave(const u8 *data, const int size)
     }
     p++;
   }
-  // if no matches found, then set it to NONE
-  if(saveType == 0) {
-    saveType = 5;
-  }
+  // No save library string found (common in some hacks): keep automatic
+  // detection instead of disabling saves.
   rtcEnable(rtcFound);
   cpuSaveType = saveType;
   flashSetSize(flashSize);

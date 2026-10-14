@@ -1563,6 +1563,16 @@ int CPULoadRom(const char *szFile)
   return romSize;
 }
 
+// Call after a soft patch changed the ROM size, before CPUInit().
+// Otherwise CPUInit's AGBPrint stub (at 0x1FE209C) would overwrite data
+// in hacks that a patch expanded to 32MB, and mirroring would use the old size.
+void CPUUpdateRomSize(int size)
+{
+  if(size <= 0 || size > 0x2000000)
+    return;
+  romSize = size;
+}
+
 void doMirroring (bool b)
 {
   u32 mirroredRomSize = (((romSize)>>20) & 0x3F)<<20;
@@ -3226,8 +3236,10 @@ void CPUInit(const char *biosFileName, bool useBiosFile)
     ioReadable[i] = false;
 
   if(romSize < 0x1fe2000) {
-    *((u16 *)&rom[0x1fe209c]) = 0xdffa; // SWI 0xFA
-    *((u16 *)&rom[0x1fe209e]) = 0x4770; // BX LR
+    // GBA memory is little endian; a plain u16 store is byte-swapped on the
+    // big-endian Xenon CPU.
+    WRITE16LE((u16 *)&rom[0x1fe209c], 0xdffa); // SWI 0xFA
+    WRITE16LE((u16 *)&rom[0x1fe209e], 0x4770); // BX LR
   } else {
     agbPrintEnable(false);
   }

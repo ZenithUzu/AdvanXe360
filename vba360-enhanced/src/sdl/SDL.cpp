@@ -1729,6 +1729,32 @@ int gba_main(char *path, char *fname)
       int size = CPULoadRom(szFile);
       failed = (size == 0);
       if(!failed) {
+        // Soft-patch: a patch with the same base name as the ROM
+        // (e.g. "Pokemon Unbound.gba" + "Pokemon Unbound.bps") is applied in
+        // memory, so the clean ROM on disk stays untouched. The ROM buffer
+        // is a fixed 32MB XPhysicalAlloc block, so it must not be realloc'd.
+        static const char *patchExts[] = { ".bps", ".ups", ".ips" };
+        patchSetFixedCapacity(0x2000000);
+        for (int pe = 0; pe < 3; pe++) {
+          char patchName[2048 + 8];
+          _snprintf(patchName, sizeof(patchName), "%s%s", filename, patchExts[pe]);
+          patchName[sizeof(patchName) - 1] = 0;
+          if (GetFileAttributes(patchName) == INVALID_FILE_ATTRIBUTES)
+            continue;
+          if (applyPatch(patchName, &rom, &size)) {
+            CPUUpdateRomSize(size);
+            systemScreenMessage("Patch applied");
+          } else {
+            systemScreenMessage("Patch failed (wrong base ROM?)");
+          }
+          break;
+        }
+        patchSetFixedCapacity(0);
+
+        // Pick the save type from the save library string the game links
+        // against (FLASH1M_V, SRAM_V, EEPROM_V, SIIRTC_V...). Pokemon hacks
+        // need 128KB flash + RTC; the old 64KB default broke their saves.
+        utilGBAFindSave(rom, size);
         sdlApplyPerImagePreferences();
 
         doMirroring(mirroringEnable);

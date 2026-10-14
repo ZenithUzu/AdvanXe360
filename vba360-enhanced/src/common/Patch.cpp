@@ -106,6 +106,35 @@ static s64 readVarPtr(FILE *f)
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #endif
 
+// When non-zero, the ROM buffer is a fixed allocation of this many bytes.
+// On Xbox 360 the GBA ROM lives in XPhysicalAlloc memory, which must never
+// be passed to realloc; patches may only grow the ROM up to this capacity.
+static int patchFixedCapacity = 0;
+
+void patchSetFixedCapacity(int capacity)
+{
+  patchFixedCapacity = capacity;
+}
+
+// Grows the ROM to newSize bytes, zero-filling the new area.
+static bool patchGrowRom(u8 **rom, int *size, s64 newSize)
+{
+  if (newSize <= *size)
+    return true;
+  if (patchFixedCapacity) {
+    if (newSize > patchFixedCapacity)
+      return false;
+  } else {
+    u8 *p = (u8 *)realloc(*rom, (size_t)newSize);
+    if (!p)
+      return false;
+    *rom = p;
+  }
+  memset(*rom + *size, 0, (size_t)(newSize - *size));
+  *size = (int)newSize;
+  return true;
+}
+
 static uLong computePatchCRC(FILE *f, unsigned int size)
 {
   Bytef buf[4096];
@@ -160,10 +189,12 @@ static bool patchApplyIPS(const char *patchname, u8 **r, int *s)
         b = (u8)c;
       } else
         b= -1;
-      // check if we need to reallocate our ROM
-      if((offset + len) >= size) {
-        size *= 2;
-        rom = (u8 *)realloc(rom, size);
+      // grow the ROM if this record writes past its end
+      if((offset + len) > size) {
+        if(!patchGrowRom(&rom, &size, (s64)offset + len)) {
+          result = false;
+          break;
+        }
         *r = rom;
         *s = size;
       }
@@ -247,10 +278,9 @@ static bool patchApplyUPS(const char *patchname, u8 **rom, int *size)
     fclose(f);
     return false;
   }
-  if (dataSize > *size) {
-    *rom = (u8*)realloc(*rom, dataSize);
-    memset(*rom + *size, 0, dataSize - *size);
-    *size = dataSize;
+  if (!patchGrowRom(rom, size, dataSize)) {
+    fclose(f);
+    return false;
   }
 
   s64 relative = 0;
@@ -271,6 +301,138 @@ static bool patchApplyUPS(const char *patchname, u8 **rom, int *size)
 
   fclose(f);
   return true;
+}
+
+// BPS (beat) patches, the most common format for modern ROM hacks.
+// Spec: https://www.romhacking.net/documents/746/
+static u64 bpsReadVar(const u8 *p, size_t end, size_t &pos, bool &ok)
+{
+  u64 data = 0, shift = 1;
+  for (;;) {
+    if (pos >= end) { ok = false; return 0; }
+    u8 x = p[pos++];
+    data += (u64)(x & 0x7f) * shift;
+    if (x & 0x80) break;
+    shift <<= 7;
+    data += shift;
+  }
+  return data;
+}
+
+static u32 bpsRead32(const u8 *p)
+{
+  return p[0] | (p[1] << 8) | (p[2] << 16) | ((u32)p[3] << 24);
+}
+
+static bool patchApplyBPS(const char *patchname, u8 **rom, int *size)
+{
+  FILE *f = fopen(patchname, "rb");
+  if (!f)
+    return false;
+  fseek(f, 0, SEEK_END);
+  long patchSize = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if (patchSize < 19) {
+    fclose(f);
+    return false;
+  }
+  u8 *patch = (u8 *)malloc(patchSize);
+  if (!patch) {
+    fclose(f);
+    return false;
+  }
+  bool readOk = fread(patch, 1, patchSize, f) == (size_t)patchSize;
+  fclose(f);
+
+  u8 *source = NULL;
+  bool ok = readOk && memcmp(patch, "BPS1", 4) == 0;
+
+  // Footer: source CRC, target CRC, patch CRC (all little endian)
+  const size_t footer = patchSize - 12;
+  if (ok) {
+    u32 patchCRC = bpsRead32(patch + patchSize - 4);
+    ok = crc32(crc32(0L, Z_NULL, 0), patch, patchSize - 4) == patchCRC;
+  }
+  if (ok) {
+    u32 srcCRC = bpsRead32(patch + footer);
+    ok = crc32(crc32(0L, Z_NULL, 0), *rom, *size) == srcCRC;
+  }
+
+  size_t pos = 4;
+  u64 sourceSize = 0, targetSize = 0;
+  if (ok) {
+    sourceSize = bpsReadVar(patch, footer, pos, ok);
+    targetSize = bpsReadVar(patch, footer, pos, ok);
+    u64 metaSize = bpsReadVar(patch, footer, pos, ok);
+    pos += (size_t)metaSize;
+    ok = ok && sourceSize == (u64)*size && pos <= footer;
+  }
+
+  // Keep an untouched copy of the source; the ROM buffer becomes the target.
+  if (ok) {
+    source = (u8 *)malloc((size_t)sourceSize);
+    ok = source != NULL;
+  }
+  if (ok) {
+    memcpy(source, *rom, (size_t)sourceSize);
+    ok = patchGrowRom(rom, size, (s64)targetSize);
+  }
+
+  u8 *target = ok ? *rom : NULL;
+  u64 out = 0, srcRel = 0, tgtRel = 0;
+  while (ok && pos < footer) {
+    u64 data = bpsReadVar(patch, footer, pos, ok);
+    u64 length = (data >> 2) + 1;
+    if (!ok || out + length > targetSize) { ok = false; break; }
+    switch (data & 3) {
+    case 0: // SourceRead
+      if (out + length > sourceSize) { ok = false; break; }
+      memcpy(target + out, source + out, (size_t)length);
+      out += length;
+      break;
+    case 1: // TargetRead
+      if (pos + length > footer) { ok = false; break; }
+      memcpy(target + out, patch + pos, (size_t)length);
+      pos += (size_t)length;
+      out += length;
+      break;
+    case 2: { // SourceCopy
+      u64 d = bpsReadVar(patch, footer, pos, ok);
+      srcRel += (d & 1) ? -(s64)(d >> 1) : (s64)(d >> 1);
+      if (!ok || srcRel + length > sourceSize) { ok = false; break; }
+      memcpy(target + out, source + srcRel, (size_t)length);
+      srcRel += length;
+      out += length;
+      break;
+    }
+    case 3: { // TargetCopy (may overlap, so copy byte by byte)
+      u64 d = bpsReadVar(patch, footer, pos, ok);
+      tgtRel += (d & 1) ? -(s64)(d >> 1) : (s64)(d >> 1);
+      if (!ok || tgtRel >= out) { ok = false; break; }
+      while (length--)
+        target[out++] = target[tgtRel++];
+      break;
+    }
+    }
+  }
+
+  if (ok) {
+    u32 tgtCRC = bpsRead32(patch + footer + 4);
+    ok = out == targetSize &&
+         crc32(crc32(0L, Z_NULL, 0), target, (uInt)targetSize) == tgtCRC;
+    if (ok)
+      *size = (int)targetSize;
+  }
+
+  // On failure after the ROM was touched, put the original back.
+  if (!ok && source && target) {
+    memcpy(*rom, source, (size_t)sourceSize);
+    *size = (int)sourceSize;
+  }
+
+  free(source);
+  free(patch);
+  return ok;
 }
 
 static int ppfVersion(FILE *f)
@@ -453,6 +615,8 @@ bool applyPatch(const char *patchname, u8 **rom, int *size)
     return patchApplyIPS(patchname, rom, size);
   if (_stricmp(p, ".ups") == 0)
     return patchApplyUPS(patchname, rom, size);
+  if (_stricmp(p, ".bps") == 0)
+    return patchApplyBPS(patchname, rom, size);
   if (_stricmp(p, ".ppf") == 0)
     return patchApplyPPF(patchname, rom, size);
   return false;
