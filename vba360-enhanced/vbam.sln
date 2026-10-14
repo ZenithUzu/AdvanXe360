@@ -1,18 +1,13 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vbam", "vbam.vcproj", "{7B1424BB-650C-44F3-9C42-014820DAE314}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7AEC599C-7C82-4F00-AA60-411E0A359CB0} = {7AEC599C-7C82-4F00-AA60-411E0A359CB0}
-		{AD499DA6-1348-4309-8D37-ADBFFB3AFF8E} = {AD499DA6-1348-4309-8D37-ADBFFB3AFF8E}
-		{4DAABDBA-B137-4429-9175-D6CC8A1BAEEE} = {4DAABDBA-B137-4429-9175-D6CC8A1BAEEE}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vbam", "vbam.vcxproj", "{7B1424BB-650C-44F3-9C42-014820DAE314}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "File_Extractor", "dependencies\File_Extractor-1.0.0\File_Extractor2008.vcproj", "{7AEC599C-7C82-4F00-AA60-411E0A359CB0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "File_Extractor", "dependencies\File_Extractor-1.0.0\File_Extractor2008.vcxproj", "{7AEC599C-7C82-4F00-AA60-411E0A359CB0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TinyXML", "src\TinyXML\TinyXML.vcproj", "{4DAABDBA-B137-4429-9175-D6CC8A1BAEEE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TinyXML", "src\TinyXML\TinyXML.vcxproj", "{4DAABDBA-B137-4429-9175-D6CC8A1BAEEE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libSDLx360", "libSDLx360\libSDLx360.vcproj", "{AD499DA6-1348-4309-8D37-ADBFFB3AFF8E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libSDLx360", "libSDLx360\libSDLx360.vcxproj", "{AD499DA6-1348-4309-8D37-ADBFFB3AFF8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

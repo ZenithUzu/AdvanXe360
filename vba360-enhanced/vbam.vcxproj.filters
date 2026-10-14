@@ -1,0 +1,428 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\apu">
+      <UniqueIdentifier>{f19872fd-ae15-40c1-a6e2-c7a74a08c878}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{f915a23b-3fa6-4ade-aa18-5ce80271ba36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\filters">
+      <UniqueIdentifier>{4ee46602-0194-40e4-9d45-ca23e47e528b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gb">
+      <UniqueIdentifier>{f13cad9f-269e-45c2-b030-89d1a3a22698}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gba">
+      <UniqueIdentifier>{178c779e-b0be-4191-b4fa-ca7aa1f49714}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sdl">
+      <UniqueIdentifier>{3e85755e-efac-4ce7-bf3b-aae335172915}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Xbox">
+      <UniqueIdentifier>{2677c73f-c2e9-4622-bac0-93d789b3a58a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{6d1a86dd-6d3e-4936-8730-54d23d99929a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="libpng">
+      <UniqueIdentifier>{fb62ed03-c99b-4b50-a043-868b95c11c7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zlib">
+      <UniqueIdentifier>{a2046d0b-feb7-4185-922d-93a7c9eb0049}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\zlib\infcodes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apu\Blip_Buffer.cpp">
+      <Filter>Source Files\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apu\Effects_Buffer.cpp">
+      <Filter>Source Files\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apu\Gb_Apu.cpp">
+      <Filter>Source Files\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apu\Gb_Apu_State.cpp">
+      <Filter>Source Files\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apu\Gb_Oscs.cpp">
+      <Filter>Source Files\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apu\Multi_Buffer.cpp">
+      <Filter>Source Files\apu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common\memgzio.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common\Patch.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common\SoundSDL.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\2xSaI.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\admame.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\bilinear.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\hq2x.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\hq\c\hq_implementation.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\interframe.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\pixel.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\scanline.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\filters\simpleFilter.cpp">
+      <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\GB.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbCheats.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbDis.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbGfx.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbGlobals.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbMemory.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbPrinter.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbSGB.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbSound.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\agbprint.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\armdis.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\bios.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Cheats.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\CheatSearch.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\EEprom.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\elf.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Flash.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\GBA-arm.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\GBA-thumb.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\GBA.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\gbafilter.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\GBAGfx.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Globals.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Mode0.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Mode1.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Mode2.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Mode3.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Mode4.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Mode5.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\remote.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\RTC.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Sound.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gba\Sram.cpp">
+      <Filter>Source Files\gba</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\dummy.cpp">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\filters.cpp">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\getopt.c">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\getopt1.c">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\gl_fakegl.c">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\inputSDL.cpp">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\SDL.cpp">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sdl\text.cpp">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\XboxHost.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\XboxUiRenderer.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\GeneralFunctions.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\Main.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\Options.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\RomSettings.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\Screenshot.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Xbox\Storage.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\UiApp.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\UiCanvas.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\UiCheatParse.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\UiConfig.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\UiScreens.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\UiThumb.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\png.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngerror.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pnggccrd.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngget.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngmem.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngpread.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngread.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngrio.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngrtran.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngrutil.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngset.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngtrans.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngvcrd.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwio.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwrite.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwtran.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libPNG\src\pngwutil.c">
+      <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\adler32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\compress.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\deflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\crc32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\emucrc32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\gzio.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\infblock.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inffast.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inftrees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\infutil.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\trees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\uncompr.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\unzip.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\explode.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\unreduce.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\unshrink.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\zutil.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libSDLx360\SDL\include\SDL.h">
+      <Filter>Source Files\sdl</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\XboxHost.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\GeneralFunctions.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\Main.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\Options.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\RomSettings.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\Screenshot.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\Storage.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiApp.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiCanvas.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiCheatParse.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiConfig.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiFontData.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiHost.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiScreens.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiThumb.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\PPCOpts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
