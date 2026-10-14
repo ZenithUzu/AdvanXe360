@@ -57,11 +57,20 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 |---|---|
 | ![Gameplay 1](docs/screenshots/gameplay-soulgold-1.png) | ![Gameplay 2](docs/screenshots/gameplay-soulgold-2.png) |
 
+**Game Boy con efectos de pantalla y paletas** (*Pokémon Edición Roja*):
+
+| | |
+|---|---|
+| ![Sin efecto, paleta gris](docs/screenshots/gb-no-effect.png) | ![CRT, paleta verde](docs/screenshots/gb-crt-green.png) |
+| *Sin efecto, paleta Gris (original)* | *CRT, paleta verde* |
+| ![LCD, paleta Pocket](docs/screenshots/gb-lcd-pocket.png) | ![LCD, paleta Light](docs/screenshots/gb-lcd-light.png) |
+| *LCD, paleta Game Boy Pocket* | *LCD, paleta Game Boy Light* |
+
 **Ajustes:**
 
 | | |
 |---|---|
-| ![Video](docs/screenshots/settings-video.png) | ![Controles](docs/screenshots/controls.png) |
+| ![Video](docs/screenshots/settings-video-es.png) | ![Controles](docs/screenshots/controls.png) |
 | ![Guardado](docs/screenshots/settings-saving.png) | ![Emulación](docs/screenshots/settings-emulation.png) |
 | ![Audio](docs/screenshots/settings-audio.png) | ![Acerca de](docs/screenshots/about.png) |
 | ![Interfaz (español)](docs/screenshots/settings-interface-es.png) | ![Interface (English)](docs/screenshots/settings-interface-en.png) |
@@ -96,6 +105,16 @@ Por defecto el fondo alrededor del juego es **negro**. Para usar una imagen, pon
 
 Si usas GBA y GB con el mismo fondo, deja el diseño importante en los 100 px de cada orilla.
 
+## Efectos de pantalla y colores
+
+En **Ajustes → Video**:
+
+- **Efecto de pantalla:**
+  - **CRT (TV antigua):** líneas de barrido que se adelgazan en colores claros y una máscara tipo rejilla de fósforo. Adaptado del shader *zfast_crt* de Greg Hogan (GPL v2+), tomado de [libretro/glsl-shaders → `crt/shaders/zfast_crt.glsl`](https://github.com/libretro/glsl-shaders/blob/master/crt/shaders/zfast_crt.glsl).
+  - **LCD (pantalla portátil):** rejilla fina y subpíxeles rojo/verde/azul, como la pantalla de una portátil. Adaptado del shader *lcd3x* de Gigaherz (dominio público), tomado de [libretro/glsl-shaders → `handheld/shaders/lcd3x.glsl`](https://github.com/libretro/glsl-shaders/blob/master/handheld/shaders/lcd3x.glsl).
+  - Los dos se tradujeron de GLSL (RetroArch) a HLSL para la Xbox 360 y funcionan en GBA y GB. Se ven mejor con **Tamaño de imagen → Entera**.
+- **Colores (Game Boy):** 40 paletas para los juegos de Game Boy. Las de Game Boy original (DMG), Pocket, Light y las **32 de Super Game Boy** (1-A a 4-H) se tomaron del core Gambatte de RetroArch: [libretro/gambatte-libretro → `libgambatte/libretro/gbcpalettes.h`](https://github.com/libretro/gambatte-libretro/blob/master/libgambatte/libretro/gbcpalettes.h) (Sindre Aamås, GPL v2). Además: Gris (original), Verde clásico y los extras Sepia, Azul y Rojo.
+
 ## Carpetas que crea el emulador
 
 Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
@@ -110,7 +129,8 @@ Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 
 ## Errores conocidos
 
-- **Líneas de colores alrededor del juego:** en algunos casos pueden aparecer líneas de colores en los lados al iniciar un juego. Se corrigió en esta versión, pero si llegan a salir, se recomienda usar una **imagen de fondo** (Ajustes → Video → Fondo de la pantalla).
+- ~~**Líneas de colores / menú alrededor del juego**~~ **(solucionado):** con el fondo negro o con un efecto activo, a veces se veían líneas de colores o el menú a los lados del juego. Ahora el emulador pinta todo el fondo de negro en cada cuadro y limpia la imagen del juego al iniciar. Si aun así llegara a pasar, usar una **imagen de fondo** lo evita (Ajustes → Video → Fondo de la pantalla).
+
 - **Rendimiento con parches:** los juegos que se cargan con un parche **UPS / IPS / BPS** aplicado al vuelo pueden tener bajones de FPS. Los hacks ya parchados en `.gba` no tienen este problema.
 
 ## Estado
