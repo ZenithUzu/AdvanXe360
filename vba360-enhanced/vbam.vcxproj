@@ -215,8 +215,7 @@
       <CallAttributedProfiling>Callcap</CallAttributedProfiling>
     </ClCompile>
     <Link>
-      <AdditionalOptions>../libSDLx360/Debug/libSDLx360.lib 
-"./Xbox 360/Debug/File_Extractor.lib" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>../libSDLx360/Debug/libSDLx360.lib %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>d3d9d.lib;xgraphicsd.lib;xapilibd.lib;xaudiod2.lib;x3daudiod.lib;xmcored.lib;xboxkrnl.lib;xbdm.lib;xactd3.lib;xuirund.lib;xuirenderd.lib;xmediad2.lib;xuivideod.lib;xnetd.lib;xuihtml.lib;xonline.lib;xmpd.lib;d3dx9d.lib</AdditionalDependencies>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
     </Link>
@@ -299,7 +298,7 @@
       <PREfast>Disabled</PREfast>
     </ClCompile>
     <Link>
-      <AdditionalOptions>"./Xbox 360/Release/File_Extractor.lib" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>libSDLx360.lib;xapilib.lib;d3d9.lib;d3dx9.lib;xgraphics.lib;xboxkrnl.lib;xnet.lib;xaudio2.lib;xact3.lib;x3daudio.lib;xmcore.lib;vcomp.lib;xuihtml.lib;xmedia2.lib;xuirender.lib;xuivideo.lib;xuirun.lib;xonline.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)libSDLx360\Release</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
@@ -330,7 +329,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalOptions>"./Xbox 360/Release/File_Extractor.lib" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>libSDLx360.lib;xapilib.lib;d3d9ltcg.lib;d3dx9.lib;xgraphics.lib;xboxkrnl.lib;xnet.lib;xaudio2.lib;xact3ltcg.lib;x3daudioltcg.lib;xmcoreltcg.lib;vcomp.lib;xuihtml.lib;xmedia2.lib;xuirender.lib;xuivideo.lib;xuirun.lib;xmp.lib;xonline.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)libSDLx360\Release_LTCG</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
@@ -569,6 +568,7 @@
     <ProjectReference Include="dependencies\File_Extractor-1.0.0\File_Extractor2008.vcxproj">
       <Project>{7aec599c-7c82-4f00-aa60-411e0a359cb0}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <ProjectReference Include="libSDLx360\libSDLx360.vcxproj">
       <Project>{ad499da6-1348-4309-8d37-adbffb3aff8e}</Project>
@@ -577,6 +577,7 @@
     <ProjectReference Include="src\TinyXML\TinyXML.vcxproj">
       <Project>{4daabdba-b137-4429-9175-d6cc8a1baeee}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
