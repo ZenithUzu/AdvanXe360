@@ -2,7 +2,7 @@
 
 🌐 **English** · [Español](README.md)
 
-**Game Boy Advance, Game Boy and Game Boy Color emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG).
+**Game Boy Advance emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG).
 Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
 **[⬇️ Download the latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
@@ -32,13 +32,13 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - Cheats, game options, settings, screenshot, restart and quit.
 
 **ROM hack and ROM compatibility**
-- **Automatic BPS / UPS / IPS patching** (GBA and GB/GBC) up to 32 MB: the clean ROM is never modified.
+- **Automatic BPS / UPS / IPS patching** up to 32 MB: the clean ROM is never modified.
 - The **save type** (Flash 64/128 KB, SRAM, EEPROM) and the **RTC clock** are detected **by reading the ROM**, not by the cartridge ID. Pokémon hacks save correctly even when they keep the original ID.
 - **Per-game options** (Y button on a game), stored by file name: save type, clock and patch.
 - Compressed ROMs in `.zip` and `.7z`.
 
 **Cheats**
-- GameShark, Action Replay, CodeBreaker and VBA codes for GBA; GameShark and Game Genie for GB/GBC.
+- GameShark, Action Replay, CodeBreaker and VBA codes.
 - Typed with an **on-screen keyboard** or **imported** from `.cht` / `.txt` files (RetroArch format too). Saved per game.
 
 **Settings**
@@ -84,24 +84,21 @@ In **Settings → Video → Screen borders** you can choose **Black** or **Image
 
 Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` and `bios\` (put `gba_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
 
-## Sensor games
+## Limitations
 
-Some GBA cartridges carried **extra hardware inside the cartridge**: a solar light sensor (*Boktai*), a gyroscope (*WarioWare: Twisted!*), a tilt sensor (*Yoshi Topsy-Turvy*, *Koro Koro Puzzle*) or rumble (*Drill Dozer*). That hardware doesn't exist on the console, so the emulator has to imitate it, and this port's core (a 2009 VBA-M snapshot) predates VBA-M's solar sensor and gyroscope support. As a result:
-
-- ***Boktai 1, 2 and 3:*** they boot (the clock is enabled automatically), but the sun gauge stays empty.
-- ***WarioWare: Twisted!:*** not playable (it needs the gyroscope).
-- ***Yoshi Topsy-Turvy*** and ***Koro Koro Puzzle:*** tilt is controlled with the **right stick** (experimental).
+- **Game Boy Advance games only.** Game Boy and Game Boy Color games are not supported.
+- **Games with sensors in the cartridge don't work**, such as *Boktai* (solar sensor), *WarioWare: Twisted!* (gyroscope) or *Yoshi Topsy-Turvy* and *Koro Koro Puzzle* (tilt). That hardware was built into the cartridge itself and the console doesn't have it; this port's core (a 2009 VBA-M snapshot) predates VBA-M's support for it.
 
 ## Status
 
-Tested on console (BadUpdate + Aurora) and in Xenia. Work in progress: if you find bugs, please open an *issue*.
+Tested on console (BadUpdate + Aurora). Work in progress: if you find bugs, please open an *issue*.
 
 ## Credits
 
 - **Original emulator authors:** Forgotten (VisualBoyAdvance) and the **VBA-M team**, plus the **VBA-GX** team, whose code the port uses.
 - **Original Xbox 360 port:** the authors of **VBA360** and the **libSDLx360** library, with support from **Team Avalaunch** and **Team XeLove**.
 - **vba360-enhanced fork:** [**frankischilling**](https://github.com/frankischilling), who fixed the port's build and whose work this project is based on.
-- **This fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, console and Xenia testing, builds and screenshots.
+- **This fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, console testing, builds and screenshots.
 - **AI programming:** **Claude** (by [Anthropic](https://www.anthropic.com)). Wrote the code changes and documentation of this fork.
 - **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
 

@@ -2,7 +2,7 @@
 
 🌐 [English](README.en.md) · **Español**
 
-Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG).
+Emulador de **Game Boy Advance para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG).
 Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
 **[⬇️ Descargar la última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
@@ -32,13 +32,13 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Trucos, opciones del juego, ajustes, captura de pantalla, reiniciar y salir.
 
 **Compatibilidad con hacks y ROMs**
-- **Parches BPS / UPS / IPS automáticos** (GBA y GB/GBC) hasta 32 MB: la ROM limpia no se modifica.
+- **Parches BPS / UPS / IPS automáticos** hasta 32 MB: la ROM limpia no se modifica.
 - El **tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM) y el **reloj RTC** se detectan **leyendo la ROM**, no por el ID del cartucho. Así guardan bien los hacks de Pokémon aunque conserven el ID original.
 - **Opciones por juego** (botón Y sobre un juego), guardadas por nombre de archivo: tipo de guardado, reloj y parche.
 - ROMs comprimidas en `.zip` y `.7z`.
 
 **Trucos**
-- GameShark, Action Replay, CodeBreaker y códigos VBA para GBA; GameShark y Game Genie para GB/GBC.
+- GameShark, Action Replay, CodeBreaker y códigos VBA.
 - Se escriben con un **teclado en pantalla** o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
 
 **Ajustes**
@@ -84,24 +84,21 @@ En **Ajustes → Video → Bordes de la pantalla** puedes elegir **Negro** o **I
 
 Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
 
-## Juegos con sensores
+## Limitaciones
 
-Algunos cartuchos de GBA traían **hardware extra dentro del cartucho**: sensor de luz solar (*Boktai*), giroscopio (*WarioWare: Twisted!*), sensor de inclinación (*Yoshi Topsy-Turvy*, *Koro Koro Puzzle*) o vibración (*Drill Dozer*). Ese hardware no existe en la consola: el emulador tiene que imitarlo, y el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M agregara el sensor solar y el giroscopio. Por eso:
-
-- ***Boktai 1, 2 y 3:*** arrancan (el reloj se activa solo), pero el medidor de sol se queda vacío.
-- ***WarioWare: Twisted!:*** no es jugable (necesita el giroscopio).
-- ***Yoshi Topsy-Turvy*** y ***Koro Koro Puzzle:*** la inclinación se controla con el **stick derecho** (soporte experimental).
+- **Solo juegos de Game Boy Advance.** No ejecuta juegos de Game Boy ni de Game Boy Color.
+- **No funcionan los juegos con sensores en el cartucho**, como *Boktai* (sensor solar), *WarioWare: Twisted!* (giroscopio) o *Yoshi Topsy-Turvy* y *Koro Koro Puzzle* (inclinación). Ese hardware venía dentro del propio cartucho y la consola no lo tiene; el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M lo emulara.
 
 ## Estado
 
-Probado en consola (BadUpdate + Aurora) y en Xenia. Proyecto en desarrollo: si encuentras errores, abre un *issue*.
+Probado en consola (BadUpdate + Aurora). Proyecto en desarrollo: si encuentras errores, abre un *issue*.
 
 ## Créditos
 
 - **Autores originales del emulador:** Forgotten (VisualBoyAdvance) y el **equipo de VBA-M**, además del equipo de **VBA-GX**, cuyo código usa el port.
 - **Port original a Xbox 360:** los autores de **VBA360** y la librería **libSDLx360**, con apoyo de **Team Avalaunch** y **Team XeLove**.
 - **Fork vba360-enhanced:** [**frankischilling**](https://github.com/frankischilling), que arregló la compilación del port y es la base de este proyecto.
-- **Este fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, pruebas en consola y en Xenia, compilación y capturas.
+- **Este fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, pruebas en consola, compilación y capturas.
 - **Programación con IA:** **Claude** (de [Anthropic](https://www.anthropic.com)). Escribió los cambios de código y la documentación de este fork.
 - **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
 
@@ -111,7 +108,7 @@ La lista completa de créditos y librerías está en el [README original](#origi
 
 # Original README (vba360-enhanced)
 
-> Texto original del proyecto en el que se basa este fork (en inglés).
+> Texto original del proyecto en el que se basa este fork (en inglés) Algunas funciones que menciona, como Game Boy / Game Boy Color, no funcionan en este fork; ver [Limitaciones](#limitaciones).
 
 An enhanced Xbox 360 port of VisualBoyAdvance-M (VBA-M), a Game Boy and Game Boy Advance emulator.
 
