@@ -498,7 +498,6 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 			IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
 		}
 	}
-	XBOX_CompileEffectShader();
 
  
    // Compile the pixel shader once and keep it: compiling on the console
