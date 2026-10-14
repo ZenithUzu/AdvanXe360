@@ -1,6 +1,9 @@
 # vba360-enhanced-ai
 
+Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG).
 Fork de / Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
+
+**[⬇️ Descargar la última versión / Download the latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
 
 ## 🇲🇽 Español
 
@@ -8,32 +11,54 @@ Fork de / Fork of [frankischilling/vba360-enhanced](https://github.com/frankisch
 
 Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los términos de la licencia GPL del proyecto original. Todo el crédito del emulador y del port es de sus autores originales (ver más abajo).
 
-![Explorador de juegos](docs/screenshots/browser.png)
+### Instalación
 
-### Qué trae este fork
+1. Descarga el `.zip` de la [última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest).
+2. Copia la carpeta `VBA360` a tu consola (por ejemplo `Hdd1:\Emulators\VBA360\`) por FTP o USB.
+3. Ábrela desde Aurora (`default.xex`). Las demás carpetas se crean solas.
+4. Pon tus ROMs donde quieras (disco duro o USB) y búscalas desde el explorador del emulador.
 
-**Interfaz nueva**, simple y rápida, dibujada por el propio emulador (ya no usa las escenas XUI):
-- Pestañas **Juegos · Recientes · Favoritos · Ajustes** (cambias con LB/RB).
-- Explorador de **unidades y carpetas** (disco duro, USB, carpeta del emulador), con vista previa del juego y aviso si tiene parche.
-- Todo en **español o inglés**, con una línea de ayuda en cada opción.
+### Funciones
 
-**Menú dentro del juego** (clic del stick derecho; se puede cambiar en Controles):
-- Guardar y cargar estado en **9 ranuras con miniatura**.
-- **Avance rápido** (2x, 3x, 4x, 6x, 8x o máximo; mantener o alternar).
-- **Trucos**, opciones del juego, ajustes, captura de pantalla, reiniciar y salir.
+**Interfaz**
+- Interfaz propia, simple y rápida, dibujada por el emulador (ya no usa las escenas XUI originales).
+- Pestañas **Juegos · Recientes · Favoritos · Ajustes** (LB / RB).
+- Explorador de **unidades y carpetas** (disco duro, USB, unidades de memoria, carpeta del emulador) con vista previa del último momento jugado y aviso si la ROM tiene parche.
+- **Español e inglés**, con una línea de ayuda en cada opción.
 
-![Menú en juego](docs/screenshots/ingame-menu.png)
+**Menú dentro del juego** (clic del stick derecho; se puede cambiar en Controles)
+- Guardar y cargar **estados en 9 ranuras**, cada una con miniatura.
+- **Avance rápido** de 2x, 3x, 4x, 6x, 8x o máximo, manteniendo o alternando el botón.
+- Trucos, opciones del juego, ajustes, captura de pantalla, reiniciar y salir.
 
-**Trucos:** GameShark, Action Replay, CodeBreaker y códigos VBA para GBA; GameShark y Game Genie para GB/GBC. Se escriben con un teclado en pantalla o se importan de un archivo `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
+**Compatibilidad con hacks y ROMs**
+- **Parches BPS / UPS / IPS automáticos** (GBA y GB/GBC) hasta 32 MB: la ROM limpia no se modifica.
+- El **tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM) y el **reloj RTC** se detectan **leyendo la ROM**, no por el ID del cartucho. Así guardan bien los hacks de Pokémon aunque conserven el ID original.
+- **Opciones por juego** (botón Y sobre un juego), guardadas por nombre de archivo: tipo de guardado, reloj y parche.
+- ROMs comprimidas en `.zip` y `.7z`.
 
-**Controles configurables:** cada botón del GBA, turbo A/B, avance rápido, menú, guardado y carga rápida. Puedes elegir de la lista o simplemente presionar el botón nuevo.
+**Trucos**
+- GameShark, Action Replay, CodeBreaker y códigos VBA para GBA; GameShark y Game Genie para GB/GBC.
+- Se escriben con un **teclado en pantalla** o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
 
-**Ajustes:** filtro (nítido, suave, Scale2x, LQ2x), tamaño original o pantalla completa, bordes negros o con una imagen tuya, FPS, salto de cuadros, sonido, BIOS original opcional, carpetas de partidas y estados, guardar estado al salir y continuar donde lo dejaste.
+**Ajustes**
+- **Video:** filtro (nítido, suave, Scale2x, LQ2x), tamaño original 3:2 o pantalla completa, **bordes negros o con imagen propia**, mostrar FPS y salto de cuadros.
+- **Audio:** sonido y silenciar durante el avance rápido.
+- **Emulación:** velocidad y modo del avance rápido, BIOS original opcional y formato de los códigos de 16 dígitos.
+- **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir y continuar donde lo dejaste.
+- **Controles:** todos los botones reasignables (también turbo A/B, avance rápido, menú, guardado y carga rápida). Puedes elegir de la lista o simplemente presionar el botón nuevo.
 
-**Compatibilidad sin depender del ID del juego:**
-- El tipo de guardado (Flash 64/128 KB, SRAM, EEPROM) y el reloj RTC se detectan **leyendo la ROM**, no por el código del cartucho. Así funcionan los hacks aunque conserven el ID del juego original.
-- **Opciones por juego** (botón Y sobre un juego) guardadas por **nombre de archivo**: tipo de guardado, RTC y parche.
-- **Parches BPS / UPS / IPS automáticos** para GBA y también para GB/GBC, hasta 32 MB.
+### Capturas
+
+| | |
+|---|---|
+| ![Explorador](docs/screenshots/browser.png) | ![Menú en juego](docs/screenshots/ingame-menu.png) |
+| ![Video](docs/screenshots/settings-video.png) | ![Controles](docs/screenshots/controls.png) |
+| ![Guardado](docs/screenshots/settings-saving.png) | ![Emulación](docs/screenshots/settings-emulation.png) |
+| ![Audio](docs/screenshots/settings-audio.png) | ![Trucos](docs/screenshots/cheats.png) |
+| ![Interfaz (español)](docs/screenshots/settings-interface-es.png) | ![Interface (English)](docs/screenshots/settings-interface-en.png) |
+
+<sub>Capturas de ajustes tomadas en Xenia; el explorador, el menú en juego y los trucos son del simulador de la interfaz en PC.</sub>
 
 ### Cómo usar un hack
 
@@ -44,7 +69,7 @@ Pokemon Unbound.gba
 Pokemon Unbound.bps
 ```
 
-Al abrir la ROM, el parche se aplica solo, en memoria (tu archivo no cambia).
+Al abrir la ROM, el parche se aplica solo, en memoria.
 
 ### Imagen de borde
 
@@ -54,9 +79,17 @@ En **Ajustes → Video → Bordes de la pantalla** puedes elegir **Negro** o **I
 
 Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
 
+### Juegos con sensores
+
+Algunos cartuchos de GBA traían **hardware extra dentro del cartucho**: sensor de luz solar (*Boktai*), giroscopio (*WarioWare: Twisted!*), sensor de inclinación (*Yoshi Topsy-Turvy*, *Koro Koro Puzzle*) o vibración (*Drill Dozer*). Ese hardware no existe en la consola: el emulador tiene que imitarlo, y el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M agregara el sensor solar y el giroscopio. Por eso:
+
+- ***Boktai 1, 2 y 3:*** arrancan (el reloj se activa solo), pero el medidor de sol se queda vacío.
+- ***WarioWare: Twisted!:*** no es jugable (necesita el giroscopio).
+- ***Yoshi Topsy-Turvy*** y ***Koro Koro Puzzle:*** la inclinación se controla con el **stick derecho** (soporte experimental).
+
 ### Estado
 
-La interfaz, los parches, la detección de guardado y los trucos están probados en PC. **Pendiente de probar en una Xbox 360 real** (BadUpdate + Aurora). Para compilar: ver *Building* más abajo (ya no hace falta empaquetar el skin XUI).
+Probado en consola (BadUpdate + Aurora) y en Xenia. Proyecto en desarrollo: si encuentras errores, abre un *issue*.
 
 ## 🇺🇸 English
 
@@ -64,24 +97,26 @@ La interfaz, los parches, la detección de guardado y los trucos están probados
 
 You are **free to use it or not**, and to copy, modify and share it under the GPL terms of the original project. All credit for the emulator and the port goes to their original authors (see below).
 
-### What this fork adds
+### Install
 
-- **New interface** drawn by the emulator itself (no more XUI scenes): Games · Recent · Favorites · Settings tabs, a drive and folder browser with game previews, Spanish or English.
-- **In-game menu** (right stick click, remappable in Controls): 9 save-state slots with thumbnails, fast forward (2x–8x or maximum, hold or toggle), cheats, game options, settings, screenshots, restart and quit.
-- **Cheats:** GameShark, Action Replay, CodeBreaker and VBA codes for GBA; GameShark and Game Genie for GB/GBC. Type them with an on-screen keyboard or import a `.cht` / `.txt` list (RetroArch format too). Saved per game.
-- **Remappable controls**, including turbo, fast forward, menu and quick save/load.
+Download the `.zip` from the [latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest), copy the `VBA360` folder to your console (e.g. `Hdd1:\Emulators\VBA360\`) and launch `default.xex` from Aurora. Put your ROMs anywhere and browse to them.
+
+### Features
+
+- **New interface** drawn by the emulator itself: Games · Recent · Favorites · Settings tabs, a drive and folder browser with game previews, Spanish or English.
+- **In-game menu** (right stick click, remappable): 9 save-state slots with thumbnails, fast forward (2x–8x or maximum, hold or toggle), cheats, game options, settings, screenshots, restart and quit.
+- **ROM hack friendly:** automatic BPS/UPS/IPS patching (GBA and GB/GBC, up to 32 MB); save type and RTC detected by reading the ROM, not the cartridge ID; per-game options keyed by file name; `.zip` / `.7z` ROMs.
+- **Cheats:** GameShark, Action Replay, CodeBreaker and VBA codes for GBA; GameShark and Game Genie for GB/GBC; on-screen keyboard or `.cht` / `.txt` import (RetroArch format too); saved per game.
 - **Settings:** filters (sharp, smooth, Scale2x, LQ2x), original or full-screen picture, black or custom-image screen borders (`borders\border.png`, 1280×720), FPS, frame skip, sound, optional real BIOS, save/state folders, save on exit and resume.
-- **Compatibility that does not rely on the game ID:** save type and RTC are detected by reading the ROM; per-game options are keyed by file name; BPS/UPS/IPS patches are applied automatically for GBA and GB/GBC, up to 32 MB.
+- **Remappable controls**, including turbo, fast forward, menu and quick save/load.
 
-![Cheats](docs/screenshots/cheats.png)
+### Sensor games
 
-### How to use a hack
-
-Put the clean ROM and the patch in the same folder with **the same name** (`Pokemon Unbound.gba` + `Pokemon Unbound.bps`). The patch is applied in memory when the ROM is opened.
+Some GBA cartridges carried extra hardware (solar sensor in *Boktai*, gyroscope in *WarioWare: Twisted!*, tilt sensor in *Yoshi Topsy-Turvy*, rumble in *Drill Dozer*). This port's core (a 2009 VBA-M snapshot) predates VBA-M's solar and gyro support: *Boktai* boots (the clock is enabled automatically) but the sun gauge stays empty, *WarioWare: Twisted!* is not playable, and tilt games are mapped to the right stick (experimental).
 
 ### Status
 
-Interface, patching, save detection and cheats are tested on PC. **Not yet tested on real Xbox 360 hardware** (BadUpdate + Aurora). To build it, see *Building* below (the XUI skin no longer needs packaging).
+Tested on console (BadUpdate + Aurora) and Xenia. Work in progress: please open an issue if you find bugs.
 
 ---
 
