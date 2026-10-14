@@ -67,14 +67,18 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 
 ## Cómo usar un hack
 
-Pon la ROM limpia y el parche en la misma carpeta, con **el mismo nombre**:
+Hay dos formas:
+
+**1. Hack ya parchado (`.gba`).** Ábrelo como cualquier otro juego. Los hacks distribuidos como `.gba` arrancan y guardan normal; por ejemplo, el **Pokémon SoulGold** de las capturas es un hack de GBA en este formato. Es la forma recomendada, porque rinde mejor.
+
+**2. ROM limpia + parche.** Pon la ROM limpia y el parche en la misma carpeta, con **el mismo nombre**:
 
 ```
 Pokemon Unbound.gba
 Pokemon Unbound.bps
 ```
 
-Al abrir la ROM, el parche se aplica solo, en memoria.
+Al abrir la ROM, el parche se aplica solo, en memoria. Ojo: con parches puede haber caídas de rendimiento (ver [Errores conocidos](#errores-conocidos)); si te pasa, usa la ROM ya parchada.
 
 ## Imagen de borde
 
@@ -88,6 +92,11 @@ Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 
 - **Solo juegos de Game Boy Advance.** No ejecuta juegos de Game Boy ni de Game Boy Color.
 - **No funcionan los juegos con sensores en el cartucho**, como *Boktai* (sensor solar), *WarioWare: Twisted!* (giroscopio) o *Yoshi Topsy-Turvy* y *Koro Koro Puzzle* (inclinación). Ese hardware venía dentro del propio cartucho y la consola no lo tiene; el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M lo emulara.
+
+## Errores conocidos
+
+- **Letras en los bordes negros:** con **Bordes de la pantalla → Negro** a veces se alcanza a ver una letra de los controles en las barras de los lados. Con **Imagen** no pasa.
+- **Rendimiento con parches:** los juegos que se cargan con un parche **UPS / IPS / BPS** aplicado al vuelo pueden tener bajones de FPS. Los hacks ya parchados en `.gba` no tienen este problema.
 
 ## Estado
 

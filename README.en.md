@@ -67,14 +67,18 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 
 ## Playing a ROM hack
 
-Put the clean ROM and the patch in the same folder, with **the same name**:
+There are two ways:
+
+**1. Pre-patched hack (`.gba`).** Open it like any other game. Hacks distributed as `.gba` files boot and save normally; for example, the **Pokémon SoulGold** in the screenshots is a GBA hack in this format. This is the recommended way, because it runs better.
+
+**2. Clean ROM + patch.** Put the clean ROM and the patch in the same folder, with **the same name**:
 
 ```
 Pokemon Unbound.gba
 Pokemon Unbound.bps
 ```
 
-When you open the ROM, the patch is applied automatically, in memory.
+When you open the ROM, the patch is applied automatically, in memory. Note: patched games may have performance drops (see [Known issues](#known-issues)); if that happens, use a pre-patched ROM.
 
 ## Border image
 
@@ -88,6 +92,11 @@ Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 
 - **Game Boy Advance games only.** Game Boy and Game Boy Color games are not supported.
 - **Games with sensors in the cartridge don't work**, such as *Boktai* (solar sensor), *WarioWare: Twisted!* (gyroscope) or *Yoshi Topsy-Turvy* and *Koro Koro Puzzle* (tilt). That hardware was built into the cartridge itself and the console doesn't have it; this port's core (a 2009 VBA-M snapshot) predates VBA-M's support for it.
+
+## Known issues
+
+- **Letters on the black borders:** with **Screen borders → Black**, a letter from the controls can sometimes show up on the side bars. It doesn't happen with **Image**.
+- **Performance with patches:** games loaded with a **UPS / IPS / BPS** patch applied on the fly can have FPS drops. Pre-patched `.gba` hacks don't have this problem.
 
 ## Status
 
