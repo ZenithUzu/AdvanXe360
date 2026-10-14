@@ -817,7 +817,15 @@
 				Name="Xbox"
 				>
 				<File
-					RelativePath=".\src\Xbox\Favorites.cpp"
+					RelativePath=".\src\Xbox\XboxHost.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\Xbox\XboxHost.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\Xbox\XboxUiRenderer.cpp"
 					>
 				</File>
 				<File
@@ -826,14 +834,6 @@
 				</File>
 				<File
 					RelativePath=".\src\Xbox\GeneralFunctions.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\Xbox\InGameOptions.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\Xbox\InGameOptions.h"
 					>
 				</File>
 				<File
@@ -850,14 +850,6 @@
 				</File>
 				<File
 					RelativePath=".\src\Xbox\Options.h"
-					>
-				</File>
-				<File
-					RelativePath=".\src\Xbox\RomList.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\src\Xbox\RomList.h"
 					>
 				</File>
 				<File
@@ -886,29 +878,63 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Skin"
+				Name="UI"
 				>
 				<File
-					RelativePath=".\Skin\VBASkin.xui"
+					RelativePath=".\src\ui\UiApp.cpp"
 					>
-					<FileConfiguration
-						Name="Debug|Xbox 360"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-							CommandLine="xuipkg /nologo /d /a &quot;$(OutDir)\media\VBASkin.xzp&quot; Skin\*  Skin\Graphics\*&#x0D;&#x0A;"
-							Outputs="$(OutDir)\media\VBASkin.xzp"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Xbox 360"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-							CommandLine="xuipkg /nologo /d /a &quot;$(OutDir)\media\VBASkin.xzp&quot; Skin\*  Skin\Graphics\*&#x0D;&#x0A;"
-							Outputs="$(OutDir)\media\VBASkin.xzp"
-						/>
-					</FileConfiguration>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiApp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiCanvas.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiCanvas.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiCheatParse.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiCheatParse.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiConfig.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiConfig.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiFontData.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiHost.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiScreens.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiScreens.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiThumb.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\UiThumb.h"
+					>
 				</File>
 			</Filter>
 		</Filter>

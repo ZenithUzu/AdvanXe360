@@ -1,41 +1,13 @@
-#include <xtl.h>
-#include <xui.h>
-#include <xuiapp.h>
-
-
+// VBA360 entry point (Main.cpp). The menus live in src/ui and the Xbox glue
+// in XboxHost.cpp; the old XUI scenes are no longer used.
 #ifndef MAIN_H
 #define MAIN_H
 
-typedef struct 
-{
-  char rompath[MAX_PATH];
-  char version[16];
-  int pointfilter;
-  int aspect;
-  int overscan;
-  int render;
-  int ntsc;
-  int bilinear;
-  int muteAudio;
-  int numfavs;
-  int gamesplayed;
-  int showFPS;
-  int flashSize;
-} t_config;
+#include <xtl.h>
 
-void DoAchievo(DWORD AcheivoID);
+extern IDirect3DDevice9 *pDevice;
 
-void UpdatePresence(DWORD type);
-
-class CVBA360App : public CXuiModule
-{
-protected:
-    // Override RegisterXuiClasses so that CMyApp can register classes.
-    virtual HRESULT RegisterXuiClasses();
-
-    // Override UnregisterXuiClasses so that CMyApp can unregister classes. 
-    virtual HRESULT UnregisterXuiClasses();
- 	
-};
+// Starts a game; returns when the player leaves it (sdl/SDL.cpp).
+int gba_main(char *path, char *fname);
 
 #endif

@@ -1,0 +1,82 @@
+// Xbox 360 glue between the menu UI (src/ui), the SDL frontend (sdl/SDL.cpp)
+// and the emulator cores.
+#ifndef XBOX_HOST_H
+#define XBOX_HOST_H
+
+#include <string>
+
+#include "../System.h"
+#include "../ui/UiConfig.h"
+
+class UiApp;
+class UiCanvas;
+
+// Settings shared by the whole program (loaded from GAME:\vba360.ini).
+extern UiConfig g_cfg;
+extern UiApp *g_ui;
+
+// --- Paths -------------------------------------------------------------------
+std::string xboxEmulatorDir();                  // "game:\"
+std::string xboxBatteryPath();                  // .sav of the running game
+std::string xboxStatePath(int slot);            // slot 0 = automatic state
+std::string xboxStateThumbPath(int slot);
+std::string xboxCheatListPath();
+void xboxCreateFolders();
+
+// --- Game lifecycle (called from gba_main in sdl/SDL.cpp) ---------------------
+// romPath is the full path of the ROM being started.
+void xboxOnGameLoading(const char *romPath);
+// After the ROM is loaded and patched: applies per-game save/RTC options.
+void xboxApplyGameOverrides(bool isGba);
+// Patch auto-apply allowed for this game?
+bool xboxPatchAllowed();
+// After CPUInit/CPUReset: cheats, automatic state.
+void xboxOnGameStarted();
+// Before the core is cleaned up: cheats, thumbnail, automatic state.
+void xboxOnGameExiting();
+// True if the last gba_main call could not open the ROM.
+extern bool xboxGameLoadFailed;
+
+// --- Per frame -------------------------------------------------------------------
+// Reads controllers, handles hotkeys and opens the in-game menu when asked.
+void xboxPollEvents();
+// GBA joypad bits for the core (with remapping and turbo).
+u32 xboxReadJoypad();
+// Fast forward: true when this frame should not be presented.
+bool xboxSkipFrame();
+bool xboxFastForwardActive();
+// Re-applies video settings (filter, scaling, FPS, frame skip, sound).
+void xboxApplySettings();
+
+// --- Controllers -----------------------------------------------------------------
+// UiPadButton bit mask of every connected controller (sticks act as D-pad
+// only when includeSticks is set).
+unsigned int xboxReadPads(bool includeSticks);
+
+// Right stick (raw XInput values), used for the tilt sensor in a few games.
+void xboxGetRightStick(int &x, int &y);
+
+// --- UI ----------------------------------------------------------------------------
+class UiHost;
+UiHost &xboxHost();
+// Canvas the in-game menu draws into (owned by main()).
+void xboxSetMenuCanvas(UiCanvas *canvas);
+// Core filter matching the "Image filter" setting.
+#include "../sdl/filters.h"
+Filter xboxSelectedFilter();
+
+// --- UI rendering ------------------------------------------------------------------
+bool xboxUiRendererInit();
+void xboxUiPresent(const UiCanvas &canvas);
+
+// Implemented in sdl/SDL.cpp
+void sdlWriteState(int num);
+void sdlReadState(int num);
+void sdlInitVideo();
+extern char filename[2048];
+extern int emulating;
+
+// Implemented in libSDLx360 (SDL_xboxvideo.c)
+extern "C" void XBOX_RestoreVideoState(void);
+
+#endif // XBOX_HOST_H

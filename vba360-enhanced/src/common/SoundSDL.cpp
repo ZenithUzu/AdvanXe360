@@ -17,8 +17,15 @@
 
 #include "SoundSDL.h"
 
+#include <string.h>
+
 extern int emulating;
 extern bool speedup;
+
+// Set by the Xbox frontend: play silence (sound off / muted fast forward)
+// and stop waiting for the audio buffer (fast forward).
+bool soundMuted = false;
+bool soundNoThrottle = false;
 
 // Hold up to 100 ms of data in the ring buffer
 const float SoundSDL::_delay = 0.1f;
@@ -52,6 +59,10 @@ void SoundSDL::write(u16 * finalWave, int length)
 	if (SDL_GetAudioStatus() != SDL_AUDIO_PLAYING)
 		SDL_PauseAudio(0);
 
+	// Silence keeps the timing (the buffer still throttles the emulation).
+	if (soundMuted)
+		memset(finalWave, 0, length);
+
 	SDL_mutexP(_mutex);
 
 	unsigned int samples = length >> 2;
@@ -66,7 +77,7 @@ void SoundSDL::write(u16 * finalWave, int length)
 
 		// If emulating and not in speed up mode, synchronize to audio
 		// by waiting till there is enough room in the buffer
-		if (emulating && !speedup)
+		if (emulating && !speedup && !soundNoThrottle)
 		{
 			SDL_CondWait(_cond, _mutex);
 		}

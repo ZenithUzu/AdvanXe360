@@ -356,6 +356,31 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 	}
 
  
+	/* The emulator calls SDL_SetVideoMode again when the filter or the
+	   picture size changes: free the previous surface instead of leaking it. */
+	if (this->hidden->SDL_primary || vertexBuffer || g_pPixelShader)
+	{
+		IDirect3DDevice9_SetTexture(D3D_Device, 0, NULL);
+		IDirect3DDevice9_SetStreamSource(D3D_Device, 0, NULL, 0, 0);
+		D3DDevice_SetPixelShader(D3D_Device, NULL);
+		D3DDevice_BlockUntilIdle(D3D_Device);
+		if (this->hidden->SDL_primary)
+		{
+			IDirect3DTexture9_Release(this->hidden->SDL_primary);
+			this->hidden->SDL_primary = NULL;
+		}
+		if (vertexBuffer)
+		{
+			IDirect3DVertexBuffer9_Release(vertexBuffer);
+			vertexBuffer = NULL;
+		}
+		if (g_pPixelShader)
+		{
+			D3DPixelShader_Release(g_pPixelShader);
+			g_pPixelShader = NULL;
+		}
+	}
+
 	ret = IDirect3DDevice9_CreateTexture(D3D_Device,width,height,1, 0,pixel_mode, D3DUSAGE_CPU_CACHED_MEMORY, (D3DTexture**)&this->hidden->SDL_primary, NULL);
 	have_direct3dtexture=1;
 
@@ -634,6 +659,23 @@ int XBOX_SetColors(_THIS, int firstcolor, int ncolors, SDL_Color *colors)
 /* Note:  If we are terminated, this could be called in the middle of
    another SDL video routine -- notably UpdateRects.
 */
+/* Called by the emulator after its menu (which draws with its own shaders
+   and texture) so the game picture is drawn with SDL's state again. */
+void XBOX_RestoreVideoState(void)
+{
+	SDL_VideoDevice *video = current_video;
+
+	if (!video || !video->hidden || !video->hidden->SDL_primary || !vertexBuffer)
+		return;
+
+	D3DDevice_SetRenderState(D3D_Device, D3DRS_VIEWPORTENABLE, FALSE);
+	D3DDevice_SetVertexShader(D3D_Device, g_pGradientVertexShader);
+	D3DDevice_SetPixelShader(D3D_Device, g_pPixelShader);
+	D3DDevice_SetVertexDeclaration(D3D_Device, g_pGradientVertexDecl);
+	IDirect3DDevice9_SetTexture(D3D_Device, 0, (D3DBaseTexture *)video->hidden->SDL_primary);
+	IDirect3DDevice9_SetStreamSource(D3D_Device, 0, vertexBuffer, 0, sizeof(VERTEX));
+}
+
 void XBOX_VideoQuit(_THIS)
 {
 	 if (this->hidden->SDL_primary)
@@ -641,6 +683,7 @@ void XBOX_VideoQuit(_THIS)
         IDirect3DDevice9_SetTexture(D3D_Device, 0, NULL);
 		IDirect3DDevice9_SetStreamSource(D3D_Device, 0,NULL, 0, 0);	
 		IDirect3DTexture9_Release(this->hidden->SDL_primary);
+		this->hidden->SDL_primary = NULL;
 
 		D3DDevice_SetVertexShader(D3D_Device, NULL );
 		D3DDevice_SetPixelShader(D3D_Device, NULL);

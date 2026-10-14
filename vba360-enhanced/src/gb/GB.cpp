@@ -14,6 +14,11 @@
 #include "gbSGB.h"
 #include "gbSound.h"
 #include "../Util.h"
+#include "../common/Patch.h"
+
+// Set by the Xbox frontend before gbLoadRom(): a .bps/.ups/.ips patch to
+// apply in memory to the ROM being loaded (cleared after use).
+const char *gbPendingPatch = NULL;
 
 #ifdef __GNUC__
 #define _stricmp strcasecmp
@@ -4055,6 +4060,16 @@ bool gbLoadRom(const char *szFile)
                    size);
   if(!gbRom)
     return false;
+
+  if(gbPendingPatch) {
+    // gbRom is malloc'd, so the patcher may grow it with realloc.
+    patchSetFixedCapacity(0);
+    if(applyPatch(gbPendingPatch, &gbRom, &size))
+      systemScreenMessage("Patch applied");
+    else
+      systemScreenMessage("Patch failed (wrong base ROM?)");
+    gbPendingPatch = NULL;
+  }
 
   gbRomSize = size;
 

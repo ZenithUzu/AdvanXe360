@@ -58,6 +58,7 @@
 #include "../common/SoundSDL.h"
 
 #include "../Xbox/Main.h"
+#include "../Xbox/XboxHost.h"
 
 #ifndef _WIN32
 # include <unistd.h>
@@ -89,10 +90,7 @@ extern void remoteStubSignal(int,int);
 extern void remoteOutput(const char *, u32);
 extern void remoteSetProtocol(int);
 extern void remoteSetPort(int);
-extern CVBA360App app;
 extern IDirect3DDevice9 *pDevice;
-
-extern t_config config;
 
 struct EmulatedSystem emulator = {
   NULL,
@@ -952,16 +950,10 @@ static int sdlCalculateShift(u32 mask)
  */
 static char * sdlStateName(int num)
 {
+  // num is the state slot (0 = automatic state, 1-9 = slots in the menu)
   static char stateName[2048];
-
-  if(saveDir[0])
-    sprintf(stateName, "%s\\%s%d.sgm", saveDir, sdlGetFilename(filename),
-            num+1);
-  else if (homeDir)
-    sprintf(stateName, "%s\\%s\\%s%d.sgm", homeDir, DOT_DIR, sdlGetFilename(filename), num + 1);
-  else
-    sprintf(stateName,"%s%d.sgm", filename, num+1);
-
+  strncpy(stateName, xboxStatePath(num).c_str(), sizeof(stateName) - 1);
+  stateName[sizeof(stateName) - 1] = 0;
   return stateName;
 }
 
@@ -973,20 +965,7 @@ void sdlWriteState(int num)
 
   if(emulator.emuWriteState)
     emulator.emuWriteState(stateName);
-
-  // now we reuse the stateName buffer - 2048 bytes fit in a lot
-  if (num == SLOT_POS_LOAD_BACKUP)
-  {
-    sprintf(stateName, "Current state backed up to %d", num+1);
-    systemScreenMessage(stateName);
-  }
-  else if (num>=0)
-  {
-    sprintf(stateName, "Wrote state %d", num+1);
-    systemScreenMessage(stateName);
-  }
-
-  systemDrawScreen();
+  // The menu shows its own message; don't redraw the game over it.
 }
 
 void sdlReadState(int num)
@@ -996,22 +975,6 @@ void sdlReadState(int num)
   stateName = sdlStateName(num);
   if(emulator.emuReadState)
     emulator.emuReadState(stateName);
-
-  if (num == SLOT_POS_LOAD_BACKUP)
-  {
-	  sprintf(stateName, "Last load UNDONE");
-  } else
-  if (num == SLOT_POS_SAVE_BACKUP)
-  {
-	  sprintf(stateName, "Last save UNDONE");
-  }
-  else
-  {
-	  sprintf(stateName, "Loaded state %d", num+1);
-  }
-  systemScreenMessage(stateName);
-
-  systemDrawScreen();
 }
 
 /*
@@ -1060,45 +1023,13 @@ void sdlWriteBackupStateExchange(int from, int to, int backup)
 
 void sdlWriteBattery()
 {
-  char buffer[1048];
-
-#if defined (_XBOX)
-  if(batteryDir[0])
-    sprintf(buffer, "%s\\%s.sav", batteryDir, sdlGetFilename(filename));
-  else if (homeDir)
-    sprintf(buffer, "%s\\%s\\%s.sav", homeDir, DOT_DIR, sdlGetFilename(filename));
-  else
-    sprintf(buffer, "%s.sav", filename);
-#else
-  sprintf(buffer, "%s.sav", sdlGetFilename(filename));
-#endif
-
-  emulator.emuWriteBattery(buffer);
-
-  systemScreenMessage("Wrote battery");
+  // "Junto a la ROM" or the emulator's saves\ folder (see the settings).
+  emulator.emuWriteBattery(xboxBatteryPath().c_str());
 }
 
 void sdlReadBattery()
 {
-  char buffer[1048];
-
-#if defined (_XBOX)
-  if(batteryDir[0])
-    sprintf(buffer, "%s\\%s.sav", batteryDir, sdlGetFilename(filename));
-  else if (homeDir)
-    sprintf(buffer, "%s\\%s\\%s.sav", homeDir, DOT_DIR, sdlGetFilename(filename));
-  else
-    sprintf(buffer, "%s.sav", filename);
-#else
-  sprintf(buffer, "%s.sav", sdlGetFilename(filename));
-#endif
-
-  bool res = false;
-
-  res = emulator.emuReadBattery(buffer);
-
-  if(res)
-    systemScreenMessage("Loaded battery");
+  emulator.emuReadBattery(xboxBatteryPath().c_str());
 }
 
 void sdlReadDesktopVideoMode() {
@@ -1111,6 +1042,8 @@ void sdlInitVideo() {
   int screenWidth;
   int screenHeight;
 
+  // Filter from the settings (must be chosen before the sizes below).
+  filter = xboxSelectedFilter();
   filter_enlarge = getFilterEnlargeFactor(filter);
 
   destWidth = filter_enlarge * srcWidth;
@@ -1133,9 +1066,10 @@ void sdlInitVideo() {
     screenHeight = destHeight;
   }
 
-  if (config.aspect)
+  // SDL_RESIZABLE makes the Xbox SDL driver keep the aspect ratio.
+  if (!g_cfg.stretch)
   {
-	flags |=  SDL_RESIZABLE;		
+	flags |=  SDL_RESIZABLE;
   }
 
   surface = SDL_SetVideoMode(screenWidth, screenHeight, 0, flags);
@@ -1199,37 +1133,16 @@ void sdlInitVideo() {
     }
   }
 
-	if (config.pointfilter == 1)
+	if (g_cfg.filter == FILTER_SHARP)
 	{
 		pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 		pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-	 
 	} else {
 		pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-	 
 	}
 
-	if (config.showFPS == 1)
-	{
-		showSpeed = 2;
-	}
-	else
-	{
-		showSpeed = 0;
-	}
-
-
-
-	if (config.bilinear == 1)
-	{
-		filter = kAdMame2x;
-	}
-	else
-	{
-		filter = kStretch2x;
-	}
-
+	showSpeed = g_cfg.showFps ? 2 : 0;
 }
 
 #define MOD_KEYS    (KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_META)
@@ -1366,20 +1279,12 @@ void sdlPollEvents()
 {
   SDL_Event event;
   while(SDL_PollEvent(&event)) {
-    switch(event.type) {  
-    case SDL_JOYHATMOTION:
-    case SDL_JOYBUTTONDOWN:
-    case SDL_JOYBUTTONUP:
-    case SDL_JOYAXISMOTION:   
-      inputProcessSDLEvent(event);
-      break;  
-    case SDL_QUIT:
+    if (event.type == SDL_QUIT)
       emulating = 0;
-      break; 
-
-      break;
-    }
   }
+  // Controllers are read with XInput: fast forward, quick save/load and
+  // the in-game menu (Xbox/XboxHost.cpp).
+  xboxPollEvents();
 }
 
 #if WITH_LIRC
@@ -1599,6 +1504,9 @@ int gba_main(char *path, char *fname)
   strcpy(FullPath, path);
   strcat(FullPath, fname);
 
+  // Per-game options, BIOS, Game Boy patch (Xbox/XboxHost.cpp)
+  xboxOnGameLoading(FullPath);
+
   fprintf(stdout, "VBA-M version %s [SDL]\n", VERSION);
 
   captureDir[0] = 0;
@@ -1698,7 +1606,9 @@ int gba_main(char *path, char *fname)
 
     if(type == IMAGE_UNKNOWN) {
       systemMessage(0, "Unknown file type %s", szFile);
-      exit(-1);
+      soundShutdown();
+      xboxGameLoadFailed = true;
+      return 1;   // back to the menu instead of quitting the program
     }
     cartridgeType = (int)type;
 
@@ -1713,6 +1623,7 @@ int gba_main(char *path, char *fname)
 
         cartridgeType = IMAGE_GB;
         emulator = GBSystem;
+        xboxApplyGameOverrides(false);
         int size = gbRomSize, patchnum;
         //for (patchnum = 0; patchnum < sdl_patch_num; patchnum++) {
         //  fprintf(stdout, "Trying patch %s%s\n", sdl_patch_names[patchnum],
@@ -1735,11 +1646,11 @@ int gba_main(char *path, char *fname)
         // is a fixed 32MB XPhysicalAlloc block, so it must not be realloc'd.
         static const char *patchExts[] = { ".bps", ".ups", ".ips" };
         patchSetFixedCapacity(0x2000000);
-        for (int pe = 0; pe < 3; pe++) {
+        for (int pe = 0; pe < 3 && xboxPatchAllowed(); pe++) {
           char patchName[2048 + 8];
           _snprintf(patchName, sizeof(patchName), "%s%s", filename, patchExts[pe]);
           patchName[sizeof(patchName) - 1] = 0;
-          if (GetFileAttributes(patchName) == INVALID_FILE_ATTRIBUTES)
+          if (GetFileAttributes(patchName) == (DWORD)-1)
             continue;
           if (applyPatch(patchName, &rom, &size)) {
             CPUUpdateRomSize(size);
@@ -1756,6 +1667,8 @@ int gba_main(char *path, char *fname)
         // need 128KB flash + RTC; the old 64KB default broke their saves.
         utilGBAFindSave(rom, size);
         sdlApplyPerImagePreferences();
+        // Options chosen for this ROM file win over everything else.
+        xboxApplyGameOverrides(true);
 
         doMirroring(mirroringEnable);
 
@@ -1774,7 +1687,9 @@ int gba_main(char *path, char *fname)
 
     if(failed) {
       systemMessage(0, "Failed to load file %s", szFile);
-      exit(-1);
+      soundShutdown();
+      xboxGameLoadFailed = true;
+      return 1;
     }
   } else {
     soundInit();
@@ -1902,9 +1817,12 @@ int gba_main(char *path, char *fname)
 	}
   }
 
-  while(emulating) {     
+  // Cheats, automatic state, video settings
+  xboxOnGameStarted();
+
+  while(emulating) {
      emulator.emuMain(emulator.emuCount);
-     sdlPollEvents(); 
+     sdlPollEvents();
   }
 
   emulating = 0;
@@ -1913,6 +1831,7 @@ int gba_main(char *path, char *fname)
   soundShutdown();
 
   if(gbRom != NULL || rom != NULL) {
+    xboxOnGameExiting();
     sdlWriteBattery();
     emulator.emuCleanUp();
   }
@@ -1997,6 +1916,9 @@ void drawSpeed(u8 *screen, int pitch, int x, int y)
 
 void systemDrawScreen()
 {
+  if (xboxSkipFrame())
+    return;
+
   unsigned int destPitch = surface->pitch;
   u8 *screen;
 

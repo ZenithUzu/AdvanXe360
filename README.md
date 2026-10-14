@@ -8,14 +8,32 @@ Fork de / Fork of [frankischilling/vba360-enhanced](https://github.com/frankisch
 
 Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los términos de la licencia GPL del proyecto original. Todo el crédito del emulador y del port es de sus autores originales (ver más abajo).
 
-### Qué cambia en este fork
+![Explorador de juegos](docs/screenshots/browser.png)
 
-El objetivo es que funcionen los **hackroms** (sobre todo los de Pokémon):
+### Qué trae este fork
 
-- **Detección automática del tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM y reloj RTC) leyendo la propia ROM. Antes todo arrancaba con Flash de 64 KB y sin RTC, así que FireRed, Emerald y sus hacks no podían guardar.
-- **Parches automáticos BPS / UPS / IPS** al cargar la ROM, en memoria, sin modificar tu archivo.
-- **Soporte para hacks expandidos a 32 MB.**
-- Corrección de un fallo que podía tumbar la consola al aplicar parches, y de un dato escrito con el orden de bytes incorrecto en la 360.
+**Interfaz nueva**, simple y rápida, dibujada por el propio emulador (ya no usa las escenas XUI):
+- Pestañas **Juegos · Recientes · Favoritos · Ajustes** (cambias con LB/RB).
+- Explorador de **unidades y carpetas** (disco duro, USB, carpeta del emulador), con vista previa del juego y aviso si tiene parche.
+- Todo en **español o inglés**, con una línea de ayuda en cada opción.
+
+**Menú dentro del juego** (clic del stick derecho, o BACK + START):
+- Guardar y cargar estado en **9 ranuras con miniatura**.
+- **Avance rápido** (2x, 3x, 4x, 6x, 8x o máximo; mantener o alternar).
+- **Trucos**, opciones del juego, ajustes, captura de pantalla, reiniciar y salir.
+
+![Menú en juego](docs/screenshots/ingame-menu.png)
+
+**Trucos:** GameShark, Action Replay, CodeBreaker y códigos VBA para GBA; GameShark y Game Genie para GB/GBC. Se escriben con un teclado en pantalla o se importan de un archivo `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
+
+**Controles configurables:** cada botón del GBA, turbo A/B, avance rápido, menú, guardado y carga rápida. Puedes elegir de la lista o simplemente presionar el botón nuevo.
+
+**Ajustes:** filtro (nítido, suave, Scale2x, LQ2x), tamaño original o pantalla completa, FPS, salto de cuadros, sonido, BIOS original opcional, carpetas de partidas y estados, guardar estado al salir y continuar donde lo dejaste.
+
+**Compatibilidad sin depender del ID del juego:**
+- El tipo de guardado (Flash 64/128 KB, SRAM, EEPROM) y el reloj RTC se detectan **leyendo la ROM**, no por el código del cartucho. Así funcionan los hacks aunque conserven el ID del juego original.
+- **Opciones por juego** (botón Y sobre un juego) guardadas por **nombre de archivo**: tipo de guardado, RTC y parche.
+- **Parches BPS / UPS / IPS automáticos** para GBA y también para GB/GBC, hasta 32 MB.
 
 ### Cómo usar un hack
 
@@ -26,11 +44,15 @@ Pokemon Unbound.gba
 Pokemon Unbound.bps
 ```
 
-Al abrir la ROM, el parche se aplica solo. Si el parche no corresponde a esa ROM base, el juego se carga sin parchear y aparece un aviso.
+Al abrir la ROM, el parche se aplica solo, en memoria (tu archivo no cambia).
+
+### Carpetas que crea el emulador
+
+Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
 
 ### Estado
 
-Probado en PC (parcheo y detección de guardado). **Pendiente de probar en una Xbox 360 real** (BadUpdate + Aurora). Para compilar: ver la sección *Building* más abajo.
+La interfaz, los parches, la detección de guardado y los trucos están probados en PC. **Pendiente de probar en una Xbox 360 real** (BadUpdate + Aurora). Para compilar: ver *Building* más abajo (ya no hace falta empaquetar el skin XUI).
 
 ## 🇺🇸 English
 
@@ -38,29 +60,24 @@ Probado en PC (parcheo y detección de guardado). **Pendiente de probar en una X
 
 You are **free to use it or not**, and to copy, modify and share it under the GPL terms of the original project. All credit for the emulator and the port goes to their original authors (see below).
 
-### What this fork changes
+### What this fork adds
 
-The goal is to make **ROM hacks** work (especially Pokémon hacks):
+- **New interface** drawn by the emulator itself (no more XUI scenes): Games · Recent · Favorites · Settings tabs, a drive and folder browser with game previews, Spanish or English.
+- **In-game menu** (right stick click, or BACK + START): 9 save-state slots with thumbnails, fast forward (2x–8x or maximum, hold or toggle), cheats, game options, settings, screenshots, restart and quit.
+- **Cheats:** GameShark, Action Replay, CodeBreaker and VBA codes for GBA; GameShark and Game Genie for GB/GBC. Type them with an on-screen keyboard or import a `.cht` / `.txt` list (RetroArch format too). Saved per game.
+- **Remappable controls**, including turbo, fast forward, menu and quick save/load.
+- **Settings:** filters (sharp, smooth, Scale2x, LQ2x), original or full-screen picture, FPS, frame skip, sound, optional real BIOS, save/state folders, save on exit and resume.
+- **Compatibility that does not rely on the game ID:** save type and RTC are detected by reading the ROM; per-game options are keyed by file name; BPS/UPS/IPS patches are applied automatically for GBA and GB/GBC, up to 32 MB.
 
-- **Automatic save type detection** (64/128 KB Flash, SRAM, EEPROM and RTC clock) by reading the ROM itself. Previously every game ran with 64 KB Flash and no RTC, so FireRed, Emerald and their hacks could not save.
-- **Automatic BPS / UPS / IPS patching** when a ROM is loaded, in memory, without modifying your file.
-- **Support for hacks expanded to 32 MB.**
-- Fixes a crash that could happen when applying patches, and a value written with the wrong byte order on the 360.
+![Cheats](docs/screenshots/cheats.png)
 
 ### How to use a hack
 
-Put the clean ROM and the patch in the same folder, with **the same name**:
-
-```
-Pokemon Unbound.gba
-Pokemon Unbound.bps
-```
-
-The patch is applied automatically when the ROM is opened. If the patch does not match that base ROM, the game loads unpatched and a message is shown.
+Put the clean ROM and the patch in the same folder with **the same name** (`Pokemon Unbound.gba` + `Pokemon Unbound.bps`). The patch is applied in memory when the ROM is opened.
 
 ### Status
 
-Tested on PC (patching and save detection). **Not yet tested on real Xbox 360 hardware** (BadUpdate + Aurora). To build it, see the *Building* section below.
+Interface, patching, save detection and cheats are tested on PC. **Not yet tested on real Xbox 360 hardware** (BadUpdate + Aurora). To build it, see *Building* below (the XUI skin no longer needs packaging).
 
 ---
 
