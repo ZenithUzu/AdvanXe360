@@ -438,10 +438,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
           tr("Original: proporci\xf3n de la consola (GBA 3:2, GB 10:9). Entera: zoom exacto (GBA x4, GB x5).",
              "Original: console proportions (GBA 3:2, GB 10:9). Integer: exact zoom (GBA x4, GB x5)."));
     const char *effects[EFFECT_COUNT] = {
-      tr("Ninguno", "None"), tr("L\xedneas (CRT)", "Scanlines (CRT)"), tr("Rejilla (LCD)", "Grid (LCD)") };
+      tr("Ninguno", "None"), tr("CRT (TV antigua)", "CRT (old TV)"), tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)") };
     m.add(V_EFFECT, ITEM_OPTION, tr("Efecto de pantalla", "Screen effect"), effects[m_cfg.screenEffect],
-          tr("L\xedneas imita una TV antigua; Rejilla, la pantalla de la consola. Mejor con tama\xf1o Entera.",
-             "Scanlines imitate an old TV; Grid, the handheld's screen. Best with Integer size."));
+          tr("CRT: l\xedneas y m\xe1scara de TV (zfast_crt). LCD: rejilla de port\xe1til (lcd3x). Mejor con Entera.",
+             "CRT: TV scanlines and mask (zfast_crt). LCD: handheld grid (lcd3x). Best with Integer size."));
     m.add(V_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
           uiGbPaletteNames[m_cfg.gbPalette][m_cfg.language ? 1 : 0],
           tr("Paleta para juegos de Game Boy, al estilo de Super Game Boy.",
@@ -541,6 +541,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.subtitle = "VBA360 enhanced-ai";
     m.addInfo(tr("Emulador de Game Boy Advance y Game Boy.",
                  "Game Boy Advance and Game Boy emulator."));
+    m.addInfo(tr("No emula Game Boy Color ni juegos de GBA que usan aditamentos o hardware especial.",
+                 "No Game Boy Color, nor GBA games that need add-ons or special hardware."));
     m.addInfo(tr("Basado en VisualBoyAdvance-M y VBA360 (licencia GPL).",
                  "Based on VisualBoyAdvance-M and VBA360 (GPL license)."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA.",

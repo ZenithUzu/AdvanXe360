@@ -33,6 +33,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 
 **Compatibilidad con hacks y ROMs**
 - **Parches BPS / UPS / IPS automáticos** hasta 32 MB: la ROM limpia no se modifica.
+- **Guardado de batería** (`.sav`) en GBA y GB: lo que guardas dentro del juego se escribe al salir, al abrir el menú y periódicamente.
 - El **tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM) y el **reloj RTC** se detectan **leyendo la ROM**, no por el ID del cartucho. Así guardan bien los hacks de Pokémon aunque conserven el ID original.
 - **Opciones por juego** (botón Y sobre un juego), guardadas por nombre de archivo: tipo de guardado, reloj y parche.
 - ROMs comprimidas en `.zip` y `.7z`.
@@ -102,11 +103,14 @@ Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 ## Limitaciones
 
 - **Game Boy Advance y Game Boy; no Game Boy Color.** Los juegos de Game Boy (`.gb`) funcionan. Los cartuchos compatibles con ambas consolas (`.gbc` "negros") arrancan en modo Game Boy, con la paleta elegida. Los juegos **solo** para Game Boy Color (como Pokémon Cristal o Super Mario Bros. Deluxe) no son compatibles.
-- **Classic NES Series / Famicom Mini** (por ejemplo *Super Mario Bros.* o *Zelda* de NES para GBA): no arrancaban. Esta versión activa para ellos el "espejo de ROM" que necesitan; si aun así no funcionan, avísanos.
-- **No funcionan los juegos con sensores en el cartucho**, como *Boktai* (sensor solar), *WarioWare: Twisted!* (giroscopio) o *Yoshi Topsy-Turvy* y *Koro Koro Puzzle* (inclinación). Ese hardware venía dentro del propio cartucho y la consola no lo tiene; el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M lo emulara.
+- **Parte de los juegos de GBA que requieren aditamentos o hardware especial no funcionan:**
+  - Cartuchos con **sensores**: *Boktai* (sensor solar), *WarioWare: Twisted!* (giroscopio), *Yoshi Topsy-Turvy* y *Koro Koro Puzzle* (inclinación). Ese hardware venía dentro del propio cartucho y la consola no lo tiene; el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M lo emulara.
+  - **Classic NES Series / Famicom Mini** (los juegos de NES para GBA, como *Super Mario Bros.*): usan protecciones especiales y no arrancan.
+  - Accesorios como el **e-Reader** o el cable link tampoco se emulan.
 
 ## Errores conocidos
 
+- **Líneas de colores alrededor del juego:** en algunos casos pueden aparecer líneas de colores en los lados al iniciar un juego. Se corrigió en esta versión, pero si llegan a salir, se recomienda usar una **imagen de fondo** (Ajustes → Video → Fondo de la pantalla).
 - **Rendimiento con parches:** los juegos que se cargan con un parche **UPS / IPS / BPS** aplicado al vuelo pueden tener bajones de FPS. Los hacks ya parchados en `.gba` no tienen este problema.
 
 ## Estado
@@ -121,6 +125,7 @@ Probado en consola (BadUpdate + Aurora). Proyecto en desarrollo: si encuentras e
 - **Este fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, pruebas en consola, compilación y capturas.
 - **Programación con IA:** **Claude** (de [Anthropic](https://www.anthropic.com)). Escribió los cambios de código y la documentación de este fork.
 - **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
+- **Efectos de pantalla:** adaptados de [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* de Greg Hogan (GPL v2+) para CRT y *lcd3x* de Gigaherz (dominio público) para LCD.
 
 La lista completa de créditos y librerías está en el [README original](#original-readme-vba360-enhanced).
 

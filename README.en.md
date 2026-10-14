@@ -33,6 +33,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 
 **ROM hack and ROM compatibility**
 - **Automatic BPS / UPS / IPS patching** up to 32 MB: the clean ROM is never modified.
+- **Battery saves** (`.sav`) for GBA and GB: what you save inside the game is written when you quit, when you open the menu and periodically.
 - The **save type** (Flash 64/128 KB, SRAM, EEPROM) and the **RTC clock** are detected **by reading the ROM**, not by the cartridge ID. Pokémon hacks save correctly even when they keep the original ID.
 - **Per-game options** (Y button on a game), stored by file name: save type, clock and patch.
 - Compressed ROMs in `.zip` and `.7z`.
@@ -102,11 +103,14 @@ Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 ## Limitations
 
 - **Game Boy Advance and Game Boy; not Game Boy Color.** Game Boy (`.gb`) games work. Cartridges made for both consoles ("black" `.gbc` carts) start in Game Boy mode with the chosen palette. Games made **only** for the Game Boy Color (such as Pokémon Crystal or Super Mario Bros. Deluxe) are not supported.
-- **Classic NES Series / Famicom Mini** (e.g. the GBA releases of NES *Super Mario Bros.* or *Zelda*) did not start. This version turns on the "ROM mirroring" they need; if they still fail, please report it.
-- **Games with sensors in the cartridge don't work**, such as *Boktai* (solar sensor), *WarioWare: Twisted!* (gyroscope) or *Yoshi Topsy-Turvy* and *Koro Koro Puzzle* (tilt). That hardware was built into the cartridge itself and the console doesn't have it; this port's core (a 2009 VBA-M snapshot) predates VBA-M's support for it.
+- **Some GBA games that need add-ons or special hardware don't work:**
+  - Cartridges with **sensors**: *Boktai* (solar sensor), *WarioWare: Twisted!* (gyroscope), *Yoshi Topsy-Turvy* and *Koro Koro Puzzle* (tilt). That hardware was built into the cartridge itself and the console doesn't have it; this port's core (a 2009 VBA-M snapshot) predates VBA-M's support for it.
+  - **Classic NES Series / Famicom Mini** (the NES games for GBA, such as *Super Mario Bros.*): they use special protections and don't start.
+  - Accessories such as the **e-Reader** or the link cable are not emulated either.
 
 ## Known issues
 
+- **Colored lines around the game:** in some cases colored lines can show at the sides when a game starts. This version fixes it, but if they still appear, using a **background image** is recommended (Settings → Video → Screen background).
 - **Performance with patches:** games loaded with a **UPS / IPS / BPS** patch applied on the fly can have FPS drops. Pre-patched `.gba` hacks don't have this problem.
 
 ## Status
@@ -121,6 +125,7 @@ Tested on console (BadUpdate + Aurora). Work in progress: if you find bugs, plea
 - **This fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, console testing, builds and screenshots.
 - **AI programming:** **Claude** (by [Anthropic](https://www.anthropic.com)). Wrote the code changes and documentation of this fork.
 - **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
+- **Screen effects:** adapted from [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* by Greg Hogan (GPL v2+) for CRT and *lcd3x* by Gigaherz (public domain) for LCD.
 
 The full list of credits and libraries is in the [original README](README.md#original-readme-vba360-enhanced).
 

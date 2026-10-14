@@ -31,7 +31,6 @@ extern int srcPitch, srcWidth, srcHeight;
 extern int cartridgeType;              // 0 = GBA, 1 = GB
 extern struct EmulatedSystem emulator;
 extern int cpuSaveType;
-extern bool mirroringEnable;          // gba/Globals.cpp
 extern bool useBios;
 extern char biosFileName[2048];
 extern int autoFrameSkip;
@@ -483,6 +482,11 @@ XboxHost g_host;
 
 void resetFrameTiming();
 
+// Frames left before the frame-skip timing is measured afresh after a game
+// starts: setting up the video (filter textures, shaders) makes the first
+// frames slow, and auto frame skip would keep skipping as if the game were.
+static int g_settleFrames = 0;
+
 // Opens the in-game menu and runs it until the player resumes or quits.
 void runInGameMenu()
 {
@@ -655,14 +659,9 @@ const SpecialCart kSpecialCarts[] = {
 
 static void applySpecialCart()
 {
-  mirroringEnable = false;
   if (!rom)
     return;
   char code[4] = { (char)rom[0xAC], (char)rom[0xAD], (char)rom[0xAE], 0 };
-  // Classic NES Series / Famicom Mini (game codes F***): they read the ROM
-  // through its mirrors to detect copies, so mirroring must be on.
-  if (code[0] == 'F')
-    mirroringEnable = true;
   for (size_t i = 0; i < sizeof(kSpecialCarts) / sizeof(kSpecialCarts[0]); i++) {
     if (strncmp(code, kSpecialCarts[i].code3, 3) != 0)
       continue;
@@ -715,6 +714,8 @@ void xboxOnGameStarted()
   g_prevPads = 0;
   g_videoStretch = -1;   // force the first video setup
   xboxApplySettings();
+  resetFrameTiming();
+  g_settleFrames = 30;
   systemScreenMessage(g_cfg.language ? "Menu: right stick click" : "Menu: clic stick derecho");
 }
 
@@ -754,6 +755,13 @@ bool xboxSkipFrame()
 
 void xboxPollEvents()
 {
+  if (g_settleFrames > 0 && --g_settleFrames == 0) {
+    // Same as closing the menu: restart the audio stream and the frame
+    // timing, which the slow first frames (video setup) threw off.
+    soundPause();
+    resetFrameTiming();
+    soundResume();
+  }
   unsigned int pads = xboxReadPads(true);
   if (g_waitRelease) {
     if (pads == 0)

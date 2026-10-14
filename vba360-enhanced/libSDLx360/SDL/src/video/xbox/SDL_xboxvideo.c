@@ -111,46 +111,89 @@ void (*XBOX_BackgroundHook)(void) = NULL;
 int XBOX_UseCustomRect = 0;
 int XBOX_CustomRect[4] = { 0, 0, 1280, 720 };
 
-/* Effect drawn over the game picture: 0 = none, 1 = scanlines (CRT),
-   2 = LCD grid. XBOX_EffectSource is the picture size in console pixels,
-   so there is one line per console line whatever the filter's zoom. */
+/* Effect drawn over the game picture: 0 = none, 1 = CRT, 2 = LCD.
+   XBOX_EffectSource is the picture size in console pixels, so there is one
+   scanline per console line whatever the filter's zoom. */
 int XBOX_ScreenEffect = 0;
 float XBOX_EffectSource[2] = { 240.0f, 160.0f };
-static D3DPixelShader *g_pEffectShader = NULL;
-static const char *g_strEffectShader =
-    " sampler detail : register(s0);                                      "
-    " float4 params : register(c0);                                       "
-    " float4 main( float2 uv : TEXCOORD0 ) : COLOR                        "
-    " {                                                                   "
-    "     float4 c = tex2D( detail, uv );                                 "
-    "     float fy = frac( uv.y * params.y );                             "
-    "     float fx = frac( uv.x * params.x );                             "
-    "     float k = 1.0 - step( 0.75, fy ) * params.w;                    "
-    "     k *= 1.0 - step( 0.75, fx ) * params.z * params.w;              "
-    "     return float4( c.rgb * k, c.a );                                "
-    " }                                                                   ";
+static D3DPixelShader *g_pEffectShader[3] = { NULL, NULL, NULL };
+
+/* CRT: adapted from zfast_crt by Greg Hogan (SoltanGris42), GPL v2 or later
+   (libretro/glsl-shaders, crt/shaders/zfast_crt.glsl). Scanlines that are
+   thinner on bright colors, plus an aperture-grille mask every 3 columns.
+   c0 = console width, console height, picture width, picture height (px). */
+static const char *g_strCrtShader =
+    "sampler detail : register(s0);\n"
+    "float4 dims : register(c0);\n"
+    "float4 main( float2 uv : TEXCOORD0 ) : COLOR\n"
+    "{\n"
+    "    float2 p = uv * dims.xy;\n"
+    "    float2 f = p - ( floor( p ) + 0.5 );\n"
+    "    float Y = f.y * f.y;\n"
+    "    float YY = Y * Y;\n"
+    "    float whichmask = floor( uv.x * dims.z ) * -0.3333;\n"
+    "    float mask = 1.0 - step( frac( whichmask ), 0.3333 ) * 0.25;\n"
+    "    float3 c = tex2D( detail, uv ).rgb;\n"
+    "    float w = 1.25 - 5.0 * ( Y - 2.05 * YY );\n"
+    "    float wB = 1.0 - 10.0 * ( YY - 2.8 * YY * Y );\n"
+    "    float k = dot( c, float3( 0.26664, 0.26664, 0.26664 ) );\n"
+    "    return float4( c * lerp( w * mask, wB, k ), 1.0 );\n"
+    "}\n";
+
+/* LCD: adapted from lcd3x by Gigaherz, public domain
+   (libretro/glsl-shaders, handheld/shaders/lcd3x.glsl). Faint lines between
+   rows and red/green/blue sub-pixel columns, like a handheld's screen. */
+static const char *g_strLcdShader =
+    "sampler detail : register(s0);\n"
+    "float4 dims : register(c0);\n"
+    "float4 main( float2 uv : TEXCOORD0 ) : COLOR\n"
+    "{\n"
+    "    float3 res = tex2D( detail, uv ).rgb;\n"
+    "    float2 angle = uv * dims.xy * 6.283185307;\n"
+    "    float yf = ( 16.0 + sin( angle.y ) ) / 17.0;\n"
+    "    float3 offs = 3.141592654 * float3( 0.5, 0.5 - 2.0 / 3.0, 0.5 - 4.0 / 3.0 );\n"
+    "    float3 xf = ( 4.0 + sin( angle.x + offs ) ) / 5.0;\n"
+    "    return float4( yf * xf * res, 1.0 );\n"
+    "}\n";
+
+/* Compiles the effect shaders once (when the video mode is set, so the
+   first game frames are not held up by the shader compiler). */
+static void XBOX_CompileEffectShaders(void)
+{
+	const char *src[3];
+	int i;
+	src[0] = NULL;
+	src[1] = g_strCrtShader;
+	src[2] = g_strLcdShader;
+	for (i = 1; i < 3; i++)
+	{
+		LPD3DXBUFFER code = NULL;
+		if (g_pEffectShader[i])
+			continue;
+		if (SUCCEEDED(D3DXCompileShader(src[i], (UINT)strlen(src[i]), NULL, NULL, "main", "ps_3_0", 0,
+		                                &code, NULL, NULL)) && code)
+		{
+			g_pEffectShader[i] = D3DDevice_CreatePixelShader((DWORD *)code->lpVtbl->GetBufferPointer(code));
+			code->lpVtbl->Release(code);
+		}
+	}
+}
+
+/* Picture size on screen, for the CRT mask (set in XBOX_SetVideoMode). */
+static float g_pictureSize[2] = { 1280.0f, 720.0f };
 
 /* Pixel shader for the game picture: plain, or with the screen effect. */
 static void XBOX_SetGamePixelShader(void)
 {
-	if (XBOX_ScreenEffect && !g_pEffectShader)
-	{
-		LPD3DXBUFFER code = NULL;
-		if (SUCCEEDED(D3DXCompileShader(g_strEffectShader, (UINT)strlen(g_strEffectShader),
-		                                NULL, NULL, "main", "ps_2_0", 0, &code, NULL, NULL)) && code)
-		{
-			g_pEffectShader = D3DDevice_CreatePixelShader((DWORD *)code->lpVtbl->GetBufferPointer(code));
-			code->lpVtbl->Release(code);
-		}
-	}
-	if (XBOX_ScreenEffect && g_pEffectShader)
+	int e = XBOX_ScreenEffect;
+	if (e > 0 && e < 3 && g_pEffectShader[e])
 	{
 		float params[4];
 		params[0] = XBOX_EffectSource[0];
 		params[1] = XBOX_EffectSource[1];
-		params[2] = XBOX_ScreenEffect == 2 ? 1.0f : 0.0f;   /* columns too */
-		params[3] = XBOX_ScreenEffect == 2 ? 0.30f : 0.45f;  /* darkness */
-		D3DDevice_SetPixelShader(D3D_Device, g_pEffectShader);
+		params[2] = g_pictureSize[0];
+		params[3] = g_pictureSize[1];
+		D3DDevice_SetPixelShader(D3D_Device, g_pEffectShader[e]);
 		IDirect3DDevice9_SetPixelShaderConstantF(D3D_Device, 0, params, 1);
 	}
 	else
@@ -445,6 +488,18 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 		return(NULL);
 	}
 
+	/* A new texture holds whatever was in that memory: clear it so no
+	   colored lines show before the first game frame is copied in. */
+	{
+		D3DLOCKED_RECT lr;
+		if (IDirect3DTexture9_LockRect(this->hidden->SDL_primary, 0, &lr, NULL, 0) == D3D_OK)
+		{
+			memset(lr.pBits, 0, (size_t)lr.Pitch * height);
+			IDirect3DTexture9_UnlockRect(this->hidden->SDL_primary, 0);
+		}
+	}
+	XBOX_CompileEffectShader();
+
  
    // Compile the pixel shader once and keep it: compiling on the console
    // takes long enough to make every filter change stutter.
@@ -549,6 +604,10 @@ SDL_Surface *XBOX_SetVideoMode(_THIS, SDL_Surface *current,
 		drawRect.right = D3D_PP.BackBufferWidth - 80;
 		drawRect.bottom = D3D_PP.BackBufferHeight- 40;
 	}
+
+	g_pictureSize[0] = (float)(drawRect.right - drawRect.left);
+	g_pictureSize[1] = (float)(drawRect.bottom - drawRect.top);
+	XBOX_CompileEffectShaders();
 
 	a.x = (float)drawRect.left - 0.5f;
 	a.y = (float)drawRect.bottom - 0.5f;
