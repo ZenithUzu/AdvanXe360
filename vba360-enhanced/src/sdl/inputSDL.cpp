@@ -14,6 +14,9 @@
 #include "../Xbox/XboxHost.h"
 
 static EPad sdlDefaultJoypad = PAD_MAIN;
+
+// Read by sdl/SDL.cpp's option parser; turbo now lives in XboxHost.cpp.
+int autoFireMaxCount = 1;
 static int sensorX = 2047;
 static int sensorY = 2047;
 
