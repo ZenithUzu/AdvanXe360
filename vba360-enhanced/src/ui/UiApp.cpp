@@ -154,10 +154,10 @@ UiRequest UiApp::takeRequest(std::string &romPath)
   return r;
 }
 
-void UiApp::toast(const std::string &msg)
+void UiApp::toast(const std::string &msg, int frames)
 {
   m_toast = msg;
-  m_toastFrames = 150;
+  m_toastFrames = frames;
 }
 
 void UiApp::launch(const std::string &rom)

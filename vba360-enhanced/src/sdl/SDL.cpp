@@ -1625,7 +1625,7 @@ int gba_main(char *path, char *fname)
 
         // used for the handling of the gb Boot Rom
         if (gbHardware & 5)
-          gbCPUInit(gbBiosFileName, useBios);
+          gbCPUInit(gbBiosFileName, gbBiosFileName[0] != 0);
 
         cartridgeType = IMAGE_GB;
         emulator = GBSystem;
@@ -1890,6 +1890,12 @@ void systemMessage(int num, const char *msg, ...)
 
   fprintf(stderr, "%s\n", buffer);
   va_end(valist);
+
+  // Keep the first message of a game load so the menu can show it.
+  if (!xboxLoadMessage[0]) {
+    strncpy(xboxLoadMessage, buffer, sizeof(xboxLoadMessage) - 1);
+    xboxLoadMessage[sizeof(xboxLoadMessage) - 1] = 0;
+  }
 }
 
 void drawScreenMessage(u8 *screen, int pitch, int x, int y, unsigned int duration)

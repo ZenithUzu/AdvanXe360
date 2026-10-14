@@ -65,7 +65,7 @@ public:
   // Fast-forward state, shared with the host's hotkey handling.
   bool fastForward;
 
-  void toast(const std::string &msg);
+  void toast(const std::string &msg, int frames = 150);
   const char *tr(const char *es, const char *en) const;
 
   // --- Used by the screens -------------------------------------------------

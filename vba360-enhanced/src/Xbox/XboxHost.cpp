@@ -44,6 +44,7 @@ extern int systemColorDepth;
 extern IDirect3DDevice9 *pDevice;
 extern gbCheat gbCheatList[100];
 extern int gbCheatNumber;
+extern char gbBiosFileName[2048];      // sdl/SDL.cpp
 extern const char *gbPendingPatch;     // gb/GB.cpp
 extern bool soundMuted;                // common/SoundSDL.cpp
 extern bool soundNoThrottle;
@@ -58,6 +59,7 @@ void systemScreenMessage(const char *msg);
 UiConfig g_cfg;
 UiApp *g_ui = 0;
 bool xboxGameLoadFailed = false;
+char xboxLoadMessage[256] = "";
 
 namespace {
 
@@ -554,11 +556,15 @@ void xboxOnGameLoading(const char *romPath)
   if (g_ui)
     g_ui->fastForward = false;
   xboxGameLoadFailed = false;
+  xboxLoadMessage[0] = 0;
 
   // Optional real BIOS (needed by a few games, nicer boot logo).
   std::string bios = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "bios"), "gba_bios.bin");
   useBios = g_cfg.useBios && pathExists(bios);
   strcpy(biosFileName, useBios ? bios.c_str() : "");
+  // Game Boy boot ROM (optional, only used by GB/SGB games).
+  std::string gbBios = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "bios"), "gb_bios.bin");
+  strcpy(gbBiosFileName, g_cfg.useBios && pathExists(gbBios) ? gbBios.c_str() : "");
 
   // Game Boy patches are applied inside gbLoadRom().
   gbPendingPatch = 0;
