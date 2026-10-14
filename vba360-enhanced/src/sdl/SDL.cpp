@@ -1024,12 +1024,18 @@ void sdlWriteBackupStateExchange(int from, int to, int backup)
 void sdlWriteBattery()
 {
   // "Junto a la ROM" or the emulator's saves\ folder (see the settings).
-  emulator.emuWriteBattery(xboxBatteryPath().c_str());
+  std::string path = xboxBatteryPath();
+  if (path.empty())
+    return;
+  if (!emulator.emuWriteBattery(path.c_str()))
+    systemScreenMessage(g_cfg.language ? "Could not write the save" : "No se pudo guardar");
 }
 
 void sdlReadBattery()
 {
-  emulator.emuReadBattery(xboxBatteryPath().c_str());
+  std::string path = xboxBatteryPath();
+  if (!path.empty())
+    emulator.emuReadBattery(path.c_str());
 }
 
 void sdlReadDesktopVideoMode() {
@@ -1831,8 +1837,9 @@ int gba_main(char *path, char *fname)
   soundShutdown();
 
   if(gbRom != NULL || rom != NULL) {
-    xboxOnGameExiting();
+    // Save first: xboxOnGameExiting() forgets which ROM was running.
     sdlWriteBattery();
+    xboxOnGameExiting();
     emulator.emuCleanUp();
   }
 

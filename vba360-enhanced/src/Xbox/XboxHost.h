@@ -77,6 +77,7 @@ void xboxUiPresent(const UiCanvas &canvas);
 void sdlWriteState(int num);
 void sdlReadState(int num);
 void sdlInitVideo();
+void sdlWriteBattery();
 extern char filename[2048];
 extern int emulating;
 

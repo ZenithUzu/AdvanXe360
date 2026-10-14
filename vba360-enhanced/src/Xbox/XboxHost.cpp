@@ -442,6 +442,8 @@ void runInGameMenu()
   if (!g_ui || !g_menuCanvas)
     return;
   soundPause();
+  // Write the save now too, so quitting from the dashboard loses nothing.
+  sdlWriteBattery();
   g_ui->openInGameMenu();
   for (;;) {
     g_ui->update(xboxReadPads(true));
@@ -503,6 +505,8 @@ std::string xboxEmulatorDir()
 
 std::string xboxBatteryPath()
 {
+  if (g_rom.empty())
+    return "";   // no game running
   if (g_cfg.saveDirMode == DIR_EMULATOR)
     return uiGameFile(xboxEmulatorDir(), "saves", g_rom, "", ".sav");
   // Classic VBA behaviour: "<rom name>.sav" next to the ROM.
