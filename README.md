@@ -84,6 +84,17 @@ Al abrir la ROM, el parche se aplica solo, en memoria. Ojo: con parches puede ha
 
 Por defecto el fondo alrededor del juego es **negro**. Para usar una imagen, ponla en la carpeta `borders\` junto a `default.xex` (puedes tener varias, con cualquier nombre) y elígela en **Ajustes → Video → Fondo de la pantalla**. Formatos: **PNG, JPG, BMP, TGA y DDS** (WebP no). Lo ideal es 1280×720, pero con **Ajuste del fondo** puedes dejarla **Centrada** (completa, al centro), **Rellenar** (cubre toda la pantalla) o **Estirar**. El juego se dibuja encima, así que solo se ven los lados. Hay un ejemplo en [`extras/borders/border.png`](extras/borders/border.png).
 
+**Medidas para diseñar tu propio fondo** (imagen de **1280×720**, ajuste *Centrada* o *Estirar*; en 1920×1080 multiplica todo por 1.5). El juego tapa este rectángulo:
+
+| Consola | Tamaño de imagen | Rectángulo del juego (x, y, ancho × alto) | Espacio libre a los lados |
+|---|---|---|---|
+| GBA | Original | 100, 0, 1080 × 720 | 100 px a cada lado |
+| GBA | Entera | 160, 40, 960 × 640 | 160 px a los lados, 40 px arriba y abajo |
+| GB | Original / Entera | 240, 0, 800 × 720 | 240 px a cada lado |
+| GBA y GB | Pantalla completa | 80, 40, 1120 × 640 | 80 px a los lados, 40 px arriba y abajo |
+
+Si usas GBA y GB con el mismo fondo, deja el diseño importante en los 100 px de cada orilla.
+
 ## Carpetas que crea el emulador
 
 Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
@@ -91,6 +102,7 @@ Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 ## Limitaciones
 
 - **Game Boy Advance y Game Boy; no Game Boy Color.** Los juegos de Game Boy (`.gb`) funcionan. Los cartuchos compatibles con ambas consolas (`.gbc` "negros") arrancan en modo Game Boy, con la paleta elegida. Los juegos **solo** para Game Boy Color (como Pokémon Cristal o Super Mario Bros. Deluxe) no son compatibles.
+- **Classic NES Series / Famicom Mini** (por ejemplo *Super Mario Bros.* o *Zelda* de NES para GBA): no arrancaban. Esta versión activa para ellos el "espejo de ROM" que necesitan; si aun así no funcionan, avísanos.
 - **No funcionan los juegos con sensores en el cartucho**, como *Boktai* (sensor solar), *WarioWare: Twisted!* (giroscopio) o *Yoshi Topsy-Turvy* y *Koro Koro Puzzle* (inclinación). Ese hardware venía dentro del propio cartucho y la consola no lo tiene; el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M lo emulara.
 
 ## Errores conocidos

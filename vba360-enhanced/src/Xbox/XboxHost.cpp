@@ -31,6 +31,7 @@ extern int srcPitch, srcWidth, srcHeight;
 extern int cartridgeType;              // 0 = GBA, 1 = GB
 extern struct EmulatedSystem emulator;
 extern int cpuSaveType;
+extern bool mirroringEnable;          // gba/Globals.cpp
 extern bool useBios;
 extern char biosFileName[2048];
 extern int autoFrameSkip;
@@ -654,9 +655,14 @@ const SpecialCart kSpecialCarts[] = {
 
 static void applySpecialCart()
 {
+  mirroringEnable = false;
   if (!rom)
     return;
   char code[4] = { (char)rom[0xAC], (char)rom[0xAD], (char)rom[0xAE], 0 };
+  // Classic NES Series / Famicom Mini (game codes F***): they read the ROM
+  // through its mirrors to detect copies, so mirroring must be on.
+  if (code[0] == 'F')
+    mirroringEnable = true;
   for (size_t i = 0; i < sizeof(kSpecialCarts) / sizeof(kSpecialCarts[0]); i++) {
     if (strncmp(code, kSpecialCarts[i].code3, 3) != 0)
       continue;

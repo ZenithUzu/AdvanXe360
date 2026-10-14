@@ -84,6 +84,17 @@ When you open the ROM, the patch is applied automatically, in memory. Note: patc
 
 By default the area around the game is **black**. To use an image, put it in the `borders\` folder next to `default.xex` (you can keep several, with any name) and pick it in **Settings → Video → Screen background**. Formats: **PNG, JPG, BMP, TGA and DDS** (not WebP). 1280×720 is ideal, but **Background fit** can keep it **Centered** (whole image in the middle), **Fill** the screen or **Stretch** it. The game is drawn on top, so only the sides show. There is an example in [`extras/borders/border.png`](extras/borders/border.png).
 
+**Sizes for designing your own background** (a **1280×720** image, fit *Centered* or *Stretch*; for 1920×1080 multiply everything by 1.5). The game covers this rectangle:
+
+| Console | Picture size | Game rectangle (x, y, width × height) | Free space at the sides |
+|---|---|---|---|
+| GBA | Original | 100, 0, 1080 × 720 | 100 px on each side |
+| GBA | Integer | 160, 40, 960 × 640 | 160 px left/right, 40 px top/bottom |
+| GB | Original / Integer | 240, 0, 800 × 720 | 240 px on each side |
+| GBA and GB | Full screen | 80, 40, 1120 × 640 | 80 px left/right, 40 px top/bottom |
+
+If you use the same background for GBA and GB, keep the important artwork within the outer 100 px.
+
 ## Folders the emulator creates
 
 Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` and `bios\` (put `gba_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
@@ -91,6 +102,7 @@ Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 ## Limitations
 
 - **Game Boy Advance and Game Boy; not Game Boy Color.** Game Boy (`.gb`) games work. Cartridges made for both consoles ("black" `.gbc` carts) start in Game Boy mode with the chosen palette. Games made **only** for the Game Boy Color (such as Pokémon Crystal or Super Mario Bros. Deluxe) are not supported.
+- **Classic NES Series / Famicom Mini** (e.g. the GBA releases of NES *Super Mario Bros.* or *Zelda*) did not start. This version turns on the "ROM mirroring" they need; if they still fail, please report it.
 - **Games with sensors in the cartridge don't work**, such as *Boktai* (solar sensor), *WarioWare: Twisted!* (gyroscope) or *Yoshi Topsy-Turvy* and *Koro Koro Puzzle* (tilt). That hardware was built into the cartridge itself and the console doesn't have it; this port's core (a 2009 VBA-M snapshot) predates VBA-M's support for it.
 
 ## Known issues
