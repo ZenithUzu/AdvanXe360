@@ -67,6 +67,7 @@ struct ConfigReader
     else if (k == "last_dir") c.lastDir = v;
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
     else if (k == "stretch") c.stretch = clampInt(v, 0, 1, c.stretch);
+    else if (k == "border") c.border = clampInt(v, 0, 1, c.border);
     else if (k == "show_fps") c.showFps = clampInt(v, 0, 1, c.showFps);
     else if (k == "frame_skip") c.frameSkip = clampInt(v, 0, 4, c.frameSkip);
     else if (k == "sound") c.sound = clampInt(v, 0, 1, c.sound);
@@ -104,7 +105,7 @@ struct GameConfigReader
 
 UiConfig::UiConfig()
   : language(0), hideNonGames(1),
-    filter(FILTER_SMOOTH), stretch(0), showFps(0), frameSkip(0),
+    filter(FILTER_SMOOTH), stretch(0), border(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1),
     ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
@@ -147,7 +148,7 @@ bool UiConfig::save(const std::string &path) const
     return false;
   fprintf(f, "# VBA360 settings\n");
   fprintf(f, "language=%d\nhide_non_games=%d\nlast_dir=%s\n", language, hideNonGames, lastDir.c_str());
-  fprintf(f, "filter=%d\nstretch=%d\nshow_fps=%d\nframe_skip=%d\n", filter, stretch, showFps, frameSkip);
+  fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nshow_fps=%d\nframe_skip=%d\n", filter, stretch, border, showFps, frameSkip);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\n", sound, muteFastForward);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\n", ffSpeed, ffToggle, useBios, gsaV3);
   fprintf(f, "save_dir=%d\nstate_dir=%d\nauto_save_state=%d\nauto_load_state=%d\nstate_slot=%d\n",

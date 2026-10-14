@@ -102,6 +102,10 @@ struct private_yuvhwdata {
 
  
 
+/* Set by the emulator to draw a border image behind the game picture
+   (NULL = black bars). */
+void (*XBOX_BackgroundHook)(void) = NULL;
+
 int have_vertexbuffer=0;
 int have_direct3dtexture=0;
 
@@ -572,6 +576,13 @@ static int XBOX_RenderSurface(_THIS, SDL_Surface *surface)
 	D3DDevice_SetPixelShader(D3D_Device, g_pPixelShader);
 	D3DDevice_SetVertexDeclaration(D3D_Device, g_pGradientVertexDecl);
 
+	/* Paint the bars around the game picture every frame; otherwise they
+	   show whatever was there before (the menu, garbage). The emulator can
+	   draw a border image there instead (it restores this state after). */
+	if (XBOX_BackgroundHook)
+		XBOX_BackgroundHook();
+	else
+		IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0L);
     IDirect3DDevice9_DrawPrimitive(D3D_Device,  D3DPT_TRIANGLESTRIP, 0, 2 ); 
 	IDirect3DDevice9_Present(D3D_Device,NULL,NULL,NULL,NULL);
 
@@ -645,6 +656,13 @@ static void XBOX_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 	D3DDevice_SetPixelShader(D3D_Device, g_pPixelShader);
 	D3DDevice_SetVertexDeclaration(D3D_Device, g_pGradientVertexDecl);
 
+	/* Paint the bars around the game picture every frame; otherwise they
+	   show whatever was there before (the menu, garbage). The emulator can
+	   draw a border image there instead (it restores this state after). */
+	if (XBOX_BackgroundHook)
+		XBOX_BackgroundHook();
+	else
+		IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0L);
 	IDirect3DDevice9_DrawPrimitive(D3D_Device,  D3DPT_TRIANGLESTRIP, 0, 2 ); 
 	IDirect3DDevice9_Present(D3D_Device,NULL,NULL,NULL,NULL);
 

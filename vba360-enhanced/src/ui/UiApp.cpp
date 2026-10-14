@@ -13,7 +13,7 @@ enum
   Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
 
-  V_FILTER = 1, V_STRETCH, V_FPS, V_FRAMESKIP,
+  V_FILTER = 1, V_STRETCH, V_BORDER, V_FPS, V_FRAMESKIP,
   A_SOUND = 1, A_MUTE_FF,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
@@ -400,6 +400,19 @@ void UiApp::buildMenu(UiMenuScreen &m)
     const char *stretch[2] = { tr("Original (3:2)", "Original (3:2)"), tr("Pantalla completa", "Full screen") };
     m.add(V_STRETCH, ITEM_OPTION, tr("Tama\xf1o de imagen", "Picture size"), stretch[m_cfg.stretch],
           tr("Original mantiene la proporci\xf3n de la consola.", "Original keeps the console's proportions."));
+    {
+      // Border image: borders\border.png / .jpg / .bmp next to default.xex
+      bool found = false;
+      static const char *names[] = { "border.png", "border.jpg", "border.bmp" };
+      for (int i = 0; i < 3 && !found; i++)
+        found = m_host.fileExists(uiJoinPath(uiJoinPath(m_host.emulatorDir(), "borders"), names[i]));
+      std::string value = !m_cfg.border ? std::string(tr("Negro", "Black"))
+                        : found ? std::string(tr("Imagen", "Image"))
+                                : std::string(tr("Imagen (no encontrada)", "Image (not found)"));
+      m.add(V_BORDER, ITEM_OPTION, tr("Bordes de la pantalla", "Screen borders"), value,
+            tr("Imagen: pon border.png (1280x720) en la carpeta borders\\ del emulador.",
+               "Image: put border.png (1280x720) in the emulator's borders\\ folder."));
+    }
     m.add(V_FPS, ITEM_OPTION, tr("Mostrar FPS", "Show FPS"), yesNo[m_cfg.showFps]);
     const char *skip[5] = { tr("Autom\xe1tico", "Automatic"), "0", "1", "2", "3" };
     m.add(V_FRAMESKIP, ITEM_OPTION, tr("Salto de cuadros", "Frame skip"), skip[m_cfg.frameSkip],
@@ -724,6 +737,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
   case MENU_SETTINGS_VIDEO:
     if (id == V_FILTER) m_cfg.filter = wrapIndex(m_cfg.filter, delta, FILTER_COUNT);
     else if (id == V_STRETCH) m_cfg.stretch ^= 1;
+    else if (id == V_BORDER) m_cfg.border ^= 1;
     else if (id == V_FPS) m_cfg.showFps ^= 1;
     else if (id == V_FRAMESKIP) m_cfg.frameSkip = wrapIndex(m_cfg.frameSkip, delta, 5);
     break;

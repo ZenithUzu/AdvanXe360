@@ -43,7 +43,62 @@ bool compile(const char *src, const char *profile, ID3DXBuffer **code)
   return SUCCEEDED(hr);
 }
 
+IDirect3DTexture9 *g_border = 0;
+
+// Fills the screen behind the game picture: black, then the border image
+// (the game is drawn on top, so only the edges of the image show).
+// Called by libSDLx360 right before it draws each game frame.
+void drawGameBackground()
+{
+  pDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
+  if (g_border && g_vs) {
+    D3DVIEWPORT9 vp;
+    pDevice->GetViewport(&vp);
+    float sw = vp.Width ? (float)vp.Width : 1280.0f;
+    float sh = vp.Height ? (float)vp.Height : 720.0f;
+    UiVertex v[4] = {
+      { -0.5f,     -0.5f,     0, 1, 0, 0 },
+      { sw - 0.5f, -0.5f,     0, 1, 1, 0 },
+      { -0.5f,     sh - 0.5f, 0, 1, 0, 1 },
+      { sw - 0.5f, sh - 0.5f, 0, 1, 1, 1 }
+    };
+    pDevice->SetRenderState(D3DRS_VIEWPORTENABLE, FALSE);
+    pDevice->SetVertexDeclaration(g_decl);
+    pDevice->SetVertexShader(g_vs);
+    pDevice->SetPixelShader(g_ps);
+    pDevice->SetTexture(0, g_border);
+    pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+    pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+    pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(UiVertex));
+  }
+  // Give the game picture its texture, vertex buffer and filter back.
+  XBOX_RestoreVideoState();
+  xboxApplyGameSampler();
+}
+
 } // namespace
+
+extern "C" void (*XBOX_BackgroundHook)(void);
+
+bool xboxSetBorderImage(const char *path)
+{
+  XBOX_BackgroundHook = NULL;   // black bars (drawn by libSDLx360)
+  if (g_border) {
+    pDevice->SetTexture(0, NULL);
+    pDevice->BlockUntilIdle();
+    g_border->Release();
+    g_border = 0;
+  }
+  if (!path || !*path || !pDevice || (!g_vs && !xboxUiRendererInit()))
+    return false;
+  // D3DX reads PNG, JPG, BMP and DDS.
+  if (FAILED(D3DXCreateTextureFromFileA(pDevice, path, &g_border))) {
+    g_border = 0;
+    return false;
+  }
+  XBOX_BackgroundHook = drawGameBackground;
+  return true;
+}
 
 bool xboxUiRendererInit()
 {

@@ -67,6 +67,10 @@ Filter xboxSelectedFilter();
 
 // --- UI rendering ------------------------------------------------------------------
 bool xboxUiRendererInit();
+// Border image drawn around the game picture (NULL path = black bars).
+bool xboxSetBorderImage(const char *path);
+// Sets the texture filter the game picture uses (sharp / smooth).
+void xboxApplyGameSampler();
 void xboxUiPresent(const UiCanvas &canvas);
 
 // Implemented in sdl/SDL.cpp

@@ -44,6 +44,7 @@ struct UiConfig
   // Video
   int filter;            // UiFilter
   int stretch;           // 0 = keep 3:2, 1 = fill screen
+  int border;            // around the picture: 0 = black, 1 = borders\border.png
   int showFps;
   int frameSkip;         // 0 = auto, 1..4 = fixed 0..3
 

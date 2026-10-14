@@ -515,7 +515,7 @@ std::string xboxCheatListPath()
 
 void xboxCreateFolders()
 {
-  static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios" };
+  static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios", "borders" };
   for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++)
     ensureDir(uiJoinPath(xboxEmulatorDir(), dirs[i]));
 }
@@ -713,9 +713,37 @@ void xboxGetRightStick(int &x, int &y)
   y = g_rightY;
 }
 
+void xboxApplyGameSampler()
+{
+  applySampler();
+}
+
+// Border image: borders\border.png / .jpg / .bmp in the emulator folder.
+static std::string g_borderLoaded;
+
+std::string xboxBorderImagePath()
+{
+  static const char *names[] = { "border.png", "border.jpg", "border.bmp" };
+  for (int i = 0; i < 3; i++) {
+    std::string p = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "borders"), names[i]);
+    if (pathExists(p))
+      return p;
+  }
+  return "";
+}
+
+static void applyBorder()
+{
+  std::string wanted = g_cfg.border ? xboxBorderImagePath() : std::string();
+  if (wanted == g_borderLoaded)
+    return;
+  g_borderLoaded = xboxSetBorderImage(wanted.c_str()) ? wanted : std::string();
+}
+
 void xboxApplySettings()
 {
   applySoundFlags();
+  applyBorder();
   showSpeed = g_cfg.showFps ? 2 : 0;
   if (g_cfg.frameSkip == 0) {
     autoFrameSkip = 1;

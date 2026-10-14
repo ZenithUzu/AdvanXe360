@@ -28,7 +28,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 
 **Controles configurables:** cada botón del GBA, turbo A/B, avance rápido, menú, guardado y carga rápida. Puedes elegir de la lista o simplemente presionar el botón nuevo.
 
-**Ajustes:** filtro (nítido, suave, Scale2x, LQ2x), tamaño original o pantalla completa, FPS, salto de cuadros, sonido, BIOS original opcional, carpetas de partidas y estados, guardar estado al salir y continuar donde lo dejaste.
+**Ajustes:** filtro (nítido, suave, Scale2x, LQ2x), tamaño original o pantalla completa, bordes negros o con una imagen tuya, FPS, salto de cuadros, sonido, BIOS original opcional, carpetas de partidas y estados, guardar estado al salir y continuar donde lo dejaste.
 
 **Compatibilidad sin depender del ID del juego:**
 - El tipo de guardado (Flash 64/128 KB, SRAM, EEPROM) y el reloj RTC se detectan **leyendo la ROM**, no por el código del cartucho. Así funcionan los hacks aunque conserven el ID del juego original.
@@ -46,9 +46,13 @@ Pokemon Unbound.bps
 
 Al abrir la ROM, el parche se aplica solo, en memoria (tu archivo no cambia).
 
+### Imagen de borde
+
+En **Ajustes → Video → Bordes de la pantalla** puedes elegir **Negro** o **Imagen**. Para usar una imagen, ponla en la carpeta `borders\` junto a `default.xex` con el nombre `border.png` (también sirve `.jpg` o `.bmp`), de 1280×720. El juego se dibuja encima, así que solo se ven los lados. Hay un ejemplo en [`extras/borders/border.png`](extras/borders/border.png).
+
 ### Carpetas que crea el emulador
 
-Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
+Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
 
 ### Estado
 
@@ -66,7 +70,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **In-game menu** (right stick click, or BACK + START): 9 save-state slots with thumbnails, fast forward (2x–8x or maximum, hold or toggle), cheats, game options, settings, screenshots, restart and quit.
 - **Cheats:** GameShark, Action Replay, CodeBreaker and VBA codes for GBA; GameShark and Game Genie for GB/GBC. Type them with an on-screen keyboard or import a `.cht` / `.txt` list (RetroArch format too). Saved per game.
 - **Remappable controls**, including turbo, fast forward, menu and quick save/load.
-- **Settings:** filters (sharp, smooth, Scale2x, LQ2x), original or full-screen picture, FPS, frame skip, sound, optional real BIOS, save/state folders, save on exit and resume.
+- **Settings:** filters (sharp, smooth, Scale2x, LQ2x), original or full-screen picture, black or custom-image screen borders (`borders\border.png`, 1280×720), FPS, frame skip, sound, optional real BIOS, save/state folders, save on exit and resume.
 - **Compatibility that does not rely on the game ID:** save type and RTC are detected by reading the ROM; per-game options are keyed by file name; BPS/UPS/IPS patches are applied automatically for GBA and GB/GBC, up to 32 MB.
 
 ![Cheats](docs/screenshots/cheats.png)
