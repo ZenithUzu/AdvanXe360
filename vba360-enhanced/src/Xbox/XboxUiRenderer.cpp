@@ -29,6 +29,26 @@ const char *kVertexShader =
   "struct VS_OUT { float4 Pos : POSITION; float2 UV : TEXCOORD0; };\n"
   "VS_OUT main(VS_IN In) { VS_OUT o; o.Pos = In.Pos; o.UV = In.UV; return o; }\n";
 
+// Solid black, for the area around the game picture.
+const char *kBlackShader =
+  "float4 main(float2 uv : TEXCOORD0) : COLOR { return float4(0.0, 0.0, 0.0, 1.0); }\n";
+IDirect3DPixelShader9 *g_psBlack = 0;
+
+// Render states every full-screen quad needs, whatever ran before it (the
+// game's effect shader, the menu, D3DX).
+void setQuadStates()
+{
+  pDevice->SetRenderState(D3DRS_VIEWPORTENABLE, FALSE);
+  pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+  pDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+  pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+  pDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+  pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+  pDevice->SetRenderState(D3DRS_COLORWRITEENABLE, 0xF);   // red, green, blue, alpha
+  pDevice->SetVertexDeclaration(g_decl);
+  pDevice->SetVertexShader(g_vs);
+}
+
 const char *kPixelShader =
   "sampler tex : register(s0);\n"
   "float4 main(float2 uv : TEXCOORD0) : COLOR { return tex2D(tex, uv); }\n";
@@ -54,6 +74,19 @@ int g_borderFit = 0;                // UiBorderFit
 void drawGameBackground()
 {
   pDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
+  // Paint the whole screen black with a quad as well: a clear alone has
+  // let the previous screen (the menu, garbage) show around the picture.
+  if (g_vs && g_psBlack) {
+    UiVertex b[4] = {
+      { -0.5f,    -0.5f,   0, 1, 0, 0 },
+      { 1279.5f,  -0.5f,   0, 1, 1, 0 },
+      { -0.5f,    719.5f,  0, 1, 0, 1 },
+      { 1279.5f,  719.5f,  0, 1, 1, 1 }
+    };
+    setQuadStates();
+    pDevice->SetPixelShader(g_psBlack);
+    pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, b, sizeof(UiVertex));
+  }
   if (g_border && g_vs && g_borderW > 0 && g_borderH > 0) {
     const float sw = 1280.0f, sh = 720.0f;
     float w = sw, h = sh;
@@ -72,9 +105,7 @@ void drawGameBackground()
       { x0,     y0 + h, 0, 1, 0, 1 },
       { x0 + w, y0 + h, 0, 1, 1, 1 }
     };
-    pDevice->SetRenderState(D3DRS_VIEWPORTENABLE, FALSE);
-    pDevice->SetVertexDeclaration(g_decl);
-    pDevice->SetVertexShader(g_vs);
+    setQuadStates();
     pDevice->SetPixelShader(g_ps);
     pDevice->SetTexture(0, g_border);
     pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
@@ -140,6 +171,10 @@ bool xboxUiRendererInit()
     return false;
   pDevice->CreatePixelShader((const DWORD *)code->GetBufferPointer(), &g_ps);
   code->Release();
+  if (compile(kBlackShader, "ps_2_0", &code)) {
+    pDevice->CreatePixelShader((const DWORD *)code->GetBufferPointer(), &g_psBlack);
+    code->Release();
+  }
 
   static const D3DVERTEXELEMENT9 decl[] = {
     { 0, 0, D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
@@ -191,12 +226,8 @@ void xboxUiPresent(const UiCanvas &canvas)
     { -0.5f,      sh - 0.5f,  0, 1, 0, 1 },
     { sw - 0.5f,  sh - 0.5f,  0, 1, 1, 1 }
   };
-  pDevice->SetRenderState(D3DRS_VIEWPORTENABLE, FALSE);
-  pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-  pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-  pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-  pDevice->SetVertexDeclaration(g_decl);
-  pDevice->SetVertexShader(g_vs);
+  pDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
+  setQuadStates();
   pDevice->SetPixelShader(g_ps);
   pDevice->SetTexture(0, g_tex);
   pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
