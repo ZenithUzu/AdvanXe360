@@ -128,6 +128,11 @@ int inputGetSensorX();
 int inputGetSensorY();
 
 /**
+ * Rotation sensor (right stick left/right), about -180..180
+ */
+int inputGetSensorZ();
+
+/**
  * Set which joypad configuration use when the core doesn't ask for a specific
  * @param pad Default pad
  */

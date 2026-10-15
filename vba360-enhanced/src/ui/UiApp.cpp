@@ -11,12 +11,12 @@ namespace {
 // Item ids (unique within a menu)
 enum
 {
-  Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
+  Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_SUN, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
 
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   A_SOUND = 1, A_MUTE_FF,
-  E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
+  E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA, E_SUN,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR,
   C_RESET = 1, C_ACTION_BASE = 100,
@@ -495,6 +495,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(E_GSA, ITEM_OPTION, tr("C\xf3""digos de 16 d\xedgitos", "16-digit codes"), gsa[m_cfg.gsaV3],
           tr("Formato de los trucos XXXXXXXX YYYYYYYY que agregues.",
              "Format of the XXXXXXXX YYYYYYYY cheats you add."));
+    m.add(E_SUN, ITEM_OPTION, tr("Luz solar (Boktai)", "Sunlight (Boktai)"), intStr(m_cfg.sunLevel) + " / 10",
+          tr("Lo que mide el sensor solar de Boktai: 0 = oscuro, 10 = sol pleno.",
+             "What Boktai's solar sensor reads: 0 = dark, 10 = full sun."));
     break;
   }
 
@@ -542,8 +545,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.subtitle = "VBA360 enhanced-ai";
     m.addInfo(tr("Emulador de Game Boy Advance y Game Boy.",
                  "Game Boy Advance and Game Boy emulator."));
-    m.addInfo(tr("No emula Game Boy Color ni juegos de GBA que usan aditamentos o hardware especial.",
-                 "No Game Boy Color, nor GBA games that need add-ons or special hardware."));
+    m.addInfo(tr("No emula Game Boy Color, Classic NES Series ni accesorios como el e-Reader.",
+                 "No Game Boy Color, Classic NES Series or add-ons such as the e-Reader."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA. Licencia GPL.",
                  "Hobby project, made with the help of AI. GPL license."));
     m.addInfo(tr("Men\xfa en juego: clic del stick derecho (configurable en Controles).",
@@ -564,6 +567,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
           "VisualBoyAdvance (1999-2004).", "VisualBoyAdvance (1999-2004)." },
         { "N\xfa""cleo", "Core", "Equipo de VBA-M",
           "VisualBoyAdvance-M; tambi\xe9n c\xf3""digo de VBA-GX.", "VisualBoyAdvance-M; also code from VBA-GX." },
+        { "Sensores del cartucho", "Cartridge sensors", "Equipo de VBA-M",
+          "Sensor solar, giroscopio y vibraci\xf3n, de la VBA-M actual.",
+          "Solar sensor, gyroscope and rumble, from current VBA-M." },
         { "Sonido de Game Boy", "Game Boy sound", "Shay Green (blargg)",
           "Gb_Apu, Blip_Buffer y File_Extractor.", "Gb_Apu, Blip_Buffer and File_Extractor." },
         { "Efecto CRT", "CRT effect", "Greg Hogan (SoltanGris42)",
@@ -614,6 +620,16 @@ void UiApp::buildQuickMenu(UiMenuScreen &m)
   m.add(Q_FF, ITEM_OPTION, tr("Avance r\xe1pido", "Fast forward"),
         fastForward ? tr("Activado", "On") : tr("Desactivado", "Off"),
         std::string(tr("Tambi\xe9n con ", "Also with ")) + uiButtonName(*this, m_cfg.map[ACT_FAST_FORWARD]));
+  int hw = m_host.cartHardware();
+  if (hw & UI_HW_SOLAR)
+    m.add(Q_SUN, ITEM_OPTION, tr("Luz solar", "Sunlight"), intStr(m_cfg.sunLevel) + " / 10",
+          tr("Sensor solar del cartucho: 0 = oscuro, 10 = sol pleno.",
+             "The cartridge's solar sensor: 0 = dark, 10 = full sun."));
+  if (hw & UI_HW_GYRO)
+    m.addInfo(tr("Giro: stick derecho a la izquierda o a la derecha.",
+                 "Rotation: right stick left or right."));
+  else if (hw & UI_HW_TILT)
+    m.addInfo(tr("Inclinaci\xf3n: stick derecho.", "Tilt: right stick."));
 
   std::vector<UiCheatInfo> cheats;
   m_host.listCheats(cheats);
@@ -827,6 +843,8 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     settings = false;
     if (id == Q_SLOT)
       m_cfg.stateSlot = wrapIndex(m_cfg.stateSlot - 1, delta, kStateSlots) + 1;
+    else if (id == Q_SUN)
+      m_cfg.sunLevel = wrapIndex(m_cfg.sunLevel, delta, 11);
     else if (id == Q_FF)
       fastForward = !fastForward;
     break;
@@ -854,6 +872,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == E_FF_MODE) m_cfg.ffToggle ^= 1;
     else if (id == E_BIOS) m_cfg.useBios ^= 1;
     else if (id == E_GSA) m_cfg.gsaV3 ^= 1;
+    else if (id == E_SUN) m_cfg.sunLevel = wrapIndex(m_cfg.sunLevel, delta, 11);
     break;
   case MENU_SETTINGS_SAVES:
     if (id == S_SAVE_DIR) m_cfg.saveDirMode ^= 1;

@@ -59,6 +59,12 @@ extern void systemScreenMessage(const char *);
 extern void systemUpdateMotionSensor();
 extern int  systemGetSensorX();
 extern int  systemGetSensorY();
+// Rotation (WarioWare: Twisted!), about -180..180; 0 = still.
+extern int  systemGetSensorZ();
+// Boktai solar sensor: 0xE8 = darkness ... 0x50 = full sun.
+extern u8   systemGetSensorDarkness();
+// Cartridge rumble motor on/off.
+extern void systemCartridgeRumble(bool on);
 extern bool systemCanChangeSoundQuality();
 extern void systemShowSpeed(int);
 extern void system10Frames(int);

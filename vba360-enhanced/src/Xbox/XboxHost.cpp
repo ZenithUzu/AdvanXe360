@@ -76,6 +76,8 @@ namespace {
 std::string g_rom;            // full path of the running game
 UiGameConfig g_gameCfg;
 bool g_isGba = true;
+int g_cartHw = 0;              // UI_HW_* of the running GBA cartridge
+bool g_rumbleOn = false;
 unsigned int g_prevPads = 0;
 bool g_waitRelease = false;   // ignore the pad until everything is released
 bool g_ffHeld = false;
@@ -333,6 +335,11 @@ public:
     return false;
   }
 
+  virtual int cartHardware()
+  {
+    return g_rom.empty() || !g_isGba ? 0 : g_cartHw;
+  }
+
   virtual bool romPatched()
   {
     return xboxRomPatched && !g_rom.empty();
@@ -493,6 +500,7 @@ void runInGameMenu()
   if (!g_ui || !g_menuCanvas)
     return;
   soundPause();
+  xboxCartridgeRumble(false);
   // Write the save now too, so quitting from the dashboard loses nothing.
   sdlWriteBattery();
   g_ui->openInGameMenu();
@@ -645,20 +653,27 @@ struct SpecialCart
   const char *code3;
   int saveType;   // -1 = keep detected, 4 = EEPROM + tilt sensor
   int rtc;        // -1 = keep detected, 1 = force the clock on
+  int hw;         // UI_HW_* extra hardware on the cartridge
 };
 
 const SpecialCart kSpecialCarts[] = {
-  { "U3I", -1, 1 },   // Boktai: The Sun Is in Your Hand
-  { "U32", -1, 1 },   // Boktai 2: Solar Boy Django
-  { "U33", -1, 1 },   // Shin Bokura no Taiyou
-  { "BR4", -1, 1 },   // Rockman EXE 4.5 Real Operation
-  { "BKA", -1, 1 },   // Sennen Kazoku
-  { "KYG",  4, -1 },  // Yoshi Topsy-Turvy (tilt)
-  { "KHP",  4, -1 },  // Koro Koro Puzzle Happy Panechu! (tilt)
+  { "U3I", -1,  1, UI_HW_SOLAR },                // Boktai: The Sun Is in Your Hand
+  { "U32", -1,  1, UI_HW_SOLAR },                // Boktai 2: Solar Boy Django
+  { "U33", -1,  1, UI_HW_SOLAR },                // Shin Bokura no Taiyou
+  { "RZW", -1, -1, UI_HW_GYRO | UI_HW_RUMBLE },  // WarioWare: Twisted!
+  { "V49", -1, -1, UI_HW_RUMBLE },               // Drill Dozer
+  { "BR4", -1,  1, 0 },                          // Rockman EXE 4.5 Real Operation
+  { "BKA", -1,  1, 0 },                          // Sennen Kazoku
+  { "KYG",  4, -1, UI_HW_TILT },                 // Yoshi Topsy-Turvy (tilt)
+  { "KHP",  4, -1, UI_HW_TILT },                 // Koro Koro Puzzle Happy Panechu! (tilt)
 };
 
 static void applySpecialCart()
 {
+  g_cartHw = 0;
+  rtcEnableSolar(false);
+  rtcEnableGyro(false);
+  rtcEnableRumble(false);
   if (!rom)
     return;
   char code[4] = { (char)rom[0xAC], (char)rom[0xAD], (char)rom[0xAE], 0 };
@@ -669,8 +684,37 @@ static void applySpecialCart()
       cpuSaveType = kSpecialCarts[i].saveType;
     if (kSpecialCarts[i].rtc == 1)
       rtcEnable(true);
+    g_cartHw = kSpecialCarts[i].hw;
+    rtcEnableSolar((g_cartHw & UI_HW_SOLAR) != 0);
+    rtcEnableGyro((g_cartHw & UI_HW_GYRO) != 0);
+    rtcEnableRumble((g_cartHw & UI_HW_RUMBLE) != 0);
     return;
   }
+}
+
+// Boktai solar sensor: light level from the settings (0..10), as the
+// darkness value the cartridge compares against (same steps as VBA-M).
+u8 xboxSunDarkness()
+{
+  static const u8 kDarkness[11] = {
+    0xE8, 0xE0, 0xDA, 0xD0, 0xC8, 0xC0, 0xB0, 0xA0, 0x88, 0x70, 0x50 };
+  int level = g_cfg.sunLevel;
+  if (level < 0) level = 0;
+  if (level > 10) level = 10;
+  return kDarkness[level];
+}
+
+// Cartridge rumble motor -> controller vibration (every connected pad).
+void xboxCartridgeRumble(bool on)
+{
+  if (on == g_rumbleOn)
+    return;
+  g_rumbleOn = on;
+  XINPUT_VIBRATION v;
+  v.wLeftMotorSpeed = on ? 40000 : 0;
+  v.wRightMotorSpeed = on ? 40000 : 0;
+  for (DWORD i = 0; i < XUSER_MAX_COUNT; i++)
+    XInputSetState(i, &v);
 }
 
 void xboxApplyGameOverrides(bool isGba)
@@ -721,6 +765,7 @@ void xboxOnGameStarted()
 
 void xboxOnGameExiting()
 {
+  xboxCartridgeRumble(false);
   saveCheats();
   saveFrameThumb(uiGameFile(xboxEmulatorDir(), "thumbs", g_rom, "", ".tmb"));
   if (g_cfg.autoSaveState)

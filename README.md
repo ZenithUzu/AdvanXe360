@@ -116,6 +116,19 @@ En **Ajustes → Video**:
   - Los dos se tradujeron de GLSL (RetroArch) a HLSL para la Xbox 360 y funcionan en GBA y GB. Se ven mejor con **Tamaño de imagen → Entera**.
 - **Colores (Game Boy):** 40 paletas para los juegos de Game Boy. Las de Game Boy original (DMG), Pocket, Light y las **32 de Super Game Boy** (1-A a 4-H) se tomaron del core Gambatte de RetroArch: [libretro/gambatte-libretro → `libgambatte/libretro/gbcpalettes.h`](https://github.com/libretro/gambatte-libretro/blob/master/libgambatte/libretro/gbcpalettes.h) (Sindre Aamås, GPL v2). Además: Gris (original), Verde clásico y los extras Sepia, Azul y Rojo.
 
+## Juegos con sensores
+
+Algunos cartuchos de GBA traían hardware extra. El emulador lo reconoce solo, por el código del juego, y lo imita con el control:
+
+| Juego | Hardware del cartucho | Cómo se usa en la Xbox |
+|---|---|---|
+| *Boktai 1 y 2*, *Shin Bokura no Taiyou* | Sensor de luz solar + reloj | El nivel de sol se elige en el **menú del juego → Luz solar** (0 a 10) o en *Ajustes → Emulación → Luz solar (Boktai)* |
+| *WarioWare: Twisted!* | Giroscopio + vibración | Girar = **stick derecho** a la izquierda o a la derecha; la vibración pasa al control |
+| *Drill Dozer* | Vibración | La vibración pasa al control |
+| *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Sensor de inclinación | Inclinar = **stick derecho** |
+
+El sensor solar, el giroscopio y la vibración se adaptaron de la VisualBoyAdvance-M actual ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+), incluidos los niveles de sol de su versión de escritorio.
+
 ## Carpetas que crea el emulador
 
 Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` y `bios\` (pon ahí `gba_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
@@ -123,8 +136,7 @@ Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`
 ## Limitaciones
 
 - **Game Boy Advance y Game Boy; no Game Boy Color.** Los juegos de Game Boy (`.gb`) funcionan. Los cartuchos compatibles con ambas consolas (`.gbc` "negros") arrancan en modo Game Boy, con la paleta elegida. Los juegos **solo** para Game Boy Color (como Pokémon Cristal o Super Mario Bros. Deluxe) no son compatibles.
-- **Parte de los juegos de GBA que requieren aditamentos o hardware especial no funcionan:**
-  - Cartuchos con **sensores**: *Boktai* (sensor solar), *WarioWare: Twisted!* (giroscopio), *Yoshi Topsy-Turvy* y *Koro Koro Puzzle* (inclinación). Ese hardware venía dentro del propio cartucho y la consola no lo tiene; el núcleo de este port (VBA-M de 2009) es anterior a que VBA-M lo emulara.
+- **Parte de los juegos de GBA que requieren aditamentos no funcionan:**
   - **Classic NES Series / Famicom Mini** (los juegos de NES para GBA, como *Super Mario Bros.*): usan protecciones especiales y no arrancan.
   - Accesorios como el **e-Reader** o el cable link tampoco se emulan.
 
@@ -148,6 +160,7 @@ Probado en consola (BadUpdate + Aurora). Proyecto en desarrollo: si encuentras e
 - **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
 - **Efectos de pantalla:** adaptados de [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* de Greg Hogan (GPL v2+) para CRT y *lcd3x* de Gigaherz (dominio público) para LCD.
 - **Paletas de Game Boy:** tomadas del core [Gambatte de libretro](https://github.com/libretro/gambatte-libretro) (Sindre Aamås, GPL v2): Game Boy original, Pocket, Light y las 32 de Super Game Boy.
+- **Sensores del cartucho** (sol, giroscopio, vibración): adaptados de la [VisualBoyAdvance-M actual](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
 - **Sonido de Game Boy y lectura de archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de Shay Green (blargg).
 
 La lista completa de créditos y librerías está en el [README original](#original-readme-vba360-enhanced).

@@ -80,6 +80,7 @@ struct ConfigReader
     else if (k == "ff_toggle") c.ffToggle = clampInt(v, 0, 1, c.ffToggle);
     else if (k == "use_bios") c.useBios = clampInt(v, 0, 1, c.useBios);
     else if (k == "gsa_v3") c.gsaV3 = clampInt(v, 0, 1, c.gsaV3);
+    else if (k == "sun_level") c.sunLevel = clampInt(v, 0, 10, c.sunLevel);
     else if (k == "save_dir") c.saveDirMode = clampInt(v, 0, 1, c.saveDirMode);
     else if (k == "state_dir") c.stateDirMode = clampInt(v, 0, 1, c.stateDirMode);
     else if (k == "auto_save_state") c.autoSaveState = clampInt(v, 0, 1, c.autoSaveState);
@@ -112,7 +113,7 @@ UiConfig::UiConfig()
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), border(0), borderFit(FIT_CENTER),
     screenEffect(EFFECT_NONE), gbPalette(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1),
-    ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0),
+    ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0), sunLevel(7),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
     autoSaveState(0), autoLoadState(0), stateSlot(1)
 {
@@ -162,7 +163,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nshow_fps=%d\nframe_skip=%d\n",
           screenEffect, gbPalette, showFps, frameSkip);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\n", sound, muteFastForward);
-  fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\n", ffSpeed, ffToggle, useBios, gsaV3);
+  fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);
   fprintf(f, "save_dir=%d\nstate_dir=%d\nauto_save_state=%d\nauto_load_state=%d\nstate_slot=%d\n",
           saveDirMode, stateDirMode, autoSaveState, autoLoadState, stateSlot);
   for (int i = 0; i < ACT_COUNT; i++)

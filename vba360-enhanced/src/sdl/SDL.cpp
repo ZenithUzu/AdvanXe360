@@ -2233,6 +2233,21 @@ int systemGetSensorY()
   return inputGetSensorY();
 }
 
+int systemGetSensorZ()
+{
+  return inputGetSensorZ();
+}
+
+u8 systemGetSensorDarkness()
+{
+  return xboxSunDarkness();
+}
+
+void systemCartridgeRumble(bool on)
+{
+  xboxCartridgeRumble(on);
+}
+
 SoundDriver * systemSoundInit()
 {
 	soundShutdown();

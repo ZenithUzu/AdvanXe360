@@ -16,16 +16,20 @@ enum RTCSTATE { IDLE, COMMAND, DATA, READDATA };
 extern GameStorage xStorage;
 #endif
 
+// Cartridge GPIO port (0x80000C4 data, 0x80000C6 direction, 0x80000C8
+// enable): real-time clock, Boktai's solar sensor, WarioWare: Twisted!'s
+// gyroscope and rumble. The sensor and rumble handling is adapted from
+// current VisualBoyAdvance-M (src/core/gba/gbaRtc.cpp, GPL v2+).
 typedef struct {
   u8 byte0;
-  u8 byte1;
-  u8 byte2;
+  u8 select;    // pin direction: 0 = read, 1 = write (for each of 4 bits)
+  u8 enable;    // bit 0 = the game can read the port
   u8 command;
   int dataLen;
   int bits;
   RTCSTATE state;
   u8 data[12];
-  // reserved variables for future
+  // reserved[10] = last solar sensor clock, reserved[11] = sensor counter
   u8 reserved[12];
   bool reserved2;
   u32 reserved3;
@@ -33,6 +37,9 @@ typedef struct {
 
 static RTCCLOCKDATA rtcClockData;
 static bool rtcEnabled = false;
+static bool rtcSolarEnabled = false;
+static bool rtcGyroEnabled = false;
+static bool rtcRumbleEnabled = false;
 
 void rtcEnable(bool e)
 {
@@ -44,19 +51,54 @@ bool rtcIsEnabled()
   return rtcEnabled;
 }
 
+void rtcEnableSolar(bool e)
+{
+  rtcSolarEnabled = e;
+}
+
+void rtcEnableGyro(bool e)
+{
+  rtcGyroEnabled = e;
+}
+
+void rtcEnableRumble(bool e)
+{
+  rtcRumbleEnabled = e;
+}
+
+// Does this cartridge have anything on its GPIO port?
+static bool rtcHasGpio()
+{
+  return rtcEnabled || rtcSolarEnabled || rtcGyroEnabled || rtcRumbleEnabled;
+}
+
 u16 rtcRead(u32 address)
 {
-  if(rtcEnabled) {
+  if(rtcHasGpio()) {
+    u16 res = 0;
     switch(address){
     case 0x80000c8:
-      return rtcClockData.byte2;
-      break;
+      return rtcClockData.enable;
     case 0x80000c6:
-      return rtcClockData.byte1;
-      break;
+      return rtcClockData.select;
     case 0x80000c4:
-      return rtcClockData.byte0;
-      break;
+      if(!(rtcClockData.enable & 1))
+        return 0;
+      // Boktai solar sensor: the bit goes high once the counter the game
+      // clocks reaches the light level (lower darkness = more sun).
+      if(rtcSolarEnabled && rtcClockData.select == 0x07) {
+        if(rtcClockData.reserved[11] >= systemGetSensorDarkness())
+          res |= 8;
+      }
+      // WarioWare: Twisted! rotation sensor, read one bit at a time.
+      if(rtcGyroEnabled && rtcClockData.select == 0x0b) {
+        u16 v = (u16)(0x6C0 + systemGetSensorZ());
+        res |= ((v >> rtcClockData.reserved[11]) & 1) << 2;
+      }
+      // Real-time clock
+      if(rtcEnabled && (rtcClockData.select & 0x04))
+        res |= rtcClockData.byte0;
+      return res;
     }
   }
 
@@ -73,15 +115,45 @@ static u8 toBCD(u8 value)
 
 bool rtcWrite(u32 address, u16 value)
 {
-  if(!rtcEnabled)
+  if(!rtcHasGpio())
     return false;
 
   if(address == 0x80000c8) {
-    rtcClockData.byte2 = (u8)value; // enable ?
+    rtcClockData.enable = (u8)value;
   } else if(address == 0x80000c6) {
-    rtcClockData.byte1 = (u8)value; // read/write
+    rtcClockData.select = (u8)value;
+    // rumble stops when the game stops driving that pin
+    if(rtcRumbleEnabled && !(value & 8))
+      systemCartridgeRumble(false);
   } else if(address == 0x80000c4) {
-    if(rtcClockData.byte2 & 1) {
+    // WarioWare: Twisted! / Drill Dozer rumble
+    if(rtcRumbleEnabled && (rtcClockData.select & 0x08))
+      systemCartridgeRumble((value & 8) != 0);
+
+    // Boktai solar sensor
+    if(rtcSolarEnabled && rtcClockData.select == 0x07) {
+      if(value & 2)
+        rtcClockData.reserved[11] = 0;   // reset the counter
+      if((value & 1) && !(rtcClockData.reserved[10] & 1)) {
+        // clock: count up, ready for another read
+        if(rtcClockData.reserved[11] < 255)
+          rtcClockData.reserved[11]++;
+        else
+          rtcClockData.reserved[11] = 0;
+      }
+      rtcClockData.reserved[10] = (u8)(value & rtcClockData.select);
+    }
+
+    // WarioWare: Twisted! rotation sensor
+    if(rtcGyroEnabled && rtcClockData.select == 0x0b) {
+      if(value & 2)
+        rtcClockData.reserved[11]--;     // clock high: next bit
+      if(value & 1)
+        rtcClockData.reserved[11] = 15;  // start a conversion
+      rtcClockData.byte0 = (u8)(value & rtcClockData.select);
+    }
+
+    if(rtcEnabled && (rtcClockData.select & 4)) {
       if(rtcClockData.state == IDLE && rtcClockData.byte0 == 1 && value == 5) {
           rtcClockData.state = COMMAND;
           rtcClockData.bits = 0;
@@ -155,8 +227,8 @@ bool rtcWrite(u32 address, u16 value)
           }
           break;
         case DATA:
-          if(rtcClockData.byte1 & 2) {
-          } else {
+          if(rtcClockData.select & 2) {
+          } else if(rtcClockData.select & 4) {
             rtcClockData.byte0 = (rtcClockData.byte0 & ~2) |
               ((rtcClockData.data[rtcClockData.bits >> 3] >>
                 (rtcClockData.bits & 7)) & 1)*2;
@@ -168,7 +240,7 @@ bool rtcWrite(u32 address, u16 value)
           }
           break;
         case READDATA:
-          if(!(rtcClockData.byte1 & 2)) {
+          if(!(rtcClockData.select & 2)) {
           } else {
             rtcClockData.data[rtcClockData.bits >> 3] =
               (rtcClockData.data[rtcClockData.bits >> 3] >> 1) |
@@ -195,8 +267,8 @@ void rtcReset()
   XMemSet(&rtcClockData, 0, sizeof(rtcClockData));
 
   rtcClockData.byte0 = 0;
-  rtcClockData.byte1 = 0;
-  rtcClockData.byte2 = 0;
+  rtcClockData.select = 0;
+  rtcClockData.enable = 0;
   rtcClockData.command = 0;
   rtcClockData.dataLen = 0;
   rtcClockData.bits = 0;

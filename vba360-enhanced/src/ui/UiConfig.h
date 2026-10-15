@@ -74,6 +74,7 @@ struct UiConfig
   int ffToggle;          // 0 = hold, 1 = toggle
   int useBios;
   int gsaV3;             // treat 16-digit codes as GameShark v3 / Action Replay
+  int sunLevel;          // Boktai solar sensor: 0 = dark ... 10 = full sun
 
   // Saves
   int saveDirMode;       // UiDirMode for battery saves (.sav)

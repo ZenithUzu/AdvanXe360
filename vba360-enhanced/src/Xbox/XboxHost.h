@@ -60,6 +60,10 @@ unsigned int xboxReadPads(bool includeSticks);
 
 // Right stick (raw XInput values), used for the tilt sensor in a few games.
 void xboxGetRightStick(int &x, int &y);
+// Boktai solar sensor darkness for the sunlight setting (0xE8 dark .. 0x50 sun).
+u8 xboxSunDarkness();
+// Cartridge rumble -> controller vibration.
+void xboxCartridgeRumble(bool on);
 
 // --- UI ----------------------------------------------------------------------------
 class UiHost;

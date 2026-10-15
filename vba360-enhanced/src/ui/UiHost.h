@@ -16,6 +16,9 @@ struct UiDirEntry
   unsigned int size;  // bytes, files only
 };
 
+// Extra hardware a cartridge has (UiHost::cartHardware).
+enum { UI_HW_SOLAR = 1, UI_HW_GYRO = 2, UI_HW_RUMBLE = 4, UI_HW_TILT = 8 };
+
 struct UiCheatInfo
 {
   std::string desc;
@@ -47,6 +50,8 @@ public:
   virtual void resetGame() = 0;
   // Last emulated frame, 32-bit 0x00RRGGBB; returns 0 if none.
   virtual const UiColor *gameFrame(int &w, int &h, int &pitch) = 0;
+  // Extra cartridge hardware of the running game (UI_HW_* bits).
+  virtual int cartHardware() { return 0; }
   // True when a .bps/.ups/.ips patch was applied to the running game.
   virtual bool romPatched() { return false; }
   // Writes the patched ROM next to the original, e.g. "Game (patched).gba".

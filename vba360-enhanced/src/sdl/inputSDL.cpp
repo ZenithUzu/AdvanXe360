@@ -19,6 +19,7 @@ static EPad sdlDefaultJoypad = PAD_MAIN;
 int autoFireMaxCount = 1;
 static int sensorX = 2047;
 static int sensorY = 2047;
+static int sensorZ = 0;
 
 void inputInitJoysticks() {}
 void inputSetKeymap(EPad, EKey, uint32_t) {}
@@ -45,7 +46,13 @@ void inputUpdateMotionSensor()
   // Ease towards the target so movement is smooth.
   sensorX += (tx - sensorX) / 4;
   sensorY += (ty - sensorY) / 4;
+  // Rotation (WarioWare: Twisted!): right stick left/right, about -180..180
+  // like VBA-M's gyro (its +-1800 range divided by 10).
+  int tz = (x > dz || x < -dz) ? x * 180 / 32767 : 0;
+  sensorZ += (tz - sensorZ) / 2;
 }
+
+int inputGetSensorZ() { return sensorZ; }
 
 int inputGetSensorX() { return sensorX; }
 int inputGetSensorY() { return sensorY; }

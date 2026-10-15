@@ -7,6 +7,10 @@ u16 rtcRead(u32 address);
 bool rtcWrite(u32 address, u16 value);
 void rtcEnable(bool);
 bool rtcIsEnabled();
+// Extra hardware on the cartridge GPIO port (set per game by the frontend).
+void rtcEnableSolar(bool);    // Boktai solar sensor
+void rtcEnableGyro(bool);     // WarioWare: Twisted! rotation sensor
+void rtcEnableRumble(bool);   // WarioWare: Twisted!, Drill Dozer
 void rtcReset();
 
 void rtcReadGame(gzFile gzFile);

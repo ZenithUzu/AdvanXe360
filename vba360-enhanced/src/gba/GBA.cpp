@@ -3759,8 +3759,9 @@ void CPULoop(int ticks)
                 // read default joystick
                 joy = systemReadJoypad(-1);
               P1 = 0x03FF ^ (joy & 0x3FF);
-              if(cpuEEPROMSensorEnabled)
-                systemUpdateMotionSensor();
+              // tilt (EEPROM sensor carts) and rotation (GPIO gyro) both
+              // come from the right stick: read it every frame
+              systemUpdateMotionSensor();
               UPDATE_REG(0x130, P1);
               u16 P1CNT = READ16LE(((u16 *)&ioMem[0x132]));
               // this seems wrong, but there are cases where the game
