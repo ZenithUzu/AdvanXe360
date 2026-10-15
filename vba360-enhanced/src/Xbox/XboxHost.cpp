@@ -702,13 +702,13 @@ static void applySpecialCart()
 }
 
 // Boktai solar sensor: light level (0..10) as the darkness value the
-// cartridge compares against. VBA-M stops at 0x50, which Boktai shows as
-// only 6 of its 8 bars; this scale keeps going down to a very bright 0x18
-// so 10 fills the gauge.
+// cartridge compares against (lower = more sun). Measured on the console:
+// 0x50 shows 6 of Boktai's 8 bars and 0x18 shows 7, so the scale now ends
+// at 0x00 (the sensor's maximum) for a full gauge at 10, with 0x50 at 6.
 u8 xboxSunDarkness()
 {
   static const u8 kDarkness[11] = {
-    0xE8, 0xD8, 0xC8, 0xB4, 0xA0, 0x8C, 0x78, 0x64, 0x50, 0x34, 0x18 };
+    0xE8, 0xC8, 0xA8, 0x90, 0x78, 0x64, 0x50, 0x38, 0x24, 0x10, 0x00 };
   int level = g_cfg.sunLevel;
   if (level < 0) level = 0;
   if (level > 10) level = 10;
