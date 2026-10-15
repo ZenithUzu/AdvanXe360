@@ -260,8 +260,7 @@ void UiHomeScreen::buildRows(UiApp &app)
       { MENU_SETTINGS_AUDIO, "Audio", "Audio", "Sonido y avance r\xe1pido", "Sound and fast forward" },
       { MENU_SETTINGS_EMU, "Emulaci\xf3n", "Emulation", "Velocidad, BIOS y trucos", "Speed, BIOS and cheats" },
       { MENU_SETTINGS_SAVES, "Guardado", "Saving", "Carpetas y guardado autom\xe1tico", "Folders and auto save" },
-      { MENU_CONTROLS, "Controles", "Controls", "Configura cada bot\xf3n", "Configure every button" },
-      { MENU_SENSORS, "Sensores", "Sensors", "Stick derecho: inclinaci\xf3n, giro y luz solar", "Right stick: tilt, rotation and sunlight" },
+      { MENU_CONTROLS, "Controles", "Controls", "Botones y sensores (stick derecho)", "Buttons and sensors (right stick)" },
       { MENU_CLOCK, "Reloj de los juegos", "Game clock", "Hora de la consola o personalizada", "Console time or a custom one" },
       { MENU_SETTINGS_UI, "Interfaz e idioma", "Interface & language", "Idioma y lista de juegos", "Language and game list" },
       { MENU_ABOUT, "Acerca de", "About", "Versi\xf3n y cr\xe9""ditos", "Version and credits" },
@@ -663,7 +662,8 @@ void UiMenuScreen::update(UiApp &app, const UiInputState &in)
   if (in.pressed & PAD_BIT(PAD_A)) {
     if (!it.enabled)
       return;
-    if (it.kind == ITEM_OPTION)
+    // In Controls, A captures the new button / stick direction instead.
+    if (it.kind == ITEM_OPTION && menuId != MENU_CONTROLS)
       app.onMenuChange(*this, id, 1);
     else
       app.onMenuActivate(*this, id);

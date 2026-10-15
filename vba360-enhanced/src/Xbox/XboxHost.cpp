@@ -335,6 +335,12 @@ public:
     return false;
   }
 
+  virtual void rightStick(int &x, int &y)
+  {
+    x = g_rightX;
+    y = g_rightY;
+  }
+
   virtual int cartHardware()
   {
     return g_rom.empty() || !g_isGba ? 0 : g_cartHw;
@@ -713,9 +719,14 @@ void xboxMotionTargets(int &tiltX, int &tiltY, int &gyro)
 {
   const int dz = uiSensorDeadzone[g_cfg.sensorDeadzone];
   const int pct = uiSensorSensPercent[g_cfg.sensorSens];
-  int vx = uiAxisValue(g_cfg.tiltXAxis, g_rightX, g_rightY);
-  int vy = uiAxisValue(g_cfg.tiltYAxis, g_rightX, g_rightY);
-  int vz = uiAxisValue(g_cfg.gyroAxis, g_rightX, g_rightY);
+  // Only for the games that have these sensors, so the right stick never
+  // interferes with anything else.
+  const bool tilt = g_isGba && (g_cartHw & UI_HW_TILT);
+  const bool rot = g_isGba && (g_cartHw & UI_HW_GYRO);
+  int vx = tilt ? uiAxisValue(g_cfg.tiltXAxis, g_rightX, g_rightY) : 0;
+  int vy = tilt ? uiAxisValue(g_cfg.tiltYAxis, g_rightX, g_rightY) : 0;
+  // Rotation follows the left/right mapping.
+  int vz = rot ? uiAxisValue(g_cfg.tiltXAxis, g_rightX, g_rightY) : 0;
   if (vx > -dz && vx < dz) vx = 0;
   if (vy > -dz && vy < dz) vy = 0;
   if (vz > -dz && vz < dz) vz = 0;

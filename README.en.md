@@ -127,7 +127,15 @@ Some GBA cartridges carried extra hardware. The emulator recognizes them by thei
 | *Drill Dozer* | Rumble | Rumble goes to the controller |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Tilt sensor | Tilt = **right stick** |
 
-**Settings → Sensors (right stick)** lets you change everything: which stick axis each sensor uses (horizontal or vertical, normal or inverted, or none), the **sensitivity** (50% to 200%) and the **dead zone**.
+In **Settings → Controls**, below the buttons, there is a **Sensors (right stick)** section:
+
+- **Left / right:** tilt (Yoshi, Koro Koro) and rotate (WarioWare: Twisted!).
+- **Up / down:** tilt forward or back.
+- **Sunlight:** which way of the stick raises the sun in Boktai.
+- To map one, select it, press **A** and push the right stick the way you want (the opposite way = inverted). You can also pick from the list with left/right, or leave it unassigned with **X**.
+- **Sensitivity** (50% to 200%) and **dead zone**.
+
+Sensors **only work in the games that use them**, so the right stick never interferes with anything else.
 
 The solar sensor, gyroscope and rumble were adapted from current VisualBoyAdvance-M ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+). The sun scale was extended beyond VBA-M's (whose maximum only showed 6 of Boktai's 8 bars).
 

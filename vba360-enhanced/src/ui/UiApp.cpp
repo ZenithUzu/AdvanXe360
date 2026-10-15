@@ -18,7 +18,7 @@ enum
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   A_SOUND = 1, A_MUTE_FF,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
-  SN_TILT_X = 1, SN_TILT_Y, SN_GYRO, SN_SUN, SN_SENS, SN_DEADZONE, SN_RESET,
+  SN_TILT_X = 50, SN_TILT_Y, SN_SUN, SN_SENS, SN_DEADZONE, SN_RESET,   // in Controls
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR,
@@ -90,7 +90,8 @@ int borderChoice(const UiConfig &cfg, const std::vector<std::string> &images)
 UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
-    m_request(UI_REQ_NONE), m_toastFrames(0), m_hintsAllowed(true)
+    m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_hintsAllowed(true)
 {
 }
 
@@ -248,7 +249,46 @@ void UiApp::update(unsigned int held)
 
   if (m_toastFrames > 0)
     m_toastFrames--;
+  updateStickCapture();
   m_frame++;
+}
+
+void UiApp::startStickCapture(int id)
+{
+  m_stickCapture = id;
+  m_stickCaptureFrames = 0;
+  toast(tr("Mueve el stick derecho hacia donde quieras... (5 s)", "Move the right stick the way you want... (5 s)"), 300);
+}
+
+// Maps the sensor being captured to the axis and direction the right stick
+// was pushed: right / up = normal, left / down = inverted.
+void UiApp::updateStickCapture()
+{
+  if (!m_stickCapture)
+    return;
+  int x = 0, y = 0;
+  m_host.rightStick(x, y);
+  int ax = x < 0 ? -x : x, ay = y < 0 ? -y : y;
+  int axis = AXIS_NONE;
+  if (ax > 20000 && ax >= ay)
+    axis = x > 0 ? AXIS_RS_X : AXIS_RS_X_INV;
+  else if (ay > 20000)
+    axis = y > 0 ? AXIS_RS_Y : AXIS_RS_Y_INV;
+  if (axis == AXIS_NONE) {
+    if (++m_stickCaptureFrames > 300) {
+      m_stickCapture = 0;
+      toast(tr("No se movi\xf3 el stick; sin cambios", "The stick didn't move; nothing changed"));
+    }
+    return;
+  }
+  if (m_stickCapture == SN_TILT_X) m_cfg.tiltXAxis = axis;
+  else if (m_stickCapture == SN_TILT_Y) m_cfg.tiltYAxis = axis;
+  else if (m_stickCapture == SN_SUN) m_cfg.sunAxis = axis;
+  m_stickCapture = 0;
+  saveAll();
+  rebuildMenus();
+  m_host.applySettings();
+  toast(tr("Sensor asignado", "Sensor mapped"));
 }
 
 void UiApp::draw(UiCanvas &c)
@@ -424,39 +464,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_SETTINGS_EMU, ITEM_SUBMENU, tr("Emulaci\xf3n", "Emulation"));
     m.add(MENU_SETTINGS_SAVES, ITEM_SUBMENU, tr("Guardado", "Saving"));
     m.add(MENU_CONTROLS, ITEM_SUBMENU, tr("Controles", "Controls"));
-    m.add(MENU_SENSORS, ITEM_SUBMENU, tr("Sensores (stick derecho)", "Sensors (right stick)"));
     m.add(MENU_CLOCK, ITEM_SUBMENU, tr("Reloj de los juegos", "Game clock"));
     m.add(MENU_SETTINGS_UI, ITEM_SUBMENU, tr("Interfaz e idioma", "Interface & language"));
     break;
-
-  case MENU_SENSORS: {
-    m.title = tr("Sensores", "Sensors");
-    m.subtitle = tr("Stick derecho para los cartuchos con sensores", "Right stick for cartridges with sensors");
-    const char *axes[AXIS_COUNT] = {
-      tr("Ninguno", "None"),
-      tr("Horizontal", "Horizontal"), tr("Horizontal (invertido)", "Horizontal (inverted)"),
-      tr("Vertical", "Vertical"), tr("Vertical (invertido)", "Vertical (inverted)") };
-    m.add(SN_TILT_X, ITEM_OPTION, tr("Inclinaci\xf3n izquierda / derecha", "Tilt left / right"), axes[m_cfg.tiltXAxis],
-          tr("Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle."));
-    m.add(SN_TILT_Y, ITEM_OPTION, tr("Inclinaci\xf3n adelante / atr\xe1s", "Tilt forward / back"), axes[m_cfg.tiltYAxis],
-          tr("Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle."));
-    m.add(SN_GYRO, ITEM_OPTION, tr("Giro", "Rotation"), axes[m_cfg.gyroAxis],
-          tr("WarioWare: Twisted! Invertido gira al otro lado.", "WarioWare: Twisted! Inverted turns the other way."));
-    m.add(SN_SUN, ITEM_OPTION, tr("Luz solar", "Sunlight"), axes[m_cfg.sunAxis],
-          tr("Boktai: hacia arriba (o a la derecha) = m\xe1s sol; invertido al rev\xe9s.",
-             "Boktai: up (or right) = more sun; inverted the other way round."));
-    char pct[16];
-    sprintf(pct, "%d%%", uiSensorSensPercent[m_cfg.sensorSens]);
-    m.add(SN_SENS, ITEM_OPTION, tr("Sensibilidad", "Sensitivity"), pct,
-          tr("Cu\xe1nto inclina o gira con el stick al tope.", "How far it tilts or turns with the stick all the way."));
-    sprintf(pct, "%d%%", (uiSensorDeadzone[m_cfg.sensorDeadzone] * 100 + 16383) / 32767);
-    m.add(SN_DEADZONE, ITEM_OPTION, tr("Zona muerta", "Dead zone"), pct,
-          tr("Movimiento del stick que se ignora (evita que se mueva solo).",
-             "Stick movement that is ignored (stops drifting)."));
-    m.addInfo(std::string(tr("Luz solar actual: ", "Current sunlight: ")) + intStr(m_cfg.sunLevel) + "/10");
-    m.add(SN_RESET, ITEM_ACTION, tr("Restablecer sensores", "Reset sensors"));
-    break;
-  }
 
   case MENU_CLOCK: {
     m.title = tr("Reloj de los juegos", "Game clock");
@@ -682,17 +692,6 @@ void UiApp::buildQuickMenu(UiMenuScreen &m)
   m.add(Q_FF, ITEM_OPTION, tr("Avance r\xe1pido", "Fast forward"),
         fastForward ? tr("Activado", "On") : tr("Desactivado", "Off"),
         std::string(tr("Tambi\xe9n con ", "Also with ")) + uiButtonName(*this, m_cfg.map[ACT_FAST_FORWARD]));
-  int hw = m_host.cartHardware();
-  if (hw & UI_HW_SOLAR)
-    m.addInfo(std::string(tr("Luz solar: ", "Sunlight: ")) + intStr(m_cfg.sunLevel) +
-              tr("/10. C\xe1mbiala con el stick derecho (Ajustes > Sensores).",
-                 "/10. Change it with the right stick (Settings > Sensors)."));
-  if (hw & UI_HW_GYRO)
-    m.addInfo(tr("Giro: stick derecho (configurable en Ajustes > Sensores).",
-                 "Rotation: right stick (configurable in Settings > Sensors)."));
-  else if (hw & UI_HW_TILT)
-    m.addInfo(tr("Inclinaci\xf3n: stick derecho (configurable en Ajustes > Sensores).",
-                 "Tilt: right stick (configurable in Settings > Sensors)."));
 
   std::vector<UiCheatInfo> cheats;
   m_host.listCheats(cheats);
@@ -731,6 +730,33 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
                    "The mode (hold or toggle) is under Emulation.");
   }
   m.add(C_RESET, ITEM_ACTION, tr("Restablecer controles", "Reset controls"));
+
+  // Cartridge sensors on the right stick
+  m.addHeader(tr("SENSORES (STICK DERECHO)", "SENSORS (RIGHT STICK)"));
+  const char *axes[AXIS_COUNT] = {
+    tr("Sin asignar", "Unassigned"),
+    tr("Horizontal", "Horizontal"), tr("Horizontal (invertido)", "Horizontal (inverted)"),
+    tr("Vertical", "Vertical"), tr("Vertical (invertido)", "Vertical (inverted)") };
+  const char *capture = tr(" A: mueve el stick derecho hacia donde quieras.", " A: move the right stick the way you want.");
+  m.add(SN_TILT_X, ITEM_OPTION, tr("Izquierda / derecha", "Left / right"), axes[m_cfg.tiltXAxis],
+        std::string(tr("Inclinar (Yoshi, Koro Koro) y girar (WarioWare: Twisted!).",
+                       "Tilt (Yoshi, Koro Koro) and rotate (WarioWare: Twisted!).")) + capture);
+  m.add(SN_TILT_Y, ITEM_OPTION, tr("Arriba / abajo", "Up / down"), axes[m_cfg.tiltYAxis],
+        std::string(tr("Inclinar hacia adelante o atr\xe1s (Yoshi, Koro Koro).",
+                       "Tilt forward or back (Yoshi, Koro Koro).")) + capture);
+  m.add(SN_SUN, ITEM_OPTION, tr("Luz solar", "Sunlight"), axes[m_cfg.sunAxis],
+        std::string(tr("Boktai: hacia ese lado sube el sol.", "Boktai: that way raises the sun.")) + capture);
+  m.addInfo(tr("Los sensores s\xf3lo se activan en los juegos que los usan.",
+               "Sensors only work in the games that use them."));
+  char pct[16];
+  sprintf(pct, "%d%%", uiSensorSensPercent[m_cfg.sensorSens]);
+  m.add(SN_SENS, ITEM_OPTION, tr("Sensibilidad", "Sensitivity"), pct,
+        tr("Cu\xe1nto inclina o gira con el stick al tope.", "How far it tilts or turns with the stick all the way."));
+  sprintf(pct, "%d%%", (uiSensorDeadzone[m_cfg.sensorDeadzone] * 100 + 16383) / 32767);
+  m.add(SN_DEADZONE, ITEM_OPTION, tr("Zona muerta", "Dead zone"), pct,
+        tr("Movimiento del stick que se ignora (evita que se mueva solo).",
+           "Stick movement that is ignored (stops drifting)."));
+  m.add(SN_RESET, ITEM_ACTION, tr("Restablecer sensores", "Reset sensors"));
 }
 
 void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
@@ -863,21 +889,6 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     }
     return;
 
-  case MENU_SENSORS:
-    if (id == SN_RESET) {
-      UiConfig def;
-      m_cfg.tiltXAxis = def.tiltXAxis;
-      m_cfg.tiltYAxis = def.tiltYAxis;
-      m_cfg.gyroAxis = def.gyroAxis;
-      m_cfg.sunAxis = def.sunAxis;
-      m_cfg.sensorSens = def.sensorSens;
-      m_cfg.sensorDeadzone = def.sensorDeadzone;
-      saveAll();
-      rebuildMenus();
-      toast(tr("Sensores restablecidos", "Sensors reset"));
-    }
-    return;
-
   case MENU_CLOCK:
     if (id == K_NOW) {
       m_cfg.clockMode = 0;
@@ -889,10 +900,25 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     return;
 
   case MENU_CONTROLS:
-    if (id == C_RESET)
+    if (id == SN_TILT_X || id == SN_TILT_Y || id == SN_SUN) {
+      startStickCapture(id);
+    } else if (id == SN_SENS || id == SN_DEADZONE) {
+      onMenuChange(m, id, 1);
+    } else if (id == SN_RESET) {
+      UiConfig def;
+      m_cfg.tiltXAxis = def.tiltXAxis;
+      m_cfg.tiltYAxis = def.tiltYAxis;
+      m_cfg.sunAxis = def.sunAxis;
+      m_cfg.sensorSens = def.sensorSens;
+      m_cfg.sensorDeadzone = def.sensorDeadzone;
+      saveAll();
+      rebuildMenus();
+      toast(tr("Sensores restablecidos", "Sensors reset"));
+    } else if (id == C_RESET) {
       openConfirm(tr("\xbfRestablecer todos los controles?", "Reset all controls?"), CONFIRM_RESET_CONTROLS, "");
-    else if (id >= C_ACTION_BASE)
+    } else if (id >= C_ACTION_BASE) {
       openCapture(id - C_ACTION_BASE);
+    }
     return;
 
   case MENU_GAME_OPTIONS:
@@ -949,14 +975,6 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == V_FPS) m_cfg.showFps ^= 1;
     else if (id == V_FRAMESKIP) m_cfg.frameSkip = wrapIndex(m_cfg.frameSkip, delta, 5);
     break;
-  case MENU_SENSORS:
-    if (id == SN_TILT_X) m_cfg.tiltXAxis = wrapIndex(m_cfg.tiltXAxis, delta, AXIS_COUNT);
-    else if (id == SN_TILT_Y) m_cfg.tiltYAxis = wrapIndex(m_cfg.tiltYAxis, delta, AXIS_COUNT);
-    else if (id == SN_GYRO) m_cfg.gyroAxis = wrapIndex(m_cfg.gyroAxis, delta, AXIS_COUNT);
-    else if (id == SN_SUN) m_cfg.sunAxis = wrapIndex(m_cfg.sunAxis, delta, AXIS_COUNT);
-    else if (id == SN_SENS) m_cfg.sensorSens = wrapIndex(m_cfg.sensorSens, delta, SENSOR_SENS_COUNT);
-    else if (id == SN_DEADZONE) m_cfg.sensorDeadzone = wrapIndex(m_cfg.sensorDeadzone, delta, SENSOR_DEADZONE_COUNT);
-    break;
   case MENU_CLOCK:
     if (id == K_MODE) {
       m_cfg.clockMode ^= 1;
@@ -999,7 +1017,12 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_HIDE) m_cfg.hideNonGames ^= 1;
     break;
   case MENU_CONTROLS:
-    if (id >= C_ACTION_BASE) {
+    if (id == SN_TILT_X) m_cfg.tiltXAxis = wrapIndex(m_cfg.tiltXAxis, delta, AXIS_COUNT);
+    else if (id == SN_TILT_Y) m_cfg.tiltYAxis = wrapIndex(m_cfg.tiltYAxis, delta, AXIS_COUNT);
+    else if (id == SN_SUN) m_cfg.sunAxis = wrapIndex(m_cfg.sunAxis, delta, AXIS_COUNT);
+    else if (id == SN_SENS) m_cfg.sensorSens = wrapIndex(m_cfg.sensorSens, delta, SENSOR_SENS_COUNT);
+    else if (id == SN_DEADZONE) m_cfg.sensorDeadzone = wrapIndex(m_cfg.sensorDeadzone, delta, SENSOR_DEADZONE_COUNT);
+    else if (id >= C_ACTION_BASE) {
       int a = id - C_ACTION_BASE;
       // cycle through every button plus "unassigned"
       m_cfg.map[a] = wrapIndex(m_cfg.map[a], delta, PAD_BUTTON_COUNT + 1);
@@ -1034,6 +1057,12 @@ void UiApp::onMenuSecondary(UiMenuScreen &m, int id, int button)
   if (m.menuId == MENU_CONTROLS) {
     if (button == PAD_X && id >= C_ACTION_BASE && id - C_ACTION_BASE != ACT_MENU) {
       m_cfg.map[id - C_ACTION_BASE] = PAD_NONE;
+      rebuildMenus();
+      m_host.applySettings();
+    } else if (button == PAD_X && (id == SN_TILT_X || id == SN_TILT_Y || id == SN_SUN)) {
+      if (id == SN_TILT_X) m_cfg.tiltXAxis = AXIS_NONE;
+      else if (id == SN_TILT_Y) m_cfg.tiltYAxis = AXIS_NONE;
+      else m_cfg.sunAxis = AXIS_NONE;
       rebuildMenus();
       m_host.applySettings();
     } else if (button == PAD_START) {

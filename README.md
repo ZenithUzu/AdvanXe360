@@ -127,7 +127,15 @@ Algunos cartuchos de GBA traían hardware extra. El emulador lo reconoce solo, p
 | *Drill Dozer* | Vibración | La vibración pasa al control |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Sensor de inclinación | Inclinar = **stick derecho** |
 
-En **Ajustes → Sensores (stick derecho)** puedes cambiar todo: qué eje del stick usa cada sensor (horizontal o vertical, normal o invertido, o ninguno), la **sensibilidad** (50 % a 200 %) y la **zona muerta**.
+En **Ajustes → Controles**, más abajo de los botones, está la sección **Sensores (stick derecho)**:
+
+- **Izquierda / derecha:** inclinar (Yoshi, Koro Koro) y girar (WarioWare: Twisted!).
+- **Arriba / abajo:** inclinar hacia adelante o atrás.
+- **Luz solar:** hacia qué lado del stick sube el sol en Boktai.
+- Para mapear, elige la opción, presiona **A** y mueve el stick derecho hacia donde quieras (al revés = invertido). También puedes elegir de la lista con izquierda/derecha, o dejarlo sin asignar con **X**.
+- **Sensibilidad** (50 % a 200 %) y **zona muerta**.
+
+Los sensores **sólo se activan en los juegos que los usan**, así que el stick derecho no interfiere con nada más.
 
 El sensor solar, el giroscopio y la vibración se adaptaron de la VisualBoyAdvance-M actual ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+). La escala de sol se amplió respecto a la de VBA-M (que en el nivel máximo solo mostraba 6 de 8 barras en Boktai).
 

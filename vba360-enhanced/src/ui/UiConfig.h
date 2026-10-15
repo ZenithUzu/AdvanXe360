@@ -84,9 +84,8 @@ struct UiConfig
   int sunLevel;          // Boktai solar sensor: 0 = dark ... 10 = full sun
 
   // Sensors (right stick)
-  int tiltXAxis;         // UiAxis for tilt left/right (Yoshi, Koro Koro)
-  int tiltYAxis;         // UiAxis for tilt forward/back
-  int gyroAxis;          // UiAxis for rotation (WarioWare: Twisted!)
+  int tiltXAxis;         // UiAxis for left/right: tilt (Yoshi, Koro Koro) and rotation (WarioWare)
+  int tiltYAxis;         // UiAxis for up/down: tilt forward/back
   int sunAxis;           // UiAxis that raises/lowers the sunlight (Boktai)
   int sensorSens;        // index into uiSensorSensPercent
   int sensorDeadzone;    // index into uiSensorDeadzone

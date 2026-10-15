@@ -50,6 +50,8 @@ public:
   virtual void resetGame() = 0;
   // Last emulated frame, 32-bit 0x00RRGGBB; returns 0 if none.
   virtual const UiColor *gameFrame(int &w, int &h, int &pitch) = 0;
+  // Right stick, raw -32768..32767 (y up = +); used to map the sensors.
+  virtual void rightStick(int &x, int &y) { x = y = 0; }
   // Extra cartridge hardware of the running game (UI_HW_* bits).
   virtual int cartHardware() { return 0; }
   // True when a .bps/.ups/.ips patch was applied to the running game.

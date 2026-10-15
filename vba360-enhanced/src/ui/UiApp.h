@@ -38,7 +38,7 @@ enum UiMenuId
 {
   MENU_QUICK = 1, MENU_SETTINGS_VIDEO, MENU_SETTINGS_AUDIO, MENU_SETTINGS_EMU,
   MENU_SETTINGS_SAVES, MENU_SETTINGS_UI, MENU_CONTROLS, MENU_GAME_OPTIONS,
-  MENU_CHEATS, MENU_ABOUT, MENU_SETTINGS_ROOT, MENU_SENSORS, MENU_CLOCK
+  MENU_CHEATS, MENU_ABOUT, MENU_SETTINGS_ROOT, MENU_CLOCK
 };
 
 class UiApp
@@ -127,6 +127,11 @@ private:
   std::string m_requestRom;
   std::string m_toast;
   int m_toastFrames;
+  // Sensor being mapped by moving the right stick (item id, 0 = none).
+  int m_stickCapture;
+  int m_stickCaptureFrames;
+  void startStickCapture(int id);
+  void updateStickCapture();
   bool m_hintsAllowed;               // only the top screen draws hints
   UiGameConfig m_gameCfg;            // options of the game being edited
   std::string m_gameCfgRom;
