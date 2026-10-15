@@ -7,6 +7,10 @@
 
 const int uiFastForwardSpeeds[] = { 2, 3, 4, 6, 8, 0 };
 const int uiFastForwardSpeedCount = sizeof(uiFastForwardSpeeds) / sizeof(uiFastForwardSpeeds[0]);
+const int uiVolumeLevels[] = { 25, 50, 75, 100, 125, 150, 200 };
+const int uiVolumeLevelCount = sizeof(uiVolumeLevels) / sizeof(uiVolumeLevels[0]);
+const int uiAudioLatencyMs[] = { 100, 60, 40 };
+const int uiAudioLatencyCount = sizeof(uiAudioLatencyMs) / sizeof(uiAudioLatencyMs[0]);
 
 namespace {
 
@@ -89,6 +93,8 @@ struct ConfigReader
     else if (k == "frame_skip") c.frameSkip = clampInt(v, 0, 4, c.frameSkip);
     else if (k == "sound") c.sound = clampInt(v, 0, 1, c.sound);
     else if (k == "mute_fast_forward") c.muteFastForward = clampInt(v, 0, 1, c.muteFastForward);
+    else if (k == "volume") c.volume = clampInt(v, 0, uiVolumeLevelCount - 1, c.volume);
+    else if (k == "audio_latency") c.audioLatency = clampInt(v, 0, uiAudioLatencyCount - 1, c.audioLatency);
     else if (k == "ff_speed") c.ffSpeed = clampInt(v, 0, uiFastForwardSpeedCount - 1, c.ffSpeed);
     else if (k == "ff_toggle") c.ffToggle = clampInt(v, 0, 1, c.ffToggle);
     else if (k == "use_bios") c.useBios = clampInt(v, 0, 1, c.useBios);
@@ -144,7 +150,7 @@ UiConfig::UiConfig()
   : language(0), hideNonGames(1), menuTheme(0), optionStyle(OPT_STYLE_PANEL), listSort(SORT_NAME),
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), border(0), borderFit(FIT_CENTER),
     screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), gbaColor(0), frameBlend(0), showFps(0), frameSkip(0),
-    sound(1), muteFastForward(1),
+    sound(1), muteFastForward(1), volume(VOLUME_DEFAULT), audioLatency(0),
     ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0), sunLevel(7),
     sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
@@ -205,7 +211,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",
           screenEffect, gbPalette, sgbBorders, showFps, frameSkip);
   fprintf(f, "gba_color=%d\nframe_blend=%d\nsave_backups=%d\n", gbaColor, frameBlend, saveBackups);
-  fprintf(f, "sound=%d\nmute_fast_forward=%d\n", sound, muteFastForward);
+  fprintf(f, "sound=%d\nmute_fast_forward=%d\nvolume=%d\naudio_latency=%d\n", sound, muteFastForward, volume, audioLatency);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);
   fprintf(f, "sensor_sensitivity=%d\nsensor_deadzone=%d\n", sensorSens, sensorDeadzone);
   for (int i = 0; i < SENS_COUNT; i++)

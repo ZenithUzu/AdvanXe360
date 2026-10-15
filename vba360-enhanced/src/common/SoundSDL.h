@@ -23,6 +23,10 @@
 
 #include <SDL.h>
 
+// Set by the Xbox frontend (Settings > Audio).
+extern int soundVolumePercent;   // 100 = as the game plays it
+extern int soundBufferMs;        // sound kept ahead: less = less delay
+
 class SoundSDL: public SoundDriver
 {
 public:
@@ -37,6 +41,8 @@ public:
 
 private:
 	RingBuffer<u16> _rbuf;
+	long _rate;     // sample rate
+	int _bufferMs;  // size of _rbuf in ms
 
 	SDL_cond  * _cond;
 	SDL_mutex * _mutex;

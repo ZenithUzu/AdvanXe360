@@ -19,7 +19,7 @@ enum
 
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   V_GBA_COLOR, V_BLEND,
-  A_SOUND = 1, A_MUTE_FF,
+  A_SOUND = 1, A_MUTE_FF, A_VOLUME, A_LATENCY,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
@@ -654,6 +654,16 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(A_SOUND, ITEM_OPTION, tr("Sonido", "Sound"), onOff[m_cfg.sound]);
     m.add(A_MUTE_FF, ITEM_OPTION, tr("Silenciar en avance r\xe1pido", "Mute while fast forwarding"),
           yesNo[m_cfg.muteFastForward]);
+    (m.add(A_VOLUME, ITEM_OPTION, tr("Volumen", "Volume"), intStr(uiVolumeLevels[m_cfg.volume]) + "%",
+           tr("M\xe1s del 100% sube el volumen de los juegos bajos (puede saturar).",
+              "Over 100% boosts quiet games (may clip)."))).choice = m_cfg.volume;
+    {
+      const char *lat[3] = { tr("Normal (100 ms)", "Normal (100 ms)"), tr("Bajo (60 ms)", "Low (60 ms)"),
+                             tr("M\xednimo (40 ms)", "Lowest (40 ms)") };
+      (m.add(A_LATENCY, ITEM_OPTION, tr("Retraso del sonido", "Sound delay"), lat[m_cfg.audioLatency],
+             tr("Menos retraso: el sonido va m\xe1s pegado a la imagen. Si oyes cortes, vuelve a Normal.",
+                "Less delay keeps the sound closer to the picture. If it crackles, go back to Normal."))).choice = m_cfg.audioLatency;
+    }
     break;
 
   case MENU_SETTINGS_EMU: {
@@ -1220,6 +1230,8 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
   case MENU_SETTINGS_AUDIO:
     if (id == A_SOUND) m_cfg.sound ^= 1;
     else if (id == A_MUTE_FF) m_cfg.muteFastForward ^= 1;
+    else if (id == A_VOLUME) m_cfg.volume = wrapIndex(m_cfg.volume, delta, uiVolumeLevelCount);
+    else if (id == A_LATENCY) m_cfg.audioLatency = wrapIndex(m_cfg.audioLatency, delta, uiAudioLatencyCount);
     break;
   case MENU_SETTINGS_EMU:
     if (id == E_FF_SPEED) m_cfg.ffSpeed = wrapIndex(m_cfg.ffSpeed, delta, uiFastForwardSpeedCount);

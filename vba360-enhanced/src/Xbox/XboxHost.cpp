@@ -52,6 +52,8 @@ extern char gbBiosFileName[2048];      // sdl/SDL.cpp
 extern const char *gbPendingPatch;     // gb/GB.cpp
 extern bool soundMuted;                // common/SoundSDL.cpp
 extern bool soundNoThrottle;
+extern int soundVolumePercent;
+extern int soundBufferMs;
 FilterFunc initFilter(const Filter f, const int colorDepth, const int srcWidth);
 extern bool wasPaused;                 // sdl/SDL.cpp: skip one frame-skip measurement
 extern u32 autoFrameSkipLastTime;
@@ -320,6 +322,8 @@ void applySoundFlags()
   bool ff = xboxFastForwardActive();
   soundMuted = !g_cfg.sound || (ff && g_cfg.muteFastForward);
   soundNoThrottle = ff;
+  soundVolumePercent = uiVolumeLevels[g_cfg.volume];
+  soundBufferMs = uiAudioLatencyMs[g_cfg.audioLatency];
 }
 
 // Writes the current frame as a thumbnail (game preview / save state).

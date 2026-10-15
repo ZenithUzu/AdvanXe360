@@ -96,6 +96,8 @@ struct UiConfig
   // Audio
   int sound;
   int muteFastForward;
+  int volume;            // index into uiVolumeLevels
+  int audioLatency;      // index into uiAudioLatencyMs (sound buffer)
 
   // Emulation
   int ffSpeed;           // index into uiFastForwardSpeeds
@@ -152,6 +154,13 @@ struct UiGameConfig
   bool load(const std::string &path);
   bool save(const std::string &path) const;
 };
+
+// Volume in percent, and how much sound is buffered ahead (ms).
+extern const int uiVolumeLevels[];
+extern const int uiVolumeLevelCount;
+enum { VOLUME_DEFAULT = 3 };
+extern const int uiAudioLatencyMs[];
+extern const int uiAudioLatencyCount;
 
 // Fast-forward multipliers; 0 means "as fast as possible".
 extern const int uiFastForwardSpeeds[];

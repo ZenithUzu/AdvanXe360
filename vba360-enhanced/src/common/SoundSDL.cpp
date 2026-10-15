@@ -26,12 +26,14 @@ extern bool speedup;
 // and stop waiting for the audio buffer (fast forward).
 bool soundMuted = false;
 bool soundNoThrottle = false;
+int soundVolumePercent = 100;
+int soundBufferMs = 100;
 
 // Hold up to 100 ms of data in the ring buffer
 const float SoundSDL::_delay = 0.1f;
 
 SoundSDL::SoundSDL():
-	_rbuf(0)
+	_rbuf(0), _rate(44100), _bufferMs(100)
 {
 
 }
@@ -62,8 +64,23 @@ void SoundSDL::write(u16 * finalWave, int length)
 	// Silence keeps the timing (the buffer still throttles the emulation).
 	if (soundMuted)
 		memset(finalWave, 0, length);
+	else if (soundVolumePercent != 100) {
+		s16 *p = reinterpret_cast<s16 *>(finalWave);
+		int vol = soundVolumePercent * 256 / 100;
+		for (int i = 0; i < (length >> 1); i++) {
+			int v = (p[i] * vol) >> 8;
+			p[i] = (s16)(v > 32767 ? 32767 : (v < -32768 ? -32768 : v));
+		}
+	}
 
 	SDL_mutexP(_mutex);
+
+	// A new buffer size from the settings: start the buffer over.
+	if (soundBufferMs != _bufferMs && soundBufferMs >= 20 && soundBufferMs <= 500)
+	{
+		_bufferMs = soundBufferMs;
+		_rbuf.reset(_bufferMs * _rate * 2 / 1000);
+	}
 
 	unsigned int samples = length >> 2;
 
@@ -111,7 +128,9 @@ bool SoundSDL::init(long sampleRate)
 		return false;
 	}
 
-	_rbuf.reset(_delay * sampleRate * 2);
+	_rate = sampleRate;
+	_bufferMs = (soundBufferMs >= 20 && soundBufferMs <= 500) ? soundBufferMs : 100;
+	_rbuf.reset(_bufferMs * sampleRate * 2 / 1000);
 
 	_cond  = SDL_CreateCond();
 	_mutex = SDL_CreateMutex();
