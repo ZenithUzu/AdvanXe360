@@ -892,7 +892,11 @@ void xboxSetupPicture(int srcW, int srcH)
     return;
   }
   int w, h;
-  if (g_cfg.stretch == SIZE_FULL) {
+  if (g_cfg.stretch == SIZE_WIDE) {
+    // 16:9: the whole 1280x720 screen, no margins (the picture is stretched).
+    w = sw;
+    h = sh;
+  } else if (g_cfg.stretch == SIZE_FULL) {
     // Fill the screen, leaving the TV-safe margins the original port used.
     w = sw - 160;
     h = sh - 80;

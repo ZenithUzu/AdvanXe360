@@ -31,7 +31,7 @@ enum UiAction
 
 enum UiFilter { FILTER_SHARP = 0, FILTER_SMOOTH, FILTER_SCALE2X, FILTER_LQ2X, FILTER_COUNT };
 // Picture size: console proportions, fill the screen, or whole-number zoom.
-enum UiPictureSize { SIZE_ORIGINAL = 0, SIZE_FULL, SIZE_INTEGER, SIZE_COUNT };
+enum UiPictureSize { SIZE_ORIGINAL = 0, SIZE_FULL, SIZE_INTEGER, SIZE_WIDE, SIZE_COUNT };
 // How the background image is fitted: whole image centered, cover, stretch.
 enum UiBorderFit { FIT_CENTER = 0, FIT_FILL, FIT_STRETCH, FIT_COUNT };
 // Screen effect drawn over the game picture.

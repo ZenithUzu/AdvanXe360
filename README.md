@@ -43,7 +43,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Se escriben con un **teclado en pantalla** o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
 
 **Ajustes**
-- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa o **entero** (píxel exacto: GBA x4, GB x5); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (40 paletas: gris, verde clásico, Game Boy original, Pocket, Light, las **32 paletas oficiales de Super Game Boy** de la 1-A a la 4-H, y sepia, azul y rojo); **fondo negro o con imagen propia** (centrada, rellenar o estirar); mostrar FPS y salto de cuadros.
+- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa, **entero** (píxel exacto: GBA x4, GB x5) o **16:9** (llena toda la TV, imagen estirada); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (40 paletas: gris, verde clásico, Game Boy original, Pocket, Light, las **32 paletas oficiales de Super Game Boy** de la 1-A a la 4-H, y sepia, azul y rojo); **fondo negro o con imagen propia** (centrada, rellenar o estirar); mostrar FPS y salto de cuadros.
 - **Audio:** sonido y silenciar durante el avance rápido.
 - **Emulación:** velocidad y modo del avance rápido, BIOS original opcional y formato de los códigos de 16 dígitos.
 - **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir y continuar donde lo dejaste.
@@ -102,6 +102,7 @@ Por defecto el fondo alrededor del juego es **negro**. Para usar una imagen, pon
 | GBA | Entera | 160, 40, 960 × 640 | 160 px a los lados, 40 px arriba y abajo |
 | GB | Original / Entera | 240, 0, 800 × 720 | 240 px a cada lado |
 | GBA y GB | Pantalla completa | 80, 40, 1120 × 640 | 80 px a los lados, 40 px arriba y abajo |
+| GBA y GB | 16:9 | 0, 0, 1280 × 720 | ninguno (el juego cubre toda la pantalla) |
 
 Si usas GBA y GB con el mismo fondo, deja el diseño importante en los 100 px de cada orilla.
 

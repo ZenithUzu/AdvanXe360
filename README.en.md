@@ -43,7 +43,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - Typed with an **on-screen keyboard** or **imported** from `.cht` / `.txt` files (RetroArch format too). Saved per game.
 
 **Settings**
-- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen or **integer** (pixel perfect: GBA x4, GB x5); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (40 palettes: gray, classic green, original Game Boy, Pocket, Light, the **32 official Super Game Boy palettes** 1-A to 4-H, plus sepia, blue and red); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
+- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen, **integer** (pixel perfect: GBA x4, GB x5) or **16:9** (fills the whole TV, stretched picture); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (40 palettes: gray, classic green, original Game Boy, Pocket, Light, the **32 official Super Game Boy palettes** 1-A to 4-H, plus sepia, blue and red); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
 - **Audio:** sound and mute during fast forward.
 - **Emulation:** fast forward speed and mode, optional real BIOS and format of 16-digit codes.
 - **Saving:** save and state folders (next to the ROM or in the emulator folder), save state on exit and resume where you left off.
@@ -102,6 +102,7 @@ By default the area around the game is **black**. To use an image, put it in the
 | GBA | Integer | 160, 40, 960 × 640 | 160 px left/right, 40 px top/bottom |
 | GB | Original / Integer | 240, 0, 800 × 720 | 240 px on each side |
 | GBA and GB | Full screen | 80, 40, 1120 × 640 | 80 px left/right, 40 px top/bottom |
+| GBA and GB | 16:9 | 0, 0, 1280 × 720 | none (the game covers the whole screen) |
 
 If you use the same background for GBA and GB, keep the important artwork within the outer 100 px.
 

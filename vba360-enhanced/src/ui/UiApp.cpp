@@ -433,10 +433,11 @@ void UiApp::buildMenu(UiMenuScreen &m)
           tr("N\xedtido: p\xedxeles definidos. Suave: bilineal. Scale2x/LQ2x: suavizan bordes.",
              "Sharp: crisp pixels. Smooth: bilinear. Scale2x/LQ2x: smooth the edges."));
     const char *stretch[SIZE_COUNT] = {
-      tr("Original", "Original"), tr("Pantalla completa", "Full screen"), tr("Entera (p\xedxel exacto)", "Integer (pixel perfect)") };
+      tr("Original", "Original"), tr("Pantalla completa", "Full screen"), tr("Entera (p\xedxel exacto)", "Integer (pixel perfect)"),
+      tr("16:9 (toda la pantalla)", "16:9 (whole screen)") };
     m.add(V_STRETCH, ITEM_OPTION, tr("Tama\xf1o de imagen", "Picture size"), stretch[m_cfg.stretch],
-          tr("Original: proporci\xf3n de la consola (GBA 3:2, GB 10:9). Entera: zoom exacto (GBA x4, GB x5).",
-             "Original: console proportions (GBA 3:2, GB 10:9). Integer: exact zoom (GBA x4, GB x5)."));
+          tr("Original: proporci\xf3n de la consola. Entera: zoom exacto. 16:9: llena la TV (estirada).",
+             "Original: console proportions. Integer: exact zoom. 16:9: fills the TV (stretched)."));
     const char *effects[EFFECT_COUNT] = {
       tr("Ninguno", "None"), tr("CRT (TV antigua)", "CRT (old TV)"), tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)") };
     m.add(V_EFFECT, ITEM_OPTION, tr("Efecto de pantalla", "Screen effect"), effects[m_cfg.screenEffect],
