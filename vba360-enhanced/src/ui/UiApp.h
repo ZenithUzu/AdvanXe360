@@ -135,6 +135,10 @@ private:
   bool m_hintsAllowed;               // only the top screen draws hints
   UiGameConfig m_gameCfg;            // options of the game being edited
   std::string m_gameCfgRom;
+  // Menu background image (Settings > Interface), loaded once per name.
+  std::string m_bgName;
+  std::vector<UiColor> m_bgPixels;
+
   std::vector<std::string> m_thumbKeys;
   std::vector<UiThumb> m_thumbs;
 

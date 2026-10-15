@@ -70,6 +70,8 @@ struct UiConfig
   int language;          // 0 = Espanol, 1 = English
   int hideNonGames;      // show only ROMs, archives, patches-free list
   std::string lastDir;   // folder the browser reopens
+  int menuTheme;         // index into uiThemes (UiScreens.h)
+  std::string menuBackground;   // image in backgrounds\ ("" = the theme's colors)
 
   // Video
   int filter;            // UiFilter
@@ -79,6 +81,7 @@ struct UiConfig
   int borderFit;         // UiBorderFit
   int screenEffect;      // UiScreenEffect
   int gbPalette;         // index into uiGbPalettes
+  int sgbBorders;        // Super Game Boy: 0 off, 1 Game Boy games, 2 also Color-compatible ones
   int showFps;
   int frameSkip;         // 0 = auto, 1..4 = fixed 0..3
 

@@ -445,8 +445,16 @@ unsigned long Memory::resetCounters(unsigned long cc) {
 	return cc;
 }
 
+// VBA360: Super Game Boy hooks, set by gb/gbGambatteBridge.cpp (null when
+// the game runs as a plain Game Boy).
+void (*sgbJoypWriteHook)(unsigned data, unsigned oldValue) = 0;
+unsigned (*sgbJoypIdleHook)() = 0;
+
 void Memory::updateInput() {
 	unsigned state = 0xF;
+
+	if ((ioamhram_[0x100] & 0x30) == 0x30 && sgbJoypIdleHook)
+		state = sgbJoypIdleHook() & 0xF;   // VBA360: SGB controller number
 
 	if ((ioamhram_[0x100] & 0x30) != 0x30 && getInput_) {
 		unsigned input = (*getInput_)();
@@ -673,6 +681,8 @@ void Memory::nontrivial_ff_write(unsigned const p, unsigned data, unsigned long 
 
 	switch (p & 0xFF) {
 	case 0x00:
+		if (sgbJoypWriteHook)
+			sgbJoypWriteHook(data, ioamhram_[0x100]);   // VBA360: SGB packets
 		if ((data ^ ioamhram_[0x100]) & 0x30) {
 			ioamhram_[0x100] = (ioamhram_[0x100] & ~0x30u) | (data & 0x30);
 			updateInput();

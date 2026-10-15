@@ -69,6 +69,9 @@ public:
   // Imports "<rom>.cht" / "<rom>.txt" style text lists; returns codes added.
   virtual int importCheatFile(const std::string &path) = 0;
 
+  // Decodes an image file (PNG, JPG, BMP...) scaled to w x h, 0xAARRGGBB.
+  virtual bool loadImage(const std::string &path, int w, int h, std::vector<UiColor> &out) { return false; }
+
   // --- System --------------------------------------------------------------
   virtual void quitToDashboard() = 0;
   // Called after settings change so video/audio/input pick them up.

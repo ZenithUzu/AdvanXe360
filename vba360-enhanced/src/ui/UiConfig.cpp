@@ -70,6 +70,8 @@ struct ConfigReader
     if (k == "language") c.language = clampInt(v, 0, 1, c.language);
     else if (k == "hide_non_games") c.hideNonGames = clampInt(v, 0, 1, c.hideNonGames);
     else if (k == "last_dir") c.lastDir = v;
+    else if (k == "menu_theme") c.menuTheme = clampInt(v, 0, 5, c.menuTheme);
+    else if (k == "menu_background") c.menuBackground = v;
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
     else if (k == "stretch") c.stretch = clampInt(v, 0, SIZE_COUNT - 1, c.stretch);
     else if (k == "border") c.border = clampInt(v, 0, 1, c.border);
@@ -77,6 +79,7 @@ struct ConfigReader
     else if (k == "border_fit") c.borderFit = clampInt(v, 0, FIT_COUNT - 1, c.borderFit);
     else if (k == "screen_effect") c.screenEffect = clampInt(v, 0, EFFECT_COUNT - 1, c.screenEffect);
     else if (k == "gb_palette") c.gbPalette = clampInt(v, 0, GB_PALETTE_COUNT - 1, c.gbPalette);
+    else if (k == "sgb_borders") c.sgbBorders = clampInt(v, 0, 2, c.sgbBorders);
     else if (k == "show_fps") c.showFps = clampInt(v, 0, 1, c.showFps);
     else if (k == "frame_skip") c.frameSkip = clampInt(v, 0, 4, c.frameSkip);
     else if (k == "sound") c.sound = clampInt(v, 0, 1, c.sound);
@@ -121,9 +124,9 @@ struct GameConfigReader
 } // namespace
 
 UiConfig::UiConfig()
-  : language(0), hideNonGames(1),
+  : language(0), hideNonGames(1), menuTheme(0),
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), border(0), borderFit(FIT_CENTER),
-    screenEffect(EFFECT_NONE), gbPalette(0), showFps(0), frameSkip(0),
+    screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1),
     ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0), sunLevel(7),
     sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
@@ -178,10 +181,11 @@ bool UiConfig::save(const std::string &path) const
     return false;
   fprintf(f, "# VBA360 settings\n");
   fprintf(f, "language=%d\nhide_non_games=%d\nlast_dir=%s\n", language, hideNonGames, lastDir.c_str());
+  fprintf(f, "menu_theme=%d\nmenu_background=%s\n", menuTheme, menuBackground.c_str());
   fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nborder_image=%s\nborder_fit=%d\n",
           filter, stretch, border, borderImage.c_str(), borderFit);
-  fprintf(f, "screen_effect=%d\ngb_palette=%d\nshow_fps=%d\nframe_skip=%d\n",
-          screenEffect, gbPalette, showFps, frameSkip);
+  fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",
+          screenEffect, gbPalette, sgbBorders, showFps, frameSkip);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\n", sound, muteFastForward);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);
   fprintf(f, "sensor_sensitivity=%d\nsensor_deadzone=%d\n", sensorSens, sensorDeadzone);

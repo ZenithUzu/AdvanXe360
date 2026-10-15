@@ -20,6 +20,8 @@
 #include "../gambatte/include/gambatte_log.h"
 #include "../gambatte/include/gbcpalettes.h"
 #include "gbGambatteBridge.h"
+#define XBOX_LOG_NO_REDIRECT
+#include "../Xbox/XboxLog.h"
 
 // Pixels are 16-bit, samples uint_least32_t; the bridge uses unsigned types.
 typedef char gmbCheckPixelSize[sizeof(gambatte::video_pixel_t) == sizeof(unsigned short) ? 1 : -1];
@@ -29,15 +31,23 @@ extern "C" void gambatte_log(enum retro_log_level level, const char *format, ...
 {
   if (level < RETRO_LOG_INFO)
     return;
+  char line[512];
   va_list args;
   va_start(args, format);
-  fputs("Gambatte: ", stdout);
-  vfprintf(stdout, format, args);
+  _vsnprintf(line, sizeof(line) - 1, format, args);
   va_end(args);
+  line[sizeof(line) - 1] = 0;
+  xboxLog("Gambatte: %s", line);
 }
 
 namespace {
 void (*rumbleFn)(bool) = 0;
+}
+
+namespace gambatte {
+// In gambatte-memory.cpp (VBA360 addition).
+extern void (*sgbJoypWriteHook)(unsigned data, unsigned oldValue);
+extern unsigned (*sgbJoypIdleHook)();
 }
 
 // Called by Gambatte's MBC5 for rumble cartridges (Pokemon Pinball...).
@@ -68,13 +78,14 @@ bool bootloader(void *, bool isCgb, uint8_t *data, uint32_t size)
 
 namespace gmbBridge {
 
-bool load(const void *rom, unsigned size)
+bool load(const void *rom, unsigned size, bool forceDmg)
 {
   unload();
   gb = new gambatte::GB;
   gb->setInputGetter(&input);
   gb->setBootloaderGetter(bootloader);
-  if (gb->load(rom, size, gambatte::GB::MULTICART_COMPAT) != 0) {
+  unsigned flags = gambatte::GB::MULTICART_COMPAT | (forceDmg ? gambatte::GB::FORCE_DMG : 0);
+  if (gb->load(rom, size, flags) != 0) {
     unload();
     return false;
   }
@@ -106,6 +117,12 @@ void setInput(unsigned (*getButtons)()) { inputFn = getButtons; }
 void setBootloader(bool (*get)(bool, unsigned char *, unsigned)) { bootFn = get; }
 void setRumble(void (*set)(bool on)) { rumbleFn = set; }
 
+void setJoypHooks(void (*write)(unsigned, unsigned), unsigned (*idle)())
+{
+  gambatte::sgbJoypWriteHook = write;
+  gambatte::sgbJoypIdleHook = idle;
+}
+
 void *saveData() { return gb ? gb->savedata_ptr() : 0; }
 unsigned saveSize() { return gb ? gb->savedata_size() : 0; }
 void *rtcData() { return gb ? gb->rtcdata_ptr() : 0; }
@@ -121,6 +138,12 @@ void setDmgColor(unsigned palette, unsigned color, unsigned rgb)
   if (gb)
     gb->setDmgPaletteColor(palette, color,
         (gambatte::video_pixel_t)((rgb >> 19 & 0x1F) << 11 | (rgb >> 10 & 0x3F) << 5 | (rgb >> 3 & 0x1F)));
+}
+
+void setDmgColorRaw(unsigned palette, unsigned color, unsigned short pixel)
+{
+  if (gb)
+    gb->setDmgPaletteColor(palette, color, (gambatte::video_pixel_t)pixel);
 }
 
 void setDmgColorGbc(unsigned palette, unsigned color, unsigned bgr15)

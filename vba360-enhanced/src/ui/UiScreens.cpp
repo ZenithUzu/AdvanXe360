@@ -5,13 +5,38 @@
 
 const UiColor UI_COL_TEXT     = 0xFFE9ECF4;
 const UiColor UI_COL_TEXT_DIM = 0xFF98A2B8;
-const UiColor UI_COL_ACCENT   = 0xFF7B6CFF;
-const UiColor UI_COL_PANEL    = 0xE0161B2A;
-const UiColor UI_COL_ROW_SEL  = 0x407B6CFF;
+// Set by uiApplyTheme().
+UiColor UI_COL_ACCENT    = 0xFF7B6CFF;
+UiColor UI_COL_PANEL     = 0xFF161B2A;
+UiColor UI_COL_ROW_SEL   = 0x407B6CFF;
+UiColor UI_COL_BG_TOP    = 0xFF0E1220;
+UiColor UI_COL_BG_BOTTOM = 0xFF181E31;
+
+// Menu color themes: accent, background gradient (top, bottom), panels.
+// The text stays light on dark in all of them so it reads the same.
+const UiTheme uiThemes[UI_THEME_COUNT] = {
+  { { "Predeterminado", "Default" },          0xFF7B6CFF, 0xFF0E1220, 0xFF181E31, 0xFF161B2A },
+  { { "Xbox 360", "Xbox 360" },               0xFF6CC24A, 0xFF0B140C, 0xFF142417, 0xFF132016 },
+  { { "Game Boy", "Game Boy" },               0xFF9BBC0F, 0xFF101A0C, 0xFF1F2B14, 0xFF1A2412 },
+  { { "Game Boy Color", "Game Boy Color" },   0xFFE0457B, 0xFF170C1A, 0xFF2A1430, 0xFF221428 },
+  { { "Game Boy Advance", "Game Boy Advance" }, 0xFF6F64F0, 0xFF0F0D24, 0xFF1D1940, 0xFF181534 },
+  { { "Rojo", "Red" },                        0xFFE5534B, 0xFF170A0C, 0xFF2A1215, 0xFF221114 },
+};
+
+void uiApplyTheme(int index)
+{
+  if (index < 0 || index >= UI_THEME_COUNT)
+    index = 0;
+  const UiTheme &t = uiThemes[index];
+  UI_COL_ACCENT = t.accent;
+  UI_COL_ROW_SEL = uiWithAlpha(t.accent, 0x40);
+  UI_COL_BG_TOP = t.bgTop;
+  UI_COL_BG_BOTTOM = t.bgBottom;
+  UI_COL_PANEL = t.panel;
+}
 
 namespace {
 
-const UiColor COL_PANEL_SOLID = 0xFF1A2032;
 const UiColor COL_DIVIDER     = 0x30FFFFFF;
 const UiColor COL_FAV         = 0xFFF5C451;
 const UiColor COL_DIR         = 0xFF8FA8FF;
@@ -424,7 +449,7 @@ void UiHomeScreen::drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
 
 void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
 {
-  c.fillRoundRect(x, y, w, h, 16, 0x60161B2A);
+  c.fillRoundRect(x, y, w, h, 16, uiWithAlpha(UI_COL_PANEL, 0x60));
   UiListState &ls = m_list[m_tab];
   bool valid = ls.sel >= 0 && ls.sel < (int)m_rows.size();
   int pad = 20;
@@ -687,7 +712,7 @@ void UiMenuScreen::draw(UiApp &app, UiCanvas &c)
     h = 560;
     x = (UI_W - w) / 2;
     y = 56;
-    c.fillRoundRect(x, y, w, h, 20, 0xF0141926);
+    c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xF0));
     c.drawTextFit(UI_FONT_TITLE, x + 32, y + 20, w - 64, title.c_str(), UI_COL_TEXT);
     if (!subtitle.empty())
       c.drawTextFit(UI_FONT_SMALL, x + 32, y + 64, w - 64, subtitle.c_str(), UI_COL_TEXT_DIM);
@@ -708,6 +733,17 @@ void UiMenuScreen::draw(UiApp &app, UiCanvas &c)
   const int rh = 50;
   int visible = h / rh;
   list.ensureVisible(visible);
+  // Text and section titles right above the selected row can't be selected
+  // themselves, so scrolling up must reveal them with it (otherwise the
+  // About screen's first lines never came back).
+  {
+    int top = list.sel;
+    while (top > 0 && top - 1 < (int)items.size() &&
+           (items[top - 1].kind == ITEM_HEADER || items[top - 1].kind == ITEM_INFO))
+      top--;
+    if (top < list.scroll && list.sel - top < visible)
+      list.scroll = top;
+  }
   c.setClip(x, y, w + 8, h);
   for (int i = 0; i <= visible; i++) {
     int idx = list.scroll + i;
@@ -859,7 +895,7 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
   c.fillRect(0, 0, UI_W, UI_H, 0x90000000);
   int w = 640, h = 470;
   int x = (UI_W - w) / 2, y = 100;
-  c.fillRoundRect(x, y, w, h, 20, 0xFA161B2A);
+  c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
   c.drawTextFit(UI_FONT_BODY, x + 32, y + 22, w - 64, m_title.c_str(), UI_COL_TEXT);
 
   // Text field with a blinking caret
@@ -925,7 +961,7 @@ void UiCaptureScreen::draw(UiApp &app, UiCanvas &c)
   c.fillRect(0, 0, UI_W, UI_H, 0xA0000000);
   int w = 640, h = 220;
   int x = (UI_W - w) / 2, y = (UI_H - h) / 2 - 20;
-  c.fillRoundRect(x, y, w, h, 20, 0xFA161B2A);
+  c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
   c.drawTextFit(UI_FONT_TITLE, x, y + 36, w, app.tr("Presiona un bot\xf3n", "Press a button"),
                 UI_COL_TEXT, UI_ALIGN_CENTER);
   char line[160];
@@ -961,7 +997,7 @@ void UiConfirmScreen::draw(UiApp &app, UiCanvas &c)
   c.fillRect(0, 0, UI_W, UI_H, 0xA0000000);
   int w = 640, h = 200;
   int x = (UI_W - w) / 2, y = (UI_H - h) / 2 - 20;
-  c.fillRoundRect(x, y, w, h, 20, 0xFA161B2A);
+  c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
   c.drawTextFit(UI_FONT_BODY, x + 24, y + 50, w - 48, m_message.c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
   const char *hints[] = { app.tr("A:S\xed", "A:Yes"), app.tr("B:No", "B:No") };
   app.drawHints(c, hints, 2);

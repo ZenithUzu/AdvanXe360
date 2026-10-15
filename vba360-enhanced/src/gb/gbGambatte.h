@@ -21,6 +21,14 @@ bool gambatteActive();
 // True when the running game uses Game Boy Color mode.
 bool gambatteIsCgb();
 
+// Super Game Boy mode for the games loaded next: 0 off, 1 Game Boy games
+// made for the Super Game Boy, 2 also the ones made for the Game Boy Color
+// too (they then run as Game Boy games, with the Super Game Boy colors).
+extern int gambatteSgbMode;
+// True when the running game is in Super Game Boy mode: the picture is
+// 256x224 with the border (the frontend's gbBorderOn layout).
+bool gambatteSgbActive();
+
 // Colors for Game Boy (not Color) games: 4 shades 0xRRGGBB, lightest first,
 // used for the background and both sprite palettes.
 void gambatteSetDmgPalette(const unsigned int *rgb4);

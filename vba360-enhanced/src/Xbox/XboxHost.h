@@ -10,6 +10,7 @@
 
 class UiApp;
 class UiCanvas;
+typedef unsigned int UiColor;   // as in ui/UiCanvas.h
 
 // Settings shared by the whole program (loaded from GAME:\vba360.ini).
 extern UiConfig g_cfg;
@@ -88,6 +89,8 @@ void xboxSetupPicture(int srcWidth, int srcHeight);
 // Sets the texture filter the game picture uses (sharp / smooth).
 void xboxApplyGameSampler();
 void xboxUiPresent(const UiCanvas &canvas);
+// Decodes an image (PNG, JPG, BMP, TGA, DDS) scaled to w x h for the menu.
+bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out);
 
 // Implemented in sdl/SDL.cpp
 void sdlWriteState(int num);

@@ -20,6 +20,9 @@ Changes made for VBA360 (all small):
   - include/libretro.h, include/gambatte_log.h: small stand-ins, since
     VBA360 is not a libretro frontend. gambatte_log() and
     cartridge_set_rumble() are implemented in ../gb/gbGambatteBridge.cpp.
+  - src/gambatte-memory.cpp: two hooks on the joypad register (FF00),
+    sgbJoypWriteHook and sgbJoypIdleHook, for the Super Game Boy mode in
+    ../gb/gbGambatteSgb.cpp (adapted from SameBoy, MIT license).
 
 Build settings (see vbam.vcxproj): __LIBRETRO__, HAVE_STDINT_H,
 VIDEO_RGB565, WORDS_BIGENDIAN (Xbox 360), include paths include/ and src/.

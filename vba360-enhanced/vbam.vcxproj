@@ -525,6 +525,7 @@
       <ObjectFileName>$(IntDir)gambatte_video_libretro.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="src\gb\gbGambatte.cpp" />
+    <ClCompile Include="src\gb\gbGambatteSgb.cpp" />
     <ClCompile Include="src\gb\gbGambatteBridge.cpp">
       <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -567,6 +568,7 @@
     <ClCompile Include="src\sdl\SDL.cpp" />
     <ClCompile Include="src\sdl\text.cpp" />
     <ClCompile Include="src\Xbox\XboxHost.cpp" />
+    <ClCompile Include="src\Xbox\XboxLog.cpp" />
     <ClCompile Include="src\Xbox\XboxUiRenderer.cpp" />
     <ClCompile Include="src\Xbox\GeneralFunctions.cpp" />
     <ClCompile Include="src\Xbox\Main.cpp" />

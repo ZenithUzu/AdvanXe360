@@ -60,6 +60,7 @@
 
 #include "../Xbox/Main.h"
 #include "../Xbox/XboxHost.h"
+#include "../Xbox/XboxLog.h"   // last: stdout prints go to vba360.log
 
 #ifndef _WIN32
 # include <unistd.h>
@@ -966,7 +967,7 @@ void sdlWriteState(int num)
   stateName = sdlStateName(num);
 
   if(emulator.emuWriteState)
-    emulator.emuWriteState(stateName);
+    fprintf(stdout, "Save state %s: %s\n", stateName, emulator.emuWriteState(stateName) ? "ok" : "FAILED");
   // The menu shows its own message; don't redraw the game over it.
 }
 
@@ -976,7 +977,7 @@ void sdlReadState(int num)
 
   stateName = sdlStateName(num);
   if(emulator.emuReadState)
-    emulator.emuReadState(stateName);
+    fprintf(stdout, "Load state %s: %s\n", stateName, emulator.emuReadState(stateName) ? "ok" : "FAILED");
 }
 
 /*
@@ -1029,15 +1030,19 @@ void sdlWriteBattery()
   std::string path = xboxBatteryPath();
   if (path.empty())
     return;
-  if (!emulator.emuWriteBattery(path.c_str()))
+  bool ok = emulator.emuWriteBattery(path.c_str());
+  fprintf(stdout, "Battery save %s: %s\n", path.c_str(), ok ? "ok" : "FAILED");
+  if (!ok)
     systemScreenMessage(g_cfg.language ? "Could not write the save" : "No se pudo guardar");
 }
 
 void sdlReadBattery()
 {
   std::string path = xboxBatteryPath();
-  if (!path.empty())
-    emulator.emuReadBattery(path.c_str());
+  if (!path.empty()) {
+    bool ok = emulator.emuReadBattery(path.c_str());
+    fprintf(stdout, "Battery load %s: %s\n", path.c_str(), ok ? "ok" : "none");
+  }
 }
 
 void sdlReadDesktopVideoMode() {
@@ -1608,6 +1613,7 @@ int gba_main(char *path, char *fname)
     bool failed = false;
 
     IMAGE_TYPE type = utilFindType(szFile);
+    fprintf(stdout, "Loading %s (type %d)\n", szFile, (int)type);
 
     if(type == IMAGE_UNKNOWN) {
       systemMessage(0, "Unknown file type %s", szFile);
@@ -1628,7 +1634,9 @@ int gba_main(char *path, char *fname)
                 gbRomSize, gbRom[0x147], gbRom[0x143], (int)gambatteIsCgb());
         cartridgeType = IMAGE_GB;
         emulator = GambatteSystem;
-        gbBorderOn = 0;
+        // Super Game Boy mode: 256x224 with the game's border.
+        gbBorderOn = gambatteSgbActive() ? 1 : 0;
+        fprintf(stdout, "Super Game Boy mode: %s\n", gbBorderOn ? "on" : "off");
         xboxApplyGameOverrides(false);
       } else if(!failed) {
         gbGetHardwareType();
@@ -1903,7 +1911,6 @@ void systemMessage(int num, const char *msg, ...)
   va_start(valist, msg);
   vsprintf(buffer, msg, valist);
 
-  fprintf(stderr, "%s\n", buffer);
   fprintf(stdout, "MESSAGE: %s\n", buffer);
   va_end(valist);
 
@@ -1917,7 +1924,7 @@ void systemMessage(int num, const char *msg, ...)
 void drawScreenMessage(u8 *screen, int pitch, int x, int y, unsigned int duration)
 {
   if(screenMessage) {
-    if(cartridgeType == 1 && gbBorderOn) {
+    if(cartridgeType == 1 && gbBorderOn && !gambatteActive()) {
       gbSgbRenderBorder();
     }
     if(((systemGetClock() - screenMessageTime) < duration) &&

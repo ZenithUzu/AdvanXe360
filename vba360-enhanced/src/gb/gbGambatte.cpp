@@ -20,6 +20,7 @@
 #include "gbCheats.h"
 #include "gbGambatte.h"
 #include "gbGambatteBridge.h"
+#include "gbGambatteSgb.h"
 
 extern u8 *pix;
 extern bool speedup;
@@ -29,6 +30,8 @@ void flush_samples(Multi_Buffer *buffer);
 
 // Game Boy Color boot ROM (bios\gbc_bios.bin), set by the frontend.
 char gambatteCgbBiosFileName[2048];
+// Super Game Boy mode for the next game (see gbGambatte.h).
+int gambatteSgbMode = 0;
 extern char gbBiosFileName[2048];
 
 namespace {
@@ -42,6 +45,7 @@ enum {
 
 bool gmb = false;   // a game runs on Gambatte
 bool gmbCgb = false;
+bool gmbSgbOn = false;   // Super Game Boy mode (colors per area, border)
 
 unsigned short gmbVideo[160 * 144];   // RGB565
 unsigned gmbSound[SOUND_BUF_SIZE + 64];
@@ -71,7 +75,13 @@ int gmbSaveCheck = 0;
 std::string gmbCheatKey;
 int gmbCheatCheck = 0;
 
-unsigned gmbButtons() { return gmbJoy & 0xFF; }
+unsigned gmbButtons()
+{
+  // In Super Game Boy multiplayer, only player 1 has a controller.
+  if (gmbSgbOn && gmbSgb::currentPlayer() != 0)
+    return 0;
+  return gmbJoy & 0xFF;
+}
 
 bool gmbBootloader(bool isCgb, unsigned char *data, unsigned bufSize)
 {
@@ -179,6 +189,12 @@ void applyCheats()
 
 void drawFrame()
 {
+  if (gmbSgbOn) {
+    // 256x224 with the border, laid out like the old core's border mode
+    // (pitch 257, one spare row on top).
+    gmbSgb::render((unsigned *)pix + 257, 257, (const unsigned *)systemColorMap32);
+    return;
+  }
   // The Xbox frontend always uses 32-bit color (like the other cores here).
   const unsigned short *src = gmbVideo;
   for (int y = 0; y < 144; y++) {
@@ -255,6 +271,8 @@ void gmbEmulate(int)
     if (frameAt >= 0 || total >= 2 * SAMPLES_PER_FRAME)
       break;
   }
+  if (gmbSgbOn)
+    gmbSgb::frame(gmbVideo);   // the picture holds shades 0-3 in this mode
   flush_samples(gmbStereo);
   endOfFrame();
 }
@@ -262,13 +280,17 @@ void gmbEmulate(int)
 void gmbReset()
 {
   gmbBridge::reset();
+  if (gmbSgbOn)
+    gmbSgb::reset();
   gmbCheatKey = "?";
 }
 
 void gmbCleanUp()
 {
   gmbBridge::unload();
+  gmbBridge::setJoypHooks(0, 0);
   gmb = false;
+  gmbSgbOn = false;
   delete gmbSynthL;
   delete gmbSynthR;
   delete gmbStereo;
@@ -326,20 +348,45 @@ bool gmbWriteBattery(const char *file)
   return ok;
 }
 
-// Save states: "VBAGMB01", the state size (4 bytes, big-endian), the state.
+// Save states: "VBAGMB01", the state size (4 bytes, big-endian), the state;
+// in Super Game Boy mode then "SGB1", its size and the Super Game Boy state.
 const char kStateTag[8] = { 'V', 'B', 'A', 'G', 'M', 'B', '0', '1' };
+const char kSgbTag[4] = { 'S', 'G', 'B', '1' };
+
+void putSize(char *p, size_t size)
+{
+  p[0] = (char)(size >> 24); p[1] = (char)(size >> 16);
+  p[2] = (char)(size >> 8); p[3] = (char)size;
+}
+
+size_t getSize(const char *p)
+{
+  return ((size_t)(u8)p[0] << 24) | ((size_t)(u8)p[1] << 16) |
+         ((size_t)(u8)p[2] << 8) | (size_t)(u8)p[3];
+}
+
+size_t stateBytes()
+{
+  return 12 + gmbBridge::stateSize() + (gmbSgbOn ? 8 + gmbSgb::stateSize() : 0);
+}
 
 bool gmbWriteStateMem(char *mem, int available, int *used)
 {
   size_t size = gmbBridge::stateSize();
-  if (!size || (size_t)available < size + 12)
+  size_t total = stateBytes();
+  if (!size || (size_t)available < total)
     return false;
   memcpy(mem, kStateTag, 8);
-  mem[8] = (char)(size >> 24); mem[9] = (char)(size >> 16);
-  mem[10] = (char)(size >> 8); mem[11] = (char)size;
+  putSize(mem + 8, size);
   gmbBridge::saveState(mem + 12);
+  if (gmbSgbOn) {
+    char *p = mem + 12 + size;
+    memcpy(p, kSgbTag, 4);
+    putSize(p + 4, gmbSgb::stateSize());
+    gmbSgb::saveState((unsigned char *)p + 8);
+  }
   if (used)
-    *used = (int)size + 12;
+    *used = (int)total;
   return true;
 }
 
@@ -347,11 +394,16 @@ bool gmbReadStateMem(const char *mem, int available)
 {
   if (available < 12 || memcmp(mem, kStateTag, 8))
     return false;
-  size_t size = ((size_t)(u8)mem[8] << 24) | ((size_t)(u8)mem[9] << 16) |
-                ((size_t)(u8)mem[10] << 8) | (size_t)(u8)mem[11];
+  size_t size = getSize(mem + 8);
   if (size + 12 > (size_t)available)
     return false;
   bool ok = gmbBridge::loadState(mem + 12, (unsigned)size);
+  if (ok && gmbSgbOn) {
+    const char *p = mem + 12 + size;
+    size_t rest = (size_t)available - 12 - size;
+    if (rest >= 8 && !memcmp(p, kSgbTag, 4) && getSize(p + 4) <= rest - 8)
+      gmbSgb::loadState((const unsigned char *)p + 8, (unsigned)getSize(p + 4));
+  }
   if (ok) {
     gmbCheatKey = "?";   // re-apply cheats over the restored memory
     gmbSkipCount = 0;
@@ -363,7 +415,7 @@ bool gmbWriteState(const char *file)
 {
   if (!gmb)
     return false;
-  size_t size = gmbBridge::stateSize() + 12;
+  size_t size = stateBytes();
   char *buf = (char *)malloc(size);
   if (!buf)
     return false;
@@ -412,12 +464,30 @@ bool gmbReadMemState(char *mem, int available)
 
 bool gmbWritePNG(const char *file)
 {
-  return utilWritePNGFile(file, 160, 144, pix);
+  return gmbSgbOn ? utilWritePNGFile(file, 256, 224, pix) : utilWritePNGFile(file, 160, 144, pix);
 }
 
 bool gmbWriteBMP(const char *file)
 {
-  return utilWriteBMPFile(file, 160, 144, pix);
+  return gmbSgbOn ? utilWriteBMPFile(file, 256, 224, pix) : utilWriteBMPFile(file, 160, 144, pix);
+}
+
+void sgbJoypWrite(unsigned data, unsigned old) { gmbSgb::joypWrite(data, old); }
+unsigned sgbJoypIdle() { return gmbSgb::joypIdle(); }
+
+// Does this game use Super Game Boy features, in the chosen mode?
+bool wantsSgb()
+{
+  if (gambatteSgbMode <= 0)
+    return false;
+  if (gbRom[0x146] != 0x03 || gbRom[0x14B] != 0x33)
+    return false;               // not a Super Game Boy game
+  unsigned cgbFlag = gbRom[0x143];
+  if (cgbFlag == 0xC0)
+    return false;               // Game Boy Color only
+  if (cgbFlag & 0x80)
+    return gambatteSgbMode >= 2;   // made for both: only if asked
+  return true;
 }
 
 void setPalette12(const unsigned short *bgr15)
@@ -455,10 +525,23 @@ bool gambatteLoad()
   gmbBridge::setInput(gmbButtons);
   gmbBridge::setBootloader(gmbBootloader);
   gmbBridge::setRumble(systemCartridgeRumble);
-  if (!gmbBridge::load(gbRom, (unsigned)gbRomSize))
+  bool sgb = wantsSgb();
+  gmbBridge::setJoypHooks(sgb ? sgbJoypWrite : 0, sgb ? sgbJoypIdle : 0);
+  if (!gmbBridge::load(gbRom, (unsigned)gbRomSize, sgb)) {
+    gmbBridge::setJoypHooks(0, 0);
     return false;
+  }
   gmb = true;
   gmbCgb = gmbBridge::isCgb();
+  gmbSgbOn = sgb && !gmbCgb;
+  if (gmbSgbOn) {
+    // The Super Game Boy colors the screen itself: Gambatte outputs the
+    // plain shades 0-3 and gmbSgb picks the colors.
+    gmbSgb::reset();
+    for (unsigned pal = 0; pal < 3; pal++)
+      for (unsigned c = 0; c < 4; c++)
+        gmbBridge::setDmgColorRaw(pal, c, (unsigned short)c);
+  }
   gmbJoy = 0;
   gmbFrameCount = gmbSkipCount = gmbSaveCheck = gmbCheatCheck = 0;
   gmbLastTime = systemGetClock();
@@ -479,9 +562,14 @@ bool gambatteIsCgb()
   return gmb && gmbCgb;
 }
 
+bool gambatteSgbActive()
+{
+  return gmb && gmbSgbOn;
+}
+
 void gambatteSetDmgPalette(const unsigned int *rgb4)
 {
-  if (!gmb || gmbCgb)
+  if (!gmb || gmbCgb || gmbSgbOn)
     return;
   gmbBridge::setColorCorrection(false);
   for (unsigned pal = 0; pal < 3; pal++)
@@ -493,6 +581,8 @@ bool gambatteSetAutoPalette()
 {
   if (!gmb || gmbCgb)
     return false;
+  if (gmbSgbOn)
+    return true;   // the Super Game Boy picks the colors
   // The title in the header (0x134, up to 16 characters), as the Game Boy
   // Color boot ROM reads it.
   char title[17];

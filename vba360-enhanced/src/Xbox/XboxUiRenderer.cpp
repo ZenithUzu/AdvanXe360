@@ -4,6 +4,7 @@
 #include <xtl.h>
 #include <d3dx9.h>
 #include <string.h>
+#include <vector>
 
 #include "XboxHost.h"
 #include "../ui/UiCanvas.h"
@@ -18,7 +19,12 @@ struct UiVertex
   float u, v;
 };
 
-IDirect3DTexture9 *g_tex = 0;
+// Two textures used in turn. The Xbox 360 doesn't wait for the GPU when the
+// CPU locks a texture, so rewriting the one still being drawn showed torn,
+// half-old letters; each one is reused only after its fence has passed.
+IDirect3DTexture9 *g_texs[2] = { 0, 0 };
+DWORD g_texFence[2] = { 0, 0 };
+int g_texCur = 0;
 IDirect3DVertexShader9 *g_vs = 0;
 IDirect3DPixelShader9 *g_ps = 0;
 IDirect3DVertexDeclaration9 *g_decl = 0;
@@ -157,7 +163,7 @@ void xboxSetBorderFit(int fit)
 
 bool xboxUiRendererInit()
 {
-  if (g_tex)
+  if (g_vs)
     return true;
   if (!pDevice)
     return false;
@@ -190,28 +196,35 @@ void xboxUiPresent(const UiCanvas &canvas)
   if (!g_vs && !xboxUiRendererInit())
     return;
   int w = canvas.width(), h = canvas.height();
-  if (!g_tex || w != g_texW || h != g_texH) {
-    if (g_tex) {
-      pDevice->SetTexture(0, NULL);
-      pDevice->BlockUntilIdle();
-      g_tex->Release();
-      g_tex = 0;
+  if (!g_texs[0] || w != g_texW || h != g_texH) {
+    pDevice->SetTexture(0, NULL);
+    pDevice->BlockUntilIdle();
+    for (int i = 0; i < 2; i++) {
+      if (g_texs[i])
+        g_texs[i]->Release();
+      g_texs[i] = 0;
+      g_texFence[i] = 0;
     }
-    if (FAILED(pDevice->CreateTexture(w, h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT,
-                                      &g_tex, NULL)))
-      return;
+    for (int i = 0; i < 2; i++)
+      if (FAILED(pDevice->CreateTexture(w, h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT,
+                                        &g_texs[i], NULL)))
+        return;
     g_texW = w;
     g_texH = h;
   }
 
-  // Copy the canvas into the texture.
+  // Copy the canvas into the texture the GPU is done with.
+  g_texCur ^= 1;
+  IDirect3DTexture9 *tex = g_texs[g_texCur];
   pDevice->SetTexture(0, NULL);
+  if (g_texFence[g_texCur])
+    pDevice->BlockOnFence(g_texFence[g_texCur]);
   D3DLOCKED_RECT lr;
-  if (SUCCEEDED(g_tex->LockRect(0, &lr, NULL, 0))) {
+  if (SUCCEEDED(tex->LockRect(0, &lr, NULL, 0))) {
     const UiColor *src = canvas.pixels();
     for (int y = 0; y < h; y++)
       memcpy((BYTE *)lr.pBits + y * lr.Pitch, src + y * w, w * 4);
-    g_tex->UnlockRect(0);
+    tex->UnlockRect(0);
   }
 
   // Full-screen quad in pixel coordinates (viewport transform disabled),
@@ -229,11 +242,36 @@ void xboxUiPresent(const UiCanvas &canvas)
   pDevice->Clear(0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
   setQuadStates();
   pDevice->SetPixelShader(g_ps);
-  pDevice->SetTexture(0, g_tex);
+  pDevice->SetTexture(0, tex);
   pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
   pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
   pDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
   pDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
   pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(UiVertex));
+  g_texFence[g_texCur] = pDevice->InsertFence();
   pDevice->Present(NULL, NULL, NULL, NULL);
+}
+
+// Menu background: the image scaled to w x h, read back as 0xAARRGGBB pixels
+// for the software menu canvas.
+bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out)
+{
+  if (!pDevice || w <= 0 || h <= 0)
+    return false;
+  IDirect3DTexture9 *tex = 0;
+  if (FAILED(D3DXCreateTextureFromFileExA(pDevice, path, w, h, 1, 0, D3DFMT_LIN_A8R8G8B8,
+                                          D3DPOOL_DEFAULT, D3DX_FILTER_LINEAR, D3DX_DEFAULT,
+                                          0, NULL, NULL, &tex)) || !tex)
+    return false;
+  bool ok = false;
+  D3DLOCKED_RECT lr;
+  if (SUCCEEDED(tex->LockRect(0, &lr, NULL, D3DLOCK_READONLY))) {
+    out.resize((size_t)w * h);
+    for (int y = 0; y < h; y++)
+      memcpy(&out[(size_t)y * w], (const BYTE *)lr.pBits + y * lr.Pitch, w * 4);
+    tex->UnlockRect(0);
+    ok = true;
+  }
+  tex->Release();
+  return ok;
 }

@@ -15,13 +15,13 @@ enum
   Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
 
-  V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
+  V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   A_SOUND = 1, A_MUTE_FF,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   CH_ADD = 1, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000
@@ -68,6 +68,29 @@ std::vector<std::string> borderImages(UiHost &host)
     if (!entries[i].isDir && uiIsImageFile(entries[i].name))
       names.push_back(entries[i].name);
   return names;
+}
+
+// Images in backgrounds\ for the menu background.
+std::vector<std::string> menuImages(UiHost &host)
+{
+  std::vector<UiDirEntry> entries;
+  std::vector<std::string> names;
+  host.listDir(uiJoinPath(host.emulatorDir(), "backgrounds"), entries);
+  for (size_t i = 0; i < entries.size(); i++)
+    if (!entries[i].isDir && uiIsImageFile(entries[i].name))
+      names.push_back(entries[i].name);
+  return names;
+}
+
+// 0 = none, 1..n = backgrounds\ image n-1.
+int menuImageChoice(const UiConfig &cfg, const std::vector<std::string> &images)
+{
+  if (cfg.menuBackground.empty())
+    return 0;
+  for (size_t i = 0; i < images.size(); i++)
+    if (lowerStr(images[i]) == lowerStr(cfg.menuBackground))
+      return (int)i + 1;
+  return 0;
 }
 
 // 0 = black, 1..n = borders\ image n-1 (matching the saved settings).
@@ -307,6 +330,7 @@ void UiApp::updateStickCapture()
 
 void UiApp::draw(UiCanvas &c)
 {
+  uiApplyTheme(m_cfg.menuTheme);
   if (m_stack.empty()) {
     drawBackground(c);
     return;
@@ -375,7 +399,23 @@ void UiApp::invalidateThumb(const std::string &path)
 
 void UiApp::drawBackground(UiCanvas &c)
 {
-  c.fillGradient(0, 0, UI_W, UI_H, 0xFF0E1220, 0xFF181E31);
+  uiApplyTheme(m_cfg.menuTheme);
+  // Optional image from backgrounds\, under a veil of the theme's colors so
+  // the text stays readable whatever the picture is.
+  if (m_cfg.menuBackground != m_bgName) {
+    m_bgName = m_cfg.menuBackground;
+    m_bgPixels.clear();
+    if (!m_bgName.empty() &&
+        !m_host.loadImage(uiJoinPath(uiJoinPath(m_host.emulatorDir(), "backgrounds"), m_bgName),
+                          UI_W, UI_H, m_bgPixels))
+      m_bgPixels.clear();
+  }
+  if (m_bgPixels.size() == (size_t)(UI_W * UI_H)) {
+    c.blitScaled(&m_bgPixels[0], UI_W, UI_H, UI_W, 0, 0, UI_W, UI_H);
+    c.fillGradient(0, 0, UI_W, UI_H, uiWithAlpha(UI_COL_BG_TOP, 0xC8), uiWithAlpha(UI_COL_BG_BOTTOM, 0xB4));
+    return;
+  }
+  c.fillGradient(0, 0, UI_W, UI_H, UI_COL_BG_TOP, UI_COL_BG_BOTTOM);
 }
 
 void UiApp::drawHeader(UiCanvas &c, const char *title, const char *subtitle)
@@ -536,6 +576,11 @@ void UiApp::buildMenu(UiMenuScreen &m)
           uiGbPaletteNames[m_cfg.gbPalette][m_cfg.language ? 1 : 0],
           tr("Para juegos de Game Boy (los de Color usan los suyos). Autom\xe1tica: los que les da el GBC.",
              "For Game Boy games (Color games keep theirs). Automatic: the ones the GBC gives them."));
+    const char *sgb[3] = { tr("Apagado", "Off"), tr("Juegos de Game Boy", "Game Boy games"),
+                           tr("Tambi\xe9n compatibles con Color", "Also Color-compatible ones") };
+    m.add(V_SGB, ITEM_OPTION, tr("Super Game Boy (marcos)", "Super Game Boy (borders)"), sgb[m_cfg.sgbBorders],
+          tr("Marco y colores del juego en el Super Game Boy. Se aplica al abrir el juego.",
+             "The game's Super Game Boy border and colors. Applies when the game starts."));
     {
       // Background: black, or an image from borders\ next to default.xex
       std::vector<std::string> images = borderImages(m_host);
@@ -609,6 +654,17 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(U_LANGUAGE, ITEM_OPTION, tr("Idioma", "Language"), m_cfg.language ? "English" : "Espa\xf1ol");
     m.add(U_HIDE, ITEM_OPTION, tr("Mostrar s\xf3lo juegos", "Show only games"), yesNo[m_cfg.hideNonGames],
           tr("Oculta los archivos que no son ROMs en el explorador.", "Hides non-ROM files in the browser."));
+    m.add(U_THEME, ITEM_OPTION, tr("Tema de colores", "Color theme"),
+          uiThemes[m_cfg.menuTheme].name[m_cfg.language ? 1 : 0],
+          tr("Colores del men\xfa, inspirados en las consolas.", "Menu colors, inspired by the consoles."));
+    {
+      std::vector<std::string> images = menuImages(m_host);
+      int choice = menuImageChoice(m_cfg, images);
+      m.add(U_BACKGROUND, ITEM_OPTION, tr("Imagen de fondo", "Background image"),
+            choice ? images[choice - 1] : std::string(tr("Ninguna", "None")),
+            tr("Una imagen de la carpeta backgrounds\\ (ideal 1280x720), oscurecida.",
+               "An image from the backgrounds\\ folder (1280x720 is best), darkened."));
+    }
     m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
           tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
     break;
@@ -655,6 +711,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
           "VisualBoyAdvance-M; tambi\xe9n c\xf3""digo de VBA-GX.", "VisualBoyAdvance-M; also code from VBA-GX." },
         { "N\xfa""cleo de Game Boy y Color", "Game Boy and Color core", "Gambatte (Sindre Aam\xe5s)",
           "gambatte-libretro (equipo de libretro), GPL v2.", "gambatte-libretro (libretro team), GPL v2." },
+        { "Super Game Boy", "Super Game Boy", "SameBoy (Lior Halphon)",
+          "Marcos y colores, adaptados de SameBoy (licencia MIT).",
+          "Borders and colors, adapted from SameBoy (MIT license)." },
         { "Sensores del cartucho", "Cartridge sensors", "Equipo de VBA-M",
           "Sensor solar, giroscopio y vibraci\xf3n, de la VBA-M actual.",
           "Solar sensor, gyroscope and rumble, from current VBA-M." },
@@ -971,6 +1030,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == V_STRETCH) m_cfg.stretch = wrapIndex(m_cfg.stretch, delta, SIZE_COUNT);
     else if (id == V_EFFECT) m_cfg.screenEffect = wrapIndex(m_cfg.screenEffect, delta, EFFECT_COUNT);
     else if (id == V_GB_COLORS) m_cfg.gbPalette = wrapIndex(m_cfg.gbPalette, delta, GB_PALETTE_COUNT);
+    else if (id == V_SGB) m_cfg.sgbBorders = wrapIndex(m_cfg.sgbBorders, delta, 3);
     else if (id == V_BORDER_FIT) m_cfg.borderFit = wrapIndex(m_cfg.borderFit, delta, FIT_COUNT);
     else if (id == V_BORDER) {
       std::vector<std::string> images = borderImages(m_host);
@@ -1021,6 +1081,12 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
   case MENU_SETTINGS_UI:
     if (id == U_LANGUAGE) m_cfg.language ^= 1;
     else if (id == U_HIDE) m_cfg.hideNonGames ^= 1;
+    else if (id == U_THEME) m_cfg.menuTheme = wrapIndex(m_cfg.menuTheme, delta, UI_THEME_COUNT);
+    else if (id == U_BACKGROUND) {
+      std::vector<std::string> images = menuImages(m_host);
+      int choice = wrapIndex(menuImageChoice(m_cfg, images), delta, (int)images.size() + 1);
+      m_cfg.menuBackground = choice ? images[choice - 1] : std::string();
+    }
     break;
   case MENU_CONTROLS:
     if (id >= SN_MAP_BASE && id < SN_MAP_BASE + SENS_COUNT) {

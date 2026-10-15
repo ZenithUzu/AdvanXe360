@@ -180,12 +180,23 @@ private:
 const char *uiButtonName(UiApp &app, int button);
 const char *uiActionName(UiApp &app, int action);
 
-// Theme colors.
+// Theme colors (the text colors are the same in every theme).
 extern const UiColor UI_COL_TEXT;
 extern const UiColor UI_COL_TEXT_DIM;
-extern const UiColor UI_COL_ACCENT;
-extern const UiColor UI_COL_PANEL;
-extern const UiColor UI_COL_ROW_SEL;
+extern UiColor UI_COL_ACCENT;
+extern UiColor UI_COL_PANEL;       // opaque; drawn with the alpha each panel needs
+extern UiColor UI_COL_ROW_SEL;
+extern UiColor UI_COL_BG_TOP;
+extern UiColor UI_COL_BG_BOTTOM;
+
+struct UiTheme
+{
+  const char *name[2];   // Spanish, English
+  UiColor accent, bgTop, bgBottom, panel;
+};
+enum { UI_THEME_COUNT = 6 };
+extern const UiTheme uiThemes[UI_THEME_COUNT];
+void uiApplyTheme(int index);
 
 // Layout (1280x720, inside the TV safe area).
 enum

@@ -9,6 +9,8 @@
 #include "GeneralFunctions.h"
 #include "Storage.h"
 #include "XboxHost.h"
+#define XBOX_LOG_NO_REDIRECT
+#include "XboxLog.h"
 
 #include "../ui/UiApp.h"
 #include "../ui/UiCanvas.h"
@@ -65,8 +67,7 @@ VOID __cdecl main()
 
   // Diagnostic log (core messages, load steps) next to default.xex.
   std::string logPath = uiJoinPath(xboxEmulatorDir(), "vba360.log");
-  if (freopen(logPath.c_str(), "w", stdout))
-    setvbuf(stdout, NULL, _IONBF, 0);
+  xboxLogOpen(logPath.c_str());
 
   UiApp ui(xboxHost(), g_cfg);
   g_cfg.load(ui.configPath());

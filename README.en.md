@@ -25,6 +25,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **Games · Recent · Favorites · Settings** tabs (LB / RB).
 - **Drive and folder** browser (hard drive, USB, memory units, emulator folder) with a preview of the last moment played and a marker when the ROM has a patch.
 - **Spanish and English**, with a help line on every option.
+- **Color themes** (Default, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance and Red) and your own **background image** for the menu (*Settings → Interface & language*).
 
 **In-game menu** (right stick click; can be changed in Controls)
 - Save and load **states in 9 slots**, each with a thumbnail.
@@ -41,6 +42,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 **Game Boy and Game Boy Color** ([Gambatte](#game-boy-and-game-boy-color) core)
 - **Game Boy** and **Game Boy Color** games (`.gb`, `.gbc`), with their colors, battery saves, clock (Pokémon Gold/Silver/Crystal) and rumble on the carts that have it.
 - Game Boy games can use a fixed palette or the **automatic** one: the colors the Game Boy Color gave them.
+- **Super Game Boy:** the **border** and colors each game had for the Super Game Boy (Pokémon Red/Blue/Yellow, Donkey Kong, Kirby...). See [Super Game Boy](#super-game-boy).
 
 **Cheats**
 - GameShark, Action Replay, CodeBreaker and VBA codes.
@@ -164,13 +166,37 @@ Game Boy and Game Boy Color games run on **Gambatte**, a very accurate core by S
 - **BIOS (optional):** with *Real BIOS* on, `bios\gb_bios.bin` (256 bytes) and `bios\gbc_bios.bin` (2304 bytes) show the boot logo. Without them games start directly.
 - A few carts with special hardware that Gambatte doesn't emulate, such as *Kirby Tilt 'n' Tumble* (tilt sensor) or the *Game Boy Camera*, don't work yet.
 
+## Super Game Boy
+
+In **Settings → Video → Super Game Boy (borders)**:
+
+| Option | What it does |
+|---|---|
+| **Off** (default) | Game Boy games use the palette chosen in *Colors (Game Boy)* |
+| **Game Boy games** | Games made for the Super Game Boy show **their border** and their per-area colors, as on the Super Nintendo |
+| **Also Color-compatible ones** | The same, and games that are also Game Boy Color games (Pokémon Yellow, Gold/Silver, Zelda DX...) run in Super Game Boy mode instead of in color |
+
+- It applies **when the game starts** (the picture becomes 256×224 with the border).
+- The game itself sends its border when it boots; until then, or in games without one, the frame is black. The console's generic Super Game Boy border is not included.
+- Save states include the border and the colors.
+- Adapted from [SameBoy](https://github.com/LIJI32/SameBoy) (`Core/sgb.c`, by Lior Halphon, MIT license).
+
+## Menu: themes and background image
+
+In **Settings → Interface & language**:
+
+- **Color theme:** Default (purple), Xbox 360 (green), Game Boy (olive green), Game Boy Color (berry), Game Boy Advance (indigo) and Red. Text stays light on dark in all of them.
+- **Background image:** put images (PNG, JPG, BMP, TGA or DDS; 1280×720 is best) in the `backgrounds\` folder next to `default.xex` and pick one. It is darkened with the theme's colors so the text stays readable.
+
 ## Folders the emulator creates
 
-Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` and `bios\` (put `gba_bios.bin`, `gb_bios.bin` or `gbc_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
+Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\` and `bios\` (put `gba_bios.bin`, `gb_bios.bin` or `gbc_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
+
+The **`vba360.log`** file (next to `default.xex`) records what happens in each session: the game opened, the core used, saves and errors. If something fails, send it along with your report.
 
 ## Limitations
 
-- **Super Game Boy:** the borders and the colors each game asked the Super Game Boy for are not emulated (its 32 fixed palettes are available).
+- **Super Game Boy:** the console's generic border, the boot animation and jingle, and the extra sound a few games used are not included.
 - **Game Boy Color (new):** Gambatte support is recent; if a game fails, please open an *issue*.
 - **Some GBA games that need add-ons don't work:**
   - **Classic NES Series / Famicom Mini** (the NES games for GBA, such as *Super Mario Bros.*): they use special protections and don't start.
@@ -196,6 +222,7 @@ Tested on console (BadUpdate + Aurora). Work in progress: if you find bugs, plea
 - **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
 - **Screen effects:** adapted from [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* by Greg Hogan (GPL v2+) for CRT and *lcd3x* by Gigaherz (public domain) for LCD.
 - **Game Boy and Game Boy Color core:** [Gambatte](https://github.com/libretro/gambatte-libretro), by **Sindre Aamås** and the gambatte-libretro contributors (libretro), GPL v2. Details of the version used in [`src/gambatte/README-VBA360.txt`](vba360-enhanced/src/gambatte/README-VBA360.txt).
+- **Super Game Boy:** borders and colors adapted from [SameBoy](https://github.com/LIJI32/SameBoy), by **Lior Halphon** (MIT license).
 - **Game Boy palettes:** from the same Gambatte core: original Game Boy, Pocket, Light, the 32 Super Game Boy presets and the Game Boy Color's automatic palettes.
 - **Cartridge sensors** (sun, gyroscope, rumble): adapted from [current VisualBoyAdvance-M](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
 - **Game Boy sound and archive reading:** Gb_Apu, Blip_Buffer and File_Extractor by Shay Green (blargg).

@@ -355,6 +355,11 @@ public:
     return xboxRomPatched && !g_rom.empty();
   }
 
+  virtual bool loadImage(const std::string &path, int w, int h, std::vector<UiColor> &out)
+  {
+    return xboxLoadImagePixels(path.c_str(), w, h, out);
+  }
+
   virtual bool savePatchedRom(std::string &savedTo)
   {
     if (!romPatched())
@@ -607,7 +612,7 @@ std::string xboxCheatListPath()
 
 void xboxCreateFolders()
 {
-  static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios", "borders" };
+  static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios", "borders", "backgrounds" };
   for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++)
     ensureDir(uiJoinPath(xboxEmulatorDir(), dirs[i]));
 }
@@ -637,6 +642,8 @@ void xboxOnGameLoading(const char *romPath)
   extern char gambatteCgbBiosFileName[2048];
   std::string gbcBios = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "bios"), "gbc_bios.bin");
   strcpy(gambatteCgbBiosFileName, g_cfg.useBios && pathExists(gbcBios) ? gbcBios.c_str() : "");
+  // Super Game Boy borders and colors (Settings > Video).
+  gambatteSgbMode = g_cfg.sgbBorders;
 
   // Game Boy patches are applied inside gbLoadRom().
   gbPendingPatch = 0;
