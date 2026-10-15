@@ -167,6 +167,8 @@ bool addParsedCode(const UiParsedCode &c, const std::string &desc)
   switch (c.kind) {
   case CODE_GBA_RAW: cheatsAddCheatCode(c.code.c_str(), d.c_str()); break;
   case CODE_GBA_GSA: cheatsAddGSACode(c.code.c_str(), d.c_str(), g_cfg.gsaV3 != 0); break;
+  case CODE_GBA_GSA12: cheatsAddGSACode(c.code.c_str(), d.c_str(), false); break;
+  case CODE_GBA_GSA3: cheatsAddGSACode(c.code.c_str(), d.c_str(), true); break;
   case CODE_GBA_CBA: cheatsAddCBACode(c.code.c_str(), d.c_str()); break;
   case CODE_GB_GS: gbAddGsCheat(c.code.c_str(), d.c_str()); break;
   case CODE_GB_GG: gbAddGgCheat(c.code.c_str(), d.c_str()); break;
@@ -183,19 +185,99 @@ void setCoreCheat(int i, bool on)
   }
 }
 
-void saveCheats()
+// Each game's cheats live in a text file of their own, by console:
+// cheats\gba\<game>.vch or cheats\gb\<game>.vch (UiCheatParse.h), so a list
+// is never fed to the wrong core. The running game's core list is rebuilt
+// from that file whenever it changes.
+bool romIsGb(const std::string &rom)
 {
-  if (g_rom.empty())
-    return;
-  std::string path = xboxCheatListPath();
-  if (coreCheatCount() == 0) {
+  std::string ext = uiExtension(rom);
+  if (ext == ".gb" || ext == ".gbc" || ext == ".cgb" || ext == ".dmg" || ext == ".sgb")
+    return true;
+  if (ext == ".gba" || ext == ".agb" || ext == ".bin" || ext == ".elf" || ext == ".mb")
+    return false;
+  // Compressed: the running game knows; otherwise guess GBA.
+  if (!g_rom.empty() && rom == g_rom)
+    return cartridgeType == 1;
+  return false;
+}
+
+std::string cheatStorePath(const std::string &rom)
+{
+  return uiGameFile(xboxEmulatorDir(), romIsGb(rom) ? "cheats\\gb" : "cheats\\gba", rom, "", ".vch");
+}
+
+void loadCheatStore(const std::string &rom, std::vector<UiStoredCheat> &list)
+{
+  int system = 0;
+  uiLoadCheatStore(cheatStorePath(rom), list, system);
+  // Wrong console in the file (renamed ROM...): ignore it.
+  if (system != 0 && system != (romIsGb(rom) ? 2 : 1))
+    list.clear();
+}
+
+void saveCheatStore(const std::string &rom, const std::vector<UiStoredCheat> &list)
+{
+  std::string path = cheatStorePath(rom);
+  if (list.empty()) {
     DeleteFile(path.c_str());
     return;
   }
+  uiSaveCheatStore(path, list, romIsGb(rom) ? 2 : 1);
+}
+
+// The running game's core gets exactly the enabled and disabled cheats of
+// its list.
+void syncCoreCheats()
+{
+  if (g_rom.empty())
+    return;
   if (cartridgeType == 1)
-    gbCheatsSaveCheatList(path.c_str());
+    gbCheatRemoveAll();
   else
-    cheatsSaveCheatList(path.c_str());
+    cheatsDeleteAll(true);
+  std::vector<UiStoredCheat> list;
+  loadCheatStore(g_rom, list);
+  bool gba = cartridgeType != 1;
+  for (size_t i = 0; i < list.size(); i++) {
+    std::vector<UiParsedCode> codes;
+    if (!uiParseCheatCodesAs(list[i].code, gba, list[i].type, codes))
+      continue;
+    int first = coreCheatCount();
+    for (size_t k = 0; k < codes.size(); k++)
+      addParsedCode(codes[k], list[i].desc);
+    for (int c = first; c < coreCheatCount(); c++)
+      setCoreCheat(c, list[i].enabled);
+  }
+}
+
+// Lists saved by older versions (cheats\<game>.clt, the core's own format)
+// are turned into the new file once.
+void migrateOldCheats()
+{
+  std::string old = xboxCheatListPath();
+  if (!pathExists(old) || pathExists(cheatStorePath(g_rom)))
+    return;
+  if (cartridgeType == 1)
+    gbCheatsLoadCheatList(old.c_str());
+  else
+    cheatsLoadCheatList(old.c_str());
+  std::vector<CheatGroup> groups;
+  cheatGroups(groups);
+  std::vector<UiStoredCheat> list;
+  for (size_t i = 0; i < groups.size(); i++) {
+    UiStoredCheat c;
+    int f = groups[i].first;
+    c.desc = coreCheatDesc(f);
+    c.enabled = coreCheatEnabled(f);
+    for (int k = 0; k < groups[i].count; k++) {
+      if (k) c.code += " ";
+      c.code += cartridgeType == 1 ? gbCheatList[f + k].cheatCode : cheatsList[f + k].codestring;
+    }
+    list.push_back(c);
+  }
+  saveCheatStore(g_rom, list);
+  DeleteFile(old.c_str());
 }
 
 // --- Video -----------------------------------------------------------------------
@@ -368,7 +450,7 @@ public:
     if (ext == ".gba" || ext == ".agb" || ext == ".bin" || ext == ".elf" || ext == ".mb")
       return 0;
     if (ext != ".gb" && ext != ".gbc" && ext != ".cgb" && ext != ".dmg" && ext != ".sgb")
-      return UI_ROM_GB | UI_ROM_SGB;   // zip / 7z: can't tell, offer everything
+      return romIsGb(rom) ? UI_ROM_GB | UI_ROM_SGB : 0;   // zip / 7z: only known when running
     unsigned char h[0x150];
     FILE *f = fopen(rom.c_str(), "rb");
     if (!f)
@@ -435,92 +517,98 @@ public:
     return (const UiColor *)(pix + srcPitch);
   }
 
-  virtual void listCheats(std::vector<UiCheatInfo> &out)
+  virtual void listCheats(const std::string &rom, std::vector<UiCheatInfo> &out)
   {
     out.clear();
-    if (g_rom.empty())
-      return;
-    std::vector<CheatGroup> groups;
-    cheatGroups(groups);
-    for (size_t i = 0; i < groups.size(); i++) {
+    std::vector<UiStoredCheat> list;
+    loadCheatStore(rom, list);
+    for (size_t i = 0; i < list.size(); i++) {
       UiCheatInfo c;
-      int f = groups[i].first;
-      c.desc = coreCheatDesc(f);
-      c.enabled = coreCheatEnabled(f);
-      for (int k = 0; k < groups[i].count; k++) {
-        if (k) c.code += "  ";
-        c.code += cartridgeType == 1 ? gbCheatList[f + k].cheatCode : cheatsList[f + k].codestring;
-      }
+      c.desc = list[i].desc;
+      c.code = list[i].code;
+      c.type = list[i].type;
+      c.enabled = list[i].enabled;
       out.push_back(c);
     }
   }
 
-  virtual void setCheatEnabled(int index, bool enabled)
+  virtual void setCheatEnabled(const std::string &rom, int index, bool enabled)
   {
-    std::vector<CheatGroup> groups;
-    cheatGroups(groups);
-    if (index < 0 || index >= (int)groups.size())
+    std::vector<UiStoredCheat> list;
+    loadCheatStore(rom, list);
+    if (index < 0 || index >= (int)list.size())
       return;
-    for (int k = 0; k < groups[index].count; k++)
-      setCoreCheat(groups[index].first + k, enabled);
-    saveCheats();
+    list[index].enabled = enabled;
+    saveCheatStore(rom, list);
+    if (rom == g_rom)
+      syncCoreCheats();
   }
 
-  virtual bool addCheat(const std::string &code, const std::string &desc)
+  virtual bool addCheat(const std::string &rom, const std::string &code, int type,
+                        const std::string &desc)
   {
     std::vector<UiParsedCode> codes;
-    if (!uiParseCheatCodes(code, g_isGba, codes))
+    if (!uiParseCheatCodesAs(code, !romIsGb(rom), type, codes))
       return false;
-    bool any = false;
-    for (size_t i = 0; i < codes.size(); i++)
-      any = addParsedCode(codes[i], desc) || any;
-    saveCheats();
-    return any;
+    std::vector<UiStoredCheat> list;
+    loadCheatStore(rom, list);
+    UiStoredCheat c;
+    c.enabled = true;
+    c.type = type;
+    c.code = code;
+    c.desc = safeDesc(desc);
+    list.push_back(c);
+    saveCheatStore(rom, list);
+    if (rom == g_rom)
+      syncCoreCheats();
+    return true;
   }
 
-  virtual void removeCheat(int index)
+  virtual void removeCheat(const std::string &rom, int index)
   {
-    std::vector<CheatGroup> groups;
-    cheatGroups(groups);
-    if (index < 0 || index >= (int)groups.size())
+    std::vector<UiStoredCheat> list;
+    loadCheatStore(rom, list);
+    if (index < 0 || index >= (int)list.size())
       return;
-    // Remove from the end so the indices stay valid.
-    for (int k = groups[index].count - 1; k >= 0; k--) {
-      int i = groups[index].first + k;
-      if (cartridgeType == 1)
-        gbCheatRemove(i);
-      else
-        cheatsDelete(i, true);
-    }
-    saveCheats();
+    list.erase(list.begin() + index);
+    saveCheatStore(rom, list);
+    if (rom == g_rom)
+      syncCoreCheats();
   }
 
-  virtual int importCheatFile(const std::string &path)
+  virtual int importCheatFile(const std::string &rom, const std::string &path)
   {
     std::vector<UiCheatEntry> entries;
-    if (!uiParseCheatFile(path, g_isGba, entries))
+    if (!uiParseCheatFile(path, !romIsGb(rom), entries))
       return 0;
+    std::vector<UiStoredCheat> list;
+    loadCheatStore(rom, list);
     int added = 0;
     for (size_t i = 0; i < entries.size(); i++) {
-      std::string desc = entries[i].desc;
-      if (desc.empty()) {
+      if (entries[i].codes.empty())
+        continue;
+      UiStoredCheat c;
+      c.desc = entries[i].desc;
+      if (c.desc.empty()) {
         char b[32];
-        sprintf(b, g_cfg.language ? "Cheat %d" : "Truco %d", (int)i + 1);
-        desc = b;
+        sprintf(b, g_cfg.language ? "Cheat %d" : "Truco %d", (int)list.size() + 1);
+        c.desc = b;
       }
-      int first = coreCheatCount();
-      bool any = false;
-      for (size_t k = 0; k < entries[i].codes.size(); k++)
-        any = addParsedCode(entries[i].codes[k], desc) || any;
-      if (any) {
-        added++;
-        // Imported cheats start off unless the file says otherwise:
-        // turning dozens of codes on at once tends to crash games.
-        for (int c = first; c < coreCheatCount(); c++)
-          setCoreCheat(c, entries[i].enabled);
+      c.desc = safeDesc(c.desc);
+      // Imported cheats start off unless the file says otherwise: turning
+      // dozens of codes on at once tends to crash games.
+      c.enabled = entries[i].enabled;
+      c.type = CT_AUTO;
+      for (size_t k = 0; k < entries[i].codes.size(); k++) {
+        if (k) c.code += " ";
+        c.code += entries[i].codes[k].code;
       }
+      list.push_back(c);
+      added++;
     }
-    saveCheats();
+    saveCheatStore(rom, list);
+    if (rom == g_rom)
+      syncCoreCheats();
     return added;
   }
 
@@ -556,8 +644,10 @@ void runInGameMenu()
   g_ui->openInGameMenu();
   for (;;) {
     g_ui->update(xboxReadPads(true));
-    g_ui->draw(*g_menuCanvas);
-    xboxUiPresent(*g_menuCanvas);
+    bool redraw = g_ui->needsRedraw();
+    if (redraw)
+      g_ui->draw(*g_menuCanvas);
+    xboxUiPresent(*g_menuCanvas, redraw);
     std::string rom;
     UiRequest r = g_ui->takeRequest(rom);
     if (r == UI_REQ_RESUME)
@@ -647,7 +737,8 @@ std::string xboxCheatListPath()
 
 void xboxCreateFolders()
 {
-  static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios", "borders", "backgrounds" };
+  static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios", "borders", "backgrounds",
+                                "cheats\\gba", "cheats\\gb" };
   for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++)
     ensureDir(uiJoinPath(xboxEmulatorDir(), dirs[i]));
 }
@@ -874,13 +965,8 @@ void xboxApplyGameOverrides(bool isGba)
 void xboxOnGameStarted()
 {
   // Cheats saved for this game
-  std::string cheats = xboxCheatListPath();
-  if (pathExists(cheats)) {
-    if (cartridgeType == 1)
-      gbCheatsLoadCheatList(cheats.c_str());
-    else
-      cheatsLoadCheatList(cheats.c_str());
-  }
+  migrateOldCheats();
+  syncCoreCheats();
   if (g_cfg.autoLoadState && pathExists(xboxStatePath(0)))
     sdlReadState(0);
   g_waitRelease = true;
@@ -897,7 +983,6 @@ void xboxOnGameExiting()
   xboxCartridgeRumble(false);
   if (g_ui)
     g_ui->saveAll();   // keeps the sunlight level changed with the stick
-  saveCheats();
   saveFrameThumb(uiGameFile(xboxEmulatorDir(), "thumbs", g_rom, "", ".tmb"));
   if (g_cfg.autoSaveState)
     g_host.saveState(0);

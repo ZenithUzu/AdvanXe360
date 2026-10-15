@@ -8,6 +8,7 @@
 #define UI_APP_H
 
 #include <string>
+#include <map>
 #include <vector>
 
 #include "UiCanvas.h"
@@ -59,6 +60,10 @@ public:
 
   void update(unsigned int heldButtons);
   void draw(UiCanvas &canvas);
+  // False when nothing on screen can have changed since the last draw (no
+  // buttons, no message, nothing blinking): the host then shows the last
+  // picture again instead of drawing it all over.
+  bool needsRedraw() const { return m_dirtyFrames > 0; }
 
   UiRequest takeRequest(std::string &romPath);
 
@@ -90,6 +95,10 @@ public:
   // A on an option: its values in a side panel / list (or the next value in
   // the classic style).
   void openPicker(UiMenuScreen &menu, int itemId);
+  // Image files in an emulator folder (borders, backgrounds), cached while
+  // a menu is open; ROM header info (UI_ROM_*), cached.
+  const std::vector<std::string> &cachedImages(const char *folder);
+  int romInfo(const std::string &rom);
   void onMenuSecondary(UiMenuScreen &menu, int itemId, int button);
   void onMenuClosed(UiMenuScreen &menu);
   void toggleFavorite(const std::string &rom);
@@ -142,9 +151,22 @@ private:
   // nothing is saved or applied then.
   bool m_quietChange;
 
+  // Cheats menu: the game, the code type picked, the code waiting for its name.
+  std::string m_cheatRom;
+  int m_cheatTypeIdx;
+  std::string m_pendingCheatCode, m_pendingCheatDesc;
+  int m_dirtyFrames;
+  std::map<std::string, std::vector<std::string> > m_imageCache;
+  std::map<std::string, int> m_romInfoCache;
+
   // Menu background image (Settings > Interface), loaded once per name.
   std::string m_bgName;
   std::vector<UiColor> m_bgPixels;
+  // The finished background (colors or image + veil), drawn once and then
+  // copied every frame.
+  std::vector<UiColor> m_bgCache;
+  int m_bgCacheTheme;
+  std::string m_bgCacheName;
 
   std::vector<std::string> m_thumbKeys;
   std::vector<UiThumb> m_thumbs;

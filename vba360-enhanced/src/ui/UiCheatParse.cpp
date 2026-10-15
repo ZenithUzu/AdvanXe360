@@ -125,6 +125,117 @@ bool uiParseCheatCodes(const std::string &text, bool gba, std::vector<UiParsedCo
   return true;
 }
 
+namespace {
+const char *const kTypeKeys[CT_COUNT] = { "auto", "gsa", "gsa3", "cba", "vba", "gs", "gg" };
+}
+
+const char *uiCheatTypeKey(int type)
+{
+  return type >= 0 && type < CT_COUNT ? kTypeKeys[type] : kTypeKeys[0];
+}
+
+int uiCheatTypeFromKey(const std::string &key)
+{
+  for (int i = 0; i < CT_COUNT; i++)
+    if (key == kTypeKeys[i])
+      return i;
+  return CT_AUTO;
+}
+
+const char *uiCheatTypeExample(int type)
+{
+  switch (type) {
+  case CT_GBA_GSA12:
+  case CT_GBA_GSA3: return "XXXXXXXX YYYYYYYY";
+  case CT_GBA_CBA: return "XXXXXXXX YYYY";
+  case CT_GBA_RAW: return "XXXXXXXX:YY";
+  case CT_GB_GS: return "01XXXXXX";
+  case CT_GB_GG: return "XXX-XXX-XXX";
+  default: return "";
+  }
+}
+
+bool uiParseCheatCodesAs(const std::string &text, bool gba, int type, std::vector<UiParsedCode> &out)
+{
+  std::vector<UiParsedCode> found;
+  if (!uiParseCheatCodes(text, gba, found))
+    return false;
+  if (type == CT_AUTO) {
+    out.insert(out.end(), found.begin(), found.end());
+    return true;
+  }
+  for (size_t i = 0; i < found.size(); i++) {
+    int k = found[i].kind;
+    bool ok = false;
+    switch (type) {
+    case CT_GBA_GSA12: ok = k == CODE_GBA_GSA; found[i].kind = CODE_GBA_GSA12; break;
+    case CT_GBA_GSA3:  ok = k == CODE_GBA_GSA; found[i].kind = CODE_GBA_GSA3; break;
+    case CT_GBA_CBA:   ok = k == CODE_GBA_CBA; break;
+    case CT_GBA_RAW:   ok = k == CODE_GBA_RAW; break;
+    case CT_GB_GS:     ok = k == CODE_GB_GS; break;
+    case CT_GB_GG:     ok = k == CODE_GB_GG; break;
+    }
+    if (!ok)
+      return false;   // e.g. a Game Genie code with "GameShark" chosen
+  }
+  out.insert(out.end(), found.begin(), found.end());
+  return true;
+}
+
+bool uiLoadCheatStore(const std::string &path, std::vector<UiStoredCheat> &out, int &system)
+{
+  out.clear();
+  system = 0;
+  FILE *f = fopen(path.c_str(), "r");
+  if (!f)
+    return false;
+  char buf[1024];
+  while (fgets(buf, sizeof(buf), f)) {
+    std::string line = trim(buf);
+    if (line.empty() || line[0] == '#')
+      continue;
+    if (line == "system=gba") { system = 1; continue; }
+    if (line == "system=gb") { system = 2; continue; }
+    if (line.compare(0, 6, "cheat=") != 0)
+      continue;
+    // cheat=<0|1>|<type>|<codes>|<description>
+    std::string rest = line.substr(6);
+    size_t a = rest.find('|');
+    size_t b = a == std::string::npos ? a : rest.find('|', a + 1);
+    size_t c = b == std::string::npos ? b : rest.find('|', b + 1);
+    if (c == std::string::npos)
+      continue;
+    UiStoredCheat ch;
+    ch.enabled = rest.substr(0, a) == "1";
+    ch.type = uiCheatTypeFromKey(rest.substr(a + 1, b - a - 1));
+    ch.code = rest.substr(b + 1, c - b - 1);
+    ch.desc = rest.substr(c + 1);
+    if (!ch.code.empty())
+      out.push_back(ch);
+  }
+  fclose(f);
+  return true;
+}
+
+bool uiSaveCheatStore(const std::string &path, const std::vector<UiStoredCheat> &list, int system)
+{
+  FILE *f = fopen(path.c_str(), "w");
+  if (!f)
+    return false;
+  fprintf(f, "# VBA360 cheats: cheat=<on>|<type>|<codes>|<description>\n");
+  if (system == 1) fprintf(f, "system=gba\n");
+  if (system == 2) fprintf(f, "system=gb\n");
+  for (size_t i = 0; i < list.size(); i++) {
+    std::string code = list[i].code, desc = list[i].desc;
+    for (size_t k = 0; k < code.size(); k++) if (code[k] == '|' || code[k] == '\n') code[k] = ' ';
+    for (size_t k = 0; k < desc.size(); k++) if (desc[k] == '\n' || desc[k] == '\r') desc[k] = ' ';
+    fprintf(f, "cheat=%d|%s|%s|%s\n", list[i].enabled ? 1 : 0, uiCheatTypeKey(list[i].type),
+            code.c_str(), desc.c_str());
+  }
+  fclose(f);
+  return true;
+}
+
 bool uiParseCheatFile(const std::string &path, bool gba, std::vector<UiCheatEntry> &out)
 {
   FILE *f = fopen(path.c_str(), "r");

@@ -90,7 +90,8 @@ void xboxSetBorderFit(int fit);
 void xboxSetupPicture(int srcWidth, int srcHeight);
 // Sets the texture filter the game picture uses (sharp / smooth).
 void xboxApplyGameSampler();
-void xboxUiPresent(const UiCanvas &canvas);
+// changed = false: show the last uploaded picture again (nothing new drawn).
+void xboxUiPresent(const UiCanvas &canvas, bool changed = true);
 // Decodes an image (PNG, JPG, BMP, TGA, DDS) scaled to w x h for the menu.
 bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out);
 

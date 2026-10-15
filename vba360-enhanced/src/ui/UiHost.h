@@ -26,6 +26,7 @@ struct UiCheatInfo
 {
   std::string desc;
   std::string code;
+  int type;          // UiCheatType
   bool enabled;
 };
 
@@ -65,14 +66,17 @@ public:
   virtual bool savePatchedRom(std::string &savedTo) { return false; }
 
   // --- Cheats ------------------------------------------------------------
-  virtual void listCheats(std::vector<UiCheatInfo> &out) = 0;
-  virtual void setCheatEnabled(int index, bool enabled) = 0;
-  // Accepts GameShark / Action Replay / CodeBreaker / raw VBA codes for GBA
-  // and GameShark / Game Genie for GB. Returns false if not recognised.
-  virtual bool addCheat(const std::string &code, const std::string &desc) = 0;
-  virtual void removeCheat(int index) = 0;
-  // Imports "<rom>.cht" / "<rom>.txt" style text lists; returns codes added.
-  virtual int importCheatFile(const std::string &path) = 0;
+  // Each game has its own list (cheats\<game>.vch), kept whether the game
+  // runs or not; changes to the running game's list apply right away.
+  virtual void listCheats(const std::string &rom, std::vector<UiCheatInfo> &out) = 0;
+  virtual void setCheatEnabled(const std::string &rom, int index, bool enabled) = 0;
+  // type: UiCheatType (UiCheatParse.h). Returns false if the code isn't valid
+  // for that type and that console.
+  virtual bool addCheat(const std::string &rom, const std::string &code, int type,
+                        const std::string &desc) = 0;
+  virtual void removeCheat(const std::string &rom, int index) = 0;
+  // Imports "<rom>.cht" / "<rom>.txt" style text lists; returns cheats added.
+  virtual int importCheatFile(const std::string &rom, const std::string &path) = 0;
 
   // Decodes an image file (PNG, JPG, BMP...) scaled to w x h, 0xAARRGGBB.
   virtual bool loadImage(const std::string &path, int w, int h, std::vector<UiColor> &out) { return false; }

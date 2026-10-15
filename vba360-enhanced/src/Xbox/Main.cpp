@@ -83,8 +83,10 @@ VOID __cdecl main()
 
   for (;;) {
     ui.update(xboxReadPads(true));
-    ui.draw(canvas);
-    xboxUiPresent(canvas);
+    bool redraw = ui.needsRedraw();
+    if (redraw)
+      ui.draw(canvas);
+    xboxUiPresent(canvas, redraw);
 
     std::string rom;
     if (ui.takeRequest(rom) != UI_REQ_LAUNCH)

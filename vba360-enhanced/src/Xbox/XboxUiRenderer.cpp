@@ -191,7 +191,7 @@ bool xboxUiRendererInit()
   return g_vs && g_ps && g_decl;
 }
 
-void xboxUiPresent(const UiCanvas &canvas)
+void xboxUiPresent(const UiCanvas &canvas, bool changed)
 {
   if (!g_vs && !xboxUiRendererInit())
     return;
@@ -213,19 +213,23 @@ void xboxUiPresent(const UiCanvas &canvas)
     g_texH = h;
   }
 
-  // Copy the canvas into the texture the GPU is done with.
-  g_texCur ^= 1;
-  IDirect3DTexture9 *tex = g_texs[g_texCur];
-  pDevice->SetTexture(0, NULL);
-  if (g_texFence[g_texCur])
-    pDevice->BlockOnFence(g_texFence[g_texCur]);
-  D3DLOCKED_RECT lr;
-  if (SUCCEEDED(tex->LockRect(0, &lr, NULL, 0))) {
-    const UiColor *src = canvas.pixels();
-    for (int y = 0; y < h; y++)
-      memcpy((BYTE *)lr.pBits + y * lr.Pitch, src + y * w, w * 4);
-    tex->UnlockRect(0);
+  // Copy the canvas into the texture the GPU is done with (when the menu
+  // didn't change, the last one is simply shown again).
+  if (changed) {
+    g_texCur ^= 1;
+    IDirect3DTexture9 *up = g_texs[g_texCur];
+    pDevice->SetTexture(0, NULL);
+    if (g_texFence[g_texCur])
+      pDevice->BlockOnFence(g_texFence[g_texCur]);
+    D3DLOCKED_RECT lr;
+    if (SUCCEEDED(up->LockRect(0, &lr, NULL, 0))) {
+      const UiColor *src = canvas.pixels();
+      for (int y = 0; y < h; y++)
+        memcpy((BYTE *)lr.pBits + y * lr.Pitch, src + y * w, w * 4);
+      up->UnlockRect(0);
+    }
   }
+  IDirect3DTexture9 *tex = g_texs[g_texCur];
 
   // Full-screen quad in pixel coordinates (viewport transform disabled),
   // the same way libSDLx360 draws the game.

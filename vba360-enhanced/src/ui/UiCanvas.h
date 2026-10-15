@@ -48,6 +48,8 @@ public:
   // brightness 0..256 darkens the image (256 = unchanged).
   void blitScaled(const UiColor *src, int sw, int sh, int spitch,
                   int dx, int dy, int dw, int dh, int brightness = 256);
+  // Copies a whole canvas-sized image (width*height pixels), ignoring the clip.
+  void copyFrom(const UiColor *src);
 
 private:
   UiColor *m_px;

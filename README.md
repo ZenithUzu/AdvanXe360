@@ -48,8 +48,11 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - **Super Game Boy:** el **marco** y los colores que cada juego traía para el Super Game Boy (Pokémon Rojo/Azul/Amarillo, Donkey Kong, Kirby...). Ver [Super Game Boy](#super-game-boy).
 
 **Trucos**
-- GameShark, Action Replay, CodeBreaker y códigos VBA.
-- Se escriben con un **teclado en pantalla** o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch). Se guardan por juego.
+- Están en **Opciones del juego** (botón Y sobre un juego, o *Opciones de este juego* en el menú dentro del juego) → **Trucos y códigos**. El emulador sabe si el juego es de GBA o de GB/GBC y ofrece los tipos que corresponden:
+  - **GBA:** Automático, GameShark / Action Replay v1-v2, GameShark v3 / Action Replay v3, CodeBreaker y VBA (`dirección:valor`).
+  - **GB / GBC:** Automático, **GameShark** (`01XXXXXX`) y **Game Genie** (`XXX-XXX-XXX` o `XXX-XXX`).
+- Se escriben con un **teclado en pantalla** (después puedes ponerle nombre) o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch).
+- Cada juego guarda **su propia lista**, separada por consola (`cheats\gba\` y `cheats\gb\`), aunque el juego no esté abierto; un código de GB nunca se aplica a un juego de GBA ni al revés. Las listas de versiones anteriores se convierten solas la primera vez.
 
 **Ajustes**
 - **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa, **entero** (píxel exacto: GBA x4, GB x5) o **16:9** (llena toda la TV, imagen estirada); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (41 opciones: gris, verde clásico, Game Boy original, Pocket, Light, las **32 paletas oficiales de Super Game Boy** de la 1-A a la 4-H, sepia, azul, rojo y **automática**, como en el Game Boy Color); **fondo negro o con imagen propia** (centrada, rellenar o estirar); mostrar FPS y salto de cuadros.

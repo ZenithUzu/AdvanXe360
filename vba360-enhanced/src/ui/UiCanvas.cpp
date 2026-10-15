@@ -122,11 +122,16 @@ inline void UiCanvas::blendPixel(UiColor *p, UiColor c, int alpha)
     *p = c | 0xFF000000;
     return;
   }
+  // x / 255 without a division (the Xbox 360 CPU divides slowly; this runs
+  // for every pixel of text and every translucent panel).
   UiColor d = *p;
   int inv = 255 - alpha;
-  int r = (((c >> 16) & 0xFF) * alpha + ((d >> 16) & 0xFF) * inv) / 255;
-  int g = (((c >> 8) & 0xFF) * alpha + ((d >> 8) & 0xFF) * inv) / 255;
-  int b = ((c & 0xFF) * alpha + (d & 0xFF) * inv) / 255;
+  int r = (int)((c >> 16) & 0xFF) * alpha + (int)((d >> 16) & 0xFF) * inv + 128;
+  int g = (int)((c >> 8) & 0xFF) * alpha + (int)((d >> 8) & 0xFF) * inv + 128;
+  int b = (int)(c & 0xFF) * alpha + (int)(d & 0xFF) * inv + 128;
+  r = (r + (r >> 8)) >> 8;
+  g = (g + (g >> 8)) >> 8;
+  b = (b + (b >> 8)) >> 8;
   *p = 0xFF000000 | (r << 16) | (g << 8) | b;
 }
 
@@ -257,8 +262,13 @@ int UiCanvas::drawText(UiFontId font, int x, int y, const char *text, UiColor c)
         if (px < m_cx0 || px >= m_cx1)
           continue;
         int a = atlasAlpha(f, gx + xx, gy + yy);
-        if (a)
-          blendPixel(row + px, c, a * baseA / 255);
+        if (a) {
+          if (baseA < 255) {
+            a = a * baseA + 128;
+            a = (a + (a >> 8)) >> 8;
+          }
+          blendPixel(row + px, c, a);
+        }
       }
     }
     pen += g[7];
@@ -300,24 +310,37 @@ void UiCanvas::blitScaled(const UiColor *src, int sw, int sh, int spitch,
 {
   if (!src || sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0)
     return;
+  // Visible part only, and the source column stepped in 16.16 fixed point
+  // instead of a division per pixel.
+  int x0 = dx < m_cx0 ? m_cx0 - dx : 0;
+  int x1 = dx + dw > m_cx1 ? m_cx1 - dx : dw;
+  if (x0 >= x1)
+    return;
+  unsigned stepX = (unsigned)(((unsigned long long)sw << 16) / (unsigned)dw);
   for (int y = 0; y < dh; y++) {
     int py = dy + y;
     if (py < m_cy0 || py >= m_cy1)
       continue;
     const UiColor *srow = src + (y * sh / dh) * spitch;
-    UiColor *drow = m_px + py * m_w;
-    for (int x = 0; x < dw; x++) {
-      int px = dx + x;
-      if (px < m_cx0 || px >= m_cx1)
-        continue;
-      UiColor s = srow[x * sw / dw];
-      if (brightness != 256) {
+    UiColor *drow = m_px + py * m_w + dx;
+    unsigned sx = stepX * (unsigned)x0;
+    if (brightness == 256) {
+      for (int x = x0; x < x1; x++, sx += stepX)
+        drow[x] = srow[sx >> 16] | 0xFF000000;
+    } else {
+      for (int x = x0; x < x1; x++, sx += stepX) {
+        UiColor s = srow[sx >> 16];
         int r = ((s >> 16) & 0xFF) * brightness >> 8;
         int g = ((s >> 8) & 0xFF) * brightness >> 8;
         int b = (s & 0xFF) * brightness >> 8;
-        s = (r << 16) | (g << 8) | b;
+        drow[x] = 0xFF000000 | (r << 16) | (g << 8) | b;
       }
-      drow[px] = s | 0xFF000000;
     }
   }
+}
+
+void UiCanvas::copyFrom(const UiColor *src)
+{
+  if (src)
+    memcpy(m_px, src, (size_t)m_w * m_h * sizeof(UiColor));
 }

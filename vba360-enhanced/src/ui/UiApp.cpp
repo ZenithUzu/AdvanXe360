@@ -1,7 +1,9 @@
 #include "UiApp.h"
 #include "UiScreens.h"
+#include "UiCheatParse.h"
 
 #include <ctype.h>
+#include <map>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,14 +27,15 @@ enum
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
-  CH_ADD = 1, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000
+  CH_ADD = 1, CH_TYPE, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000,
+  G_CHEATS = 40
 };
 
 // Confirm / keyboard purposes
 enum
 {
   CONFIRM_QUIT = 1, CONFIRM_DELETE_CHEAT, CONFIRM_RESET_CONTROLS, CONFIRM_RESET_GAME,
-  KEYBOARD_CHEAT = 1
+  KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC
 };
 
 const int kStateSlots = 9;   // slots 1..9 (0 is the automatic one)
@@ -84,30 +87,6 @@ std::string lowerStr(std::string s)
   return s;
 }
 
-// Image files in the emulator's borders\ folder (background choices).
-std::vector<std::string> borderImages(UiHost &host)
-{
-  std::vector<UiDirEntry> entries;
-  std::vector<std::string> names;
-  host.listDir(uiJoinPath(host.emulatorDir(), "borders"), entries);
-  for (size_t i = 0; i < entries.size(); i++)
-    if (!entries[i].isDir && uiIsImageFile(entries[i].name))
-      names.push_back(entries[i].name);
-  return names;
-}
-
-// Images in backgrounds\ for the menu background.
-std::vector<std::string> menuImages(UiHost &host)
-{
-  std::vector<UiDirEntry> entries;
-  std::vector<std::string> names;
-  host.listDir(uiJoinPath(host.emulatorDir(), "backgrounds"), entries);
-  for (size_t i = 0; i < entries.size(); i++)
-    if (!entries[i].isDir && uiIsImageFile(entries[i].name))
-      names.push_back(entries[i].name);
-  return names;
-}
-
 // 0 = none, 1..n = backgrounds\ image n-1.
 int menuImageChoice(const UiConfig &cfg, const std::vector<std::string> &images)
 {
@@ -154,7 +133,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false)
+    m_hintsAllowed(true), m_quietChange(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1)
 {
 }
 
@@ -209,11 +188,13 @@ void UiApp::clearStack()
 
 void UiApp::push(UiScreen *s)
 {
+  m_dirtyFrames = 3;
   m_stack.push_back(s);
 }
 
 void UiApp::pop()
 {
+  m_dirtyFrames = 3;
   if (m_stack.empty())
     return;
   m_trash.push_back(m_stack.back());
@@ -314,6 +295,15 @@ void UiApp::update(unsigned int held)
     m_toastFrames--;
   updateStickCapture();
   m_frame++;
+
+  // Redraw while buttons are held or just released, while a message, a
+  // capture or a blinking cursor is on screen, and twice a second anyway.
+  if (m_dirtyFrames > 0)
+    m_dirtyFrames--;
+  if (held || in.pressed || m_toastFrames > 0 || m_stickCapture || m_request != UI_REQ_NONE)
+    m_dirtyFrames = 3;
+  if ((m_frame % 15) == 0)
+    m_dirtyFrames = m_dirtyFrames > 1 ? m_dirtyFrames : 1;
 }
 
 void UiApp::startStickCapture(int id)
@@ -426,6 +416,12 @@ void UiApp::invalidateThumb(const std::string &path)
 void UiApp::drawBackground(UiCanvas &c)
 {
   uiApplyTheme(m_cfg.menuTheme);
+  bool fresh = m_bgCache.size() == (size_t)(UI_W * UI_H) &&
+               m_bgCacheTheme == m_cfg.menuTheme && m_bgCacheName == m_cfg.menuBackground;
+  if (fresh && c.width() == UI_W && c.height() == UI_H) {
+    c.copyFrom(&m_bgCache[0]);
+    return;
+  }
   // Optional image from backgrounds\, under a veil of the theme's colors so
   // the text stays readable whatever the picture is.
   if (m_cfg.menuBackground != m_bgName) {
@@ -439,9 +435,17 @@ void UiApp::drawBackground(UiCanvas &c)
   if (m_bgPixels.size() == (size_t)(UI_W * UI_H)) {
     c.blitScaled(&m_bgPixels[0], UI_W, UI_H, UI_W, 0, 0, UI_W, UI_H);
     c.fillGradient(0, 0, UI_W, UI_H, uiWithAlpha(UI_COL_BG_TOP, 0xC8), uiWithAlpha(UI_COL_BG_BOTTOM, 0xB4));
-    return;
+  } else {
+    c.fillGradient(0, 0, UI_W, UI_H, UI_COL_BG_TOP, UI_COL_BG_BOTTOM);
   }
-  c.fillGradient(0, 0, UI_W, UI_H, UI_COL_BG_TOP, UI_COL_BG_BOTTOM);
+  if (c.width() == UI_W && c.height() == UI_H) {
+    m_bgCache.assign(c.pixels(), c.pixels() + UI_W * UI_H);
+    m_bgCacheTheme = m_cfg.menuTheme;
+    m_bgCacheName = m_cfg.menuBackground;
+    // The image itself isn't needed any more (4 MB).
+    std::vector<UiColor>().swap(m_bgPixels);
+    m_bgName = "\x01";   // reload it if the cache is ever rebuilt
+  }
 }
 
 void UiApp::drawHeader(UiCanvas &c, const char *title, const char *subtitle)
@@ -502,6 +506,7 @@ void UiApp::openMenu(int menuId, const std::string &rom)
 {
   UiMenuScreen *m = new UiMenuScreen(menuId, m_inGame);
   m->arg = rom;
+  m_imageCache.clear();   // pick up images copied since the last time
   if (menuId == MENU_GAME_OPTIONS) {
     m_gameCfg = UiGameConfig();
     m_gameCfg.load(gameConfigPath(rom));
@@ -609,7 +614,7 @@ void UiApp::buildMenu(UiMenuScreen &m)
              "The game's Super Game Boy border and colors. Applies when the game starts."))).choice = m_cfg.sgbBorders;
     {
       // Background: black, or an image from borders\ next to default.xex
-      std::vector<std::string> images = borderImages(m_host);
+      std::vector<std::string> images = cachedImages("borders");
       int choice = borderChoice(m_cfg, images);
       std::string value = choice == 0 ? std::string(tr("Negro", "Black")) : images[choice - 1];
       (m.add(V_BORDER, ITEM_OPTION, tr("Fondo de la pantalla", "Screen background"), value,
@@ -690,7 +695,7 @@ void UiApp::buildMenu(UiMenuScreen &m)
           uiThemes[m_cfg.menuTheme].name[m_cfg.language ? 1 : 0],
           tr("Colores del men\xfa, inspirados en las consolas.", "Menu colors, inspired by the consoles."))).choice = m_cfg.menuTheme;
     {
-      std::vector<std::string> images = menuImages(m_host);
+      std::vector<std::string> images = cachedImages("backgrounds");
       int choice = menuImageChoice(m_cfg, images);
       (m.add(U_BACKGROUND, ITEM_OPTION, tr("Imagen de fondo", "Background image"),
             choice ? images[choice - 1] : std::string(tr("Ninguna", "None")),
@@ -802,15 +807,9 @@ void UiApp::buildQuickMenu(UiMenuScreen &m)
         fastForward ? tr("Activado", "On") : tr("Desactivado", "Off"),
         std::string(tr("Tambi\xe9n con ", "Also with ")) + uiButtonName(*this, m_cfg.map[ACT_FAST_FORWARD]));
 
-  std::vector<UiCheatInfo> cheats;
-  m_host.listCheats(cheats);
-  int on = 0;
-  for (size_t i = 0; i < cheats.size(); i++)
-    if (cheats[i].enabled) on++;
-  char buf[64];
-  sprintf(buf, tr("%d activos", "%d on"), on);
-  m.add(Q_CHEATS, ITEM_SUBMENU, tr("Trucos", "Cheats"), cheats.empty() ? "" : buf);
-  m.add(Q_GAME_OPTIONS, ITEM_SUBMENU, tr("Opciones de este juego", "Options for this game"));
+  m.add(Q_GAME_OPTIONS, ITEM_SUBMENU, tr("Opciones de este juego", "Options for this game"), "",
+        tr("Imagen de este juego, trucos y c\xf3""digos, parche...",
+           "This game's picture, cheats and codes, patch..."));
   m.add(Q_SETTINGS, ITEM_SUBMENU, tr("Ajustes", "Settings"));
   m.add(Q_SCREENSHOT, ITEM_ACTION, tr("Captura de pantalla", "Take screenshot"));
   m.add(Q_RESET, ITEM_ACTION, tr("Reiniciar juego", "Restart game"));
@@ -872,7 +871,7 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
 {
   m.title = tr("Opciones del juego", "Game options");
   m.subtitle = uiStripExtension(uiFileName(m.arg));
-  int rom = m_host.romInfo(m.arg);
+  int rom = romInfo(m.arg);
   bool gb = (rom & UI_ROM_GB) != 0;
 
   if (!gb) {
@@ -895,6 +894,21 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
     m.add(G_SAVE_PATCHED, ITEM_ACTION, tr("Guardar ROM ya parchada", "Save patched ROM"), "",
           tr("Crea una copia con el parche aplicado junto a la ROM; carga m\xe1s r\xe1pido.",
              "Writes a copy with the patch applied next to the ROM; it loads faster."));
+
+  {
+    std::vector<UiCheatInfo> cheats;
+    m_host.listCheats(m.arg, cheats);
+    int on = 0;
+    for (size_t i = 0; i < cheats.size(); i++)
+      if (cheats[i].enabled) on++;
+    char buf[64];
+    sprintf(buf, tr("%d de %d activos", "%d of %d on"), on, (int)cheats.size());
+    m.add(G_CHEATS, ITEM_SUBMENU, tr("Trucos y c\xf3""digos", "Cheats and codes"), cheats.empty() ? "" : buf,
+          gb ? tr("GameShark y Game Genie de Game Boy / Color. Se guardan para este juego.",
+                  "Game Boy / Color GameShark and Game Genie. Kept for this game.")
+             : tr("GameShark, Action Replay, CodeBreaker. Se guardan para este juego.",
+                  "GameShark, Action Replay, CodeBreaker. Kept for this game."));
+  }
 
   // Picture: the global settings, or this game's own.
   m.addHeader(tr("Imagen de este juego", "This game's picture"));
@@ -925,13 +939,44 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
     m.add(G_PLAY, ITEM_ACTION, tr("Jugar", "Play"));
 }
 
+// Code types offered per console.
+const int kGbaCheatTypes[] = { CT_AUTO, CT_GBA_GSA12, CT_GBA_GSA3, CT_GBA_CBA, CT_GBA_RAW };
+const int kGbCheatTypes[] = { CT_AUTO, CT_GB_GS, CT_GB_GG };
+
+const char *cheatTypeName(const UiApp &app, int type)
+{
+  switch (type) {
+  case CT_GBA_GSA12: return "GameShark / Action Replay v1, v2";
+  case CT_GBA_GSA3: return "GameShark v3 / Action Replay v3";
+  case CT_GBA_CBA: return "CodeBreaker";
+  case CT_GBA_RAW: return app.tr("VBA (direcci\xf3n:valor)", "VBA (address:value)");
+  case CT_GB_GS: return "GameShark";
+  case CT_GB_GG: return "Game Genie";
+  default: return app.tr("Autom\xe1tico", "Automatic");
+  }
+}
+
 void UiApp::buildCheatsMenu(UiMenuScreen &m)
 {
-  m.title = tr("Trucos", "Cheats");
-  m.subtitle = uiStripExtension(uiFileName(m.arg));
+  bool gb = (romInfo(m.arg) & UI_ROM_GB) != 0;
+  m.title = tr("Trucos y c\xf3""digos", "Cheats and codes");
+  m.subtitle = uiStripExtension(uiFileName(m.arg)) +
+               (gb ? "  \xb7  Game Boy / Game Boy Color" : "  \xb7  Game Boy Advance");
+  const int *types = gb ? kGbCheatTypes : kGbaCheatTypes;
+  int typeCount = gb ? 3 : 5;
+  if (m_cheatTypeIdx < 0 || m_cheatTypeIdx >= typeCount)
+    m_cheatTypeIdx = 0;
+  int type = types[m_cheatTypeIdx];
+  std::string example = uiCheatTypeExample(type);
+  (m.add(CH_TYPE, ITEM_OPTION, tr("Tipo de c\xf3""digo", "Code type"), cheatTypeName(*this, type),
+         gb ? tr("Autom\xe1tico reconoce GameShark (01XXXXXX) y Game Genie (XXX-XXX-XXX).",
+                 "Automatic recognises GameShark (01XXXXXX) and Game Genie (XXX-XXX-XXX).")
+            : tr("Autom\xe1tico reconoce el c\xf3""digo por c\xf3mo est\xe1 escrito.",
+                 "Automatic recognises the code by how it is written."))).choice = m_cheatTypeIdx;
   m.add(CH_ADD, ITEM_ACTION, tr("Agregar c\xf3""digo", "Add code"), "",
-        tr("GameShark, Action Replay, CodeBreaker o Game Genie.",
-           "GameShark, Action Replay, CodeBreaker or Game Genie."));
+        example.empty() ? std::string(tr("Escr\xed""belo con el teclado; luego le pones nombre.",
+                                         "Type it with the keyboard, then give it a name."))
+                        : std::string(tr("Formato: ", "Format: ")) + example);
 
   // Text lists the player dropped next to the ROM or in cheats\.
   std::string base = uiStripExtension(m.arg);
@@ -948,7 +993,7 @@ void UiApp::buildCheatsMenu(UiMenuScreen &m)
   }
 
   std::vector<UiCheatInfo> cheats;
-  m_host.listCheats(cheats);
+  m_host.listCheats(m.arg, cheats);
   if (cheats.empty()) {
     m.addInfo(tr("No hay trucos para este juego.", "No cheats for this game."));
   } else {
@@ -1051,7 +1096,11 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     return;
 
   case MENU_GAME_OPTIONS:
-    if (id == G_PLAY) {
+    if (id == G_CHEATS) {
+      m_gameCfg.save(gameConfigPath(m_gameCfgRom));
+      m_cheatTypeIdx = 0;
+      openMenu(MENU_CHEATS, m.arg);
+    } else if (id == G_PLAY) {
       m_gameCfg.save(gameConfigPath(m_gameCfgRom));
       launch(m_gameCfgRom);
     } else if (id == G_SAVE_PATCHED) {
@@ -1064,11 +1113,19 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     return;
 
   case MENU_CHEATS:
+    m_cheatRom = m.arg;
     if (id == CH_ADD) {
-      openKeyboard(tr("Escribe el c\xf3""digo del truco", "Type the cheat code"), "", KEYBOARD_CHEAT);
+      bool gb = (romInfo(m.arg) & UI_ROM_GB) != 0;
+      int type = (gb ? kGbCheatTypes : kGbaCheatTypes)[m_cheatTypeIdx];
+      std::string title = tr("Escribe el c\xf3""digo del truco", "Type the cheat code");
+      if (*uiCheatTypeExample(type))
+        title += std::string(" (") + uiCheatTypeExample(type) + ")";
+      openKeyboard(title, "", KEYBOARD_CHEAT);
+    } else if (id == CH_TYPE) {
+      onMenuChange(m, id, 1);
     } else if (id >= CH_IMPORT_BASE && id < CH_IMPORT_BASE + 4) {
       const std::string &path = m.items[m.list.sel].help;
-      int n = m_host.importCheatFile(path);
+      int n = m_host.importCheatFile(m.arg, path);
       char buf[96];
       sprintf(buf, tr("%d c\xf3""digos importados", "%d codes imported"), n);
       toast(buf);
@@ -1097,7 +1154,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == V_SGB) m_cfg.sgbBorders = wrapIndex(m_cfg.sgbBorders, delta, 3);
     else if (id == V_BORDER_FIT) m_cfg.borderFit = wrapIndex(m_cfg.borderFit, delta, FIT_COUNT);
     else if (id == V_BORDER) {
-      std::vector<std::string> images = borderImages(m_host);
+      std::vector<std::string> images = cachedImages("borders");
       int choice = wrapIndex(borderChoice(m_cfg, images), delta, (int)images.size() + 1);
       m_cfg.border = choice != 0;
       m_cfg.borderImage = choice != 0 ? images[choice - 1] : std::string();
@@ -1148,7 +1205,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_THEME) m_cfg.menuTheme = wrapIndex(m_cfg.menuTheme, delta, UI_THEME_COUNT);
     else if (id == U_OPTION_STYLE) m_cfg.optionStyle = wrapIndex(m_cfg.optionStyle, delta, OPT_STYLE_COUNT);
     else if (id == U_BACKGROUND) {
-      std::vector<std::string> images = menuImages(m_host);
+      std::vector<std::string> images = cachedImages("backgrounds");
       int choice = wrapIndex(menuImageChoice(m_cfg, images), delta, (int)images.size() + 1);
       m_cfg.menuBackground = choice ? images[choice - 1] : std::string();
     }
@@ -1188,23 +1245,62 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     break;
   case MENU_CHEATS:
     settings = false;
-    if (id >= CH_CHEAT_BASE) {
+    if (id == CH_TYPE) {
+      int count = (romInfo(m.arg) & UI_ROM_GB) ? 3 : 5;
+      m_cheatTypeIdx = wrapIndex(m_cheatTypeIdx, delta, count);
+    } else if (id >= CH_CHEAT_BASE) {
       std::vector<UiCheatInfo> cheats;
-      m_host.listCheats(cheats);
+      m_host.listCheats(m.arg, cheats);
       int i = id - CH_CHEAT_BASE;
       if (i < (int)cheats.size())
-        m_host.setCheatEnabled(i, !cheats[i].enabled);
+        m_host.setCheatEnabled(m.arg, i, !cheats[i].enabled);
     }
     break;
   }
+  if (m_quietChange) {
+    // Only listing the values: rebuild just this menu.
+    int sel = m.selectedId();
+    buildMenu(m);
+    m.selectId(sel);
+    return;
+  }
   rebuildMenus();
-  if (settings && !m_quietChange)
+  if (settings)
     m_host.applySettings();
+}
+
+const std::vector<std::string> &UiApp::cachedImages(const char *folder)
+{
+  // Read once per menu opened: rebuilding a menu after every change listed
+  // the folder again (slow on the Xbox hard drive).
+  std::map<std::string, std::vector<std::string> >::iterator it = m_imageCache.find(folder);
+  if (it != m_imageCache.end())
+    return it->second;
+  std::vector<std::string> &names = m_imageCache[folder];
+  std::vector<UiDirEntry> entries;
+  m_host.listDir(uiJoinPath(m_host.emulatorDir(), folder), entries);
+  for (size_t i = 0; i < entries.size(); i++)
+    if (!entries[i].isDir && uiIsImageFile(entries[i].name))
+      names.push_back(entries[i].name);
+  return names;
+}
+
+int UiApp::romInfo(const std::string &rom)
+{
+  std::map<std::string, int>::iterator it = m_romInfoCache.find(rom);
+  if (it != m_romInfoCache.end())
+    return it->second;
+  int info = m_host.romInfo(rom);
+  m_romInfoCache[rom] = info;
+  return info;
 }
 
 void UiApp::openPicker(UiMenuScreen &m, int id)
 {
-  if (m_cfg.optionStyle == OPT_STYLE_CLASSIC || m.menuId == MENU_CLOCK || m.menuId == MENU_CONTROLS) {
+  // Cheats switch on / off directly (and listing their values would write
+  // the cheat file twice).
+  if (m_cfg.optionStyle == OPT_STYLE_CLASSIC || m.menuId == MENU_CLOCK || m.menuId == MENU_CONTROLS ||
+      (m.menuId == MENU_CHEATS && id >= CH_CHEAT_BASE)) {
     onMenuChange(m, id, 1);
     return;
   }
@@ -1239,6 +1335,11 @@ void UiApp::openPicker(UiMenuScreen &m, int id)
   m.selectId(id);
   if (values.size() < 2)
     return;
+  if (values.size() == 2) {
+    // Yes / No style: A just switches it.
+    onMenuChange(m, id, 1);
+    return;
+  }
   // values[] starts at the current one; when the option knows its position,
   // show them in their own order with the current one selected.
   int n = (int)values.size();
@@ -1268,6 +1369,7 @@ void UiApp::onMenuSecondary(UiMenuScreen &m, int id, int button)
       openConfirm(tr("\xbfRestablecer todos los controles?", "Reset all controls?"), CONFIRM_RESET_CONTROLS, "");
     }
   } else if (m.menuId == MENU_CHEATS && button == PAD_Y && id >= CH_CHEAT_BASE) {
+    m_cheatRom = m.arg;
     openConfirm(tr("\xbf""Borrar este truco?", "Delete this cheat?"), CONFIRM_DELETE_CHEAT,
                 intStr(id - CH_CHEAT_BASE));
   }
@@ -1293,7 +1395,25 @@ void UiApp::openKeyboard(const std::string &title, const std::string &initial, i
 
 void UiApp::onKeyboardDone(int purpose, const std::string &text, bool accepted)
 {
-  if (!accepted || purpose != KEYBOARD_CHEAT)
+  if (!accepted)
+    return;
+  if (purpose == KEYBOARD_CHEAT_DESC) {
+    // Second step: the name. The code was checked in the first step.
+    std::string desc = text;
+    while (!desc.empty() && desc[desc.size() - 1] == ' ')
+      desc.erase(desc.size() - 1);
+    if (desc.empty())
+      desc = m_pendingCheatDesc;
+    bool gb = (romInfo(m_cheatRom) & UI_ROM_GB) != 0;
+    int type = (gb ? kGbCheatTypes : kGbaCheatTypes)[m_cheatTypeIdx];
+    if (m_host.addCheat(m_cheatRom, m_pendingCheatCode, type, desc))
+      toast(tr("Truco agregado y activado", "Cheat added and enabled"));
+    else
+      toast(tr("C\xf3""digo no v\xe1lido", "Invalid code"));
+    rebuildMenus();
+    return;
+  }
+  if (purpose != KEYBOARD_CHEAT)
     return;
   std::string code;
   for (size_t i = 0; i < text.size(); i++)
@@ -1303,14 +1423,21 @@ void UiApp::onKeyboardDone(int purpose, const std::string &text, bool accepted)
     code.erase(code.size() - 1);
   if (code.empty())
     return;
+  // Check it against the chosen type and the game's console first.
+  bool gb = (romInfo(m_cheatRom) & UI_ROM_GB) != 0;
+  int type = (gb ? kGbCheatTypes : kGbaCheatTypes)[m_cheatTypeIdx];
+  std::vector<UiParsedCode> parsed;
+  if (!uiParseCheatCodesAs(code, !gb, type, parsed)) {
+    toast(gb ? tr("C\xf3""digo no v\xe1lido para Game Boy / Color", "Not a valid Game Boy / Color code")
+             : tr("C\xf3""digo no v\xe1lido para Game Boy Advance", "Not a valid Game Boy Advance code"));
+    return;
+  }
   std::vector<UiCheatInfo> cheats;
-  m_host.listCheats(cheats);
-  std::string desc = std::string(tr("C\xf3""digo ", "Code ")) + intStr((int)cheats.size() + 1);
-  if (m_host.addCheat(code, desc))
-    toast(tr("Truco agregado y activado", "Cheat added and enabled"));
-  else
-    toast(tr("C\xf3""digo no v\xe1lido", "Invalid code"));
-  rebuildMenus();
+  m_host.listCheats(m_cheatRom, cheats);
+  m_pendingCheatCode = code;
+  m_pendingCheatDesc = std::string(tr("C\xf3""digo ", "Code ")) + intStr((int)cheats.size() + 1);
+  openKeyboard(tr("Nombre del truco (opcional)", "Cheat name (optional)"), m_pendingCheatDesc,
+               KEYBOARD_CHEAT_DESC);
 }
 
 void UiApp::openConfirm(const std::string &message, int purpose, const std::string &arg)
@@ -1326,7 +1453,7 @@ void UiApp::onConfirm(int purpose, const std::string &arg)
     m_host.quitToDashboard();
     break;
   case CONFIRM_DELETE_CHEAT:
-    m_host.removeCheat(atoi(arg.c_str()));
+    m_host.removeCheat(m_cheatRom, atoi(arg.c_str()));
     rebuildMenus();
     break;
   case CONFIRM_RESET_CONTROLS:
