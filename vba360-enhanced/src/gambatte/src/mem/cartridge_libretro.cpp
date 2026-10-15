@@ -19,6 +19,7 @@ namespace gambatte
          case 0x13:
          case 0x1B:
          case 0x1E:
+         case 0x22: // MBC7 (EEPROM)
          case 0xFE:
          case 0xFF:
             return true;
@@ -58,6 +59,8 @@ namespace gambatte
    {
       if (isSachen_)
          return 0;
+      if (isMbc7())
+         return 0x100;   /* the EEPROM: 256 bytes, as in other emulators */
       if (hasBattery(memptrs_.romdata()[0x147]))
          return memptrs_.rambankdataend() - memptrs_.rambankdata();
       return 0;

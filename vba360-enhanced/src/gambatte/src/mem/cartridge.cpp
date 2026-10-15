@@ -725,6 +725,212 @@ namespace gambatte
       }
    };
 
+   /* VBA360: MBC7 (Kirby Tilt 'n' Tumble). ROM banks like MBC5; the
+    * A000-AFFF area holds the accelerometer and EEPROM registers instead
+    * of RAM, served by Mbc7Chip (never mapped as plain memory). */
+   class Mbc7 : public DefaultMbc {
+      MemPtrs &memptrs;
+      Mbc7Chip *const chip;
+      unsigned char rombank;
+      void setRombank() const { memptrs.setRombank(rombank & (rombanks(memptrs) - 1)); }
+      public:
+      Mbc7(MemPtrs &memptrs, Mbc7Chip *chip)
+         : memptrs(memptrs), chip(chip), rombank(1)
+      {
+         memptrs.setRambank(MemPtrs::READ_EN | MemPtrs::WRITE_EN | MemPtrs::RTC_EN, 0);
+      }
+      virtual void romWrite(const unsigned P, const unsigned data) {
+         switch (P >> 12 & 0x7) {
+            case 0x0:
+            case 0x1:
+               chip->setRamEnable(data == 0x0A);
+               break;
+            case 0x2:
+            case 0x3:
+               rombank = data;
+               setRombank();
+               break;
+            case 0x4:
+            case 0x5:
+               chip->setSecondaryEnable(data == 0x40);
+               break;
+            default:
+               break;
+         }
+      }
+      virtual void saveState(SaveState::Mem &ss) const {
+         ss.rombank = rombank;
+         ss.rambank = 0;
+         ss.enableRam = chip->ramEnable();
+      }
+      virtual void loadState(const SaveState::Mem &ss) {
+         rombank = ss.rombank & 0xFF;
+         memptrs.setRambank(MemPtrs::READ_EN | MemPtrs::WRITE_EN | MemPtrs::RTC_EN, 0);
+         setRombank();
+      }
+   };
+
+   unsigned mbc7AccelX = 0x81D0, mbc7AccelY = 0x81D0;
+   bool mbc7Present = false;
+
+   void Mbc7Chip::reset()
+   {
+      ramEnable_ = secondaryEnable_ = false;
+      latchReady_ = true;
+      xLatch_ = yLatch_ = 0x8000;
+      cs_ = clk_ = di_ = false;
+      do_ = true;
+      writeEnabled_ = false;
+      readBits_ = 0xFFFF;
+      command_ = 0;
+      argumentBitsLeft_ = 0;
+   }
+
+   unsigned char Mbc7Chip::read(unsigned p) const
+   {
+      if (!ramEnable_ || !secondaryEnable_ || p >= 0xB000 || p < 0xA000)
+         return 0xFF;
+      switch ((p >> 4) & 0xF) {
+         case 2: return xLatch_ & 0xFF;
+         case 3: return xLatch_ >> 8;
+         case 4: return yLatch_ & 0xFF;
+         case 5: return yLatch_ >> 8;
+         case 6: return 0;
+         case 8: return (do_ ? 1 : 0) | (di_ ? 2 : 0) | (clk_ ? 0x40 : 0) | (cs_ ? 0x80 : 0);
+      }
+      return 0xFF;
+   }
+
+   void Mbc7Chip::write(unsigned p, unsigned value)
+   {
+      if (!ramEnable_ || !secondaryEnable_ || p >= 0xB000 || p < 0xA000 || !eeprom_)
+         return;
+      switch ((p >> 4) & 0xF) {
+         case 0:
+            if (value == 0x55) {
+               latchReady_ = true;
+               xLatch_ = yLatch_ = 0x8000;
+            }
+            break;
+         case 1:
+            if (value == 0xAA) {
+               latchReady_ = false;
+               xLatch_ = mbc7AccelX & 0xFFFF;
+               yLatch_ = mbc7AccelY & 0xFFFF;
+            }
+            break;
+         case 8:
+            cs_ = (value & 0x80) != 0;
+            di_ = (value & 2) != 0;
+            if (cs_ && !clk_ && (value & 0x40)) {   // rising clock edge
+               do_ = (readBits_ >> 15) != 0;
+               readBits_ = (readBits_ << 1 | 1) & 0xFFFF;
+               if (argumentBitsLeft_ == 0) {
+                  command_ = (command_ << 1 | (di_ ? 1 : 0)) & 0xFFFF;
+                  if (command_ & 0x400) {   // a full command
+                     unsigned const addr = command_ & 0x7F;
+                     switch ((command_ >> 6) & 0xF) {
+                        case 0x8: case 0x9: case 0xA: case 0xB:   // READ
+                           readBits_ = word(addr);
+                           command_ = 0;
+                           break;
+                        case 0x3:   // EWEN
+                           writeEnabled_ = true;
+                           command_ = 0;
+                           break;
+                        case 0x0:   // EWDS
+                           writeEnabled_ = false;
+                           command_ = 0;
+                           break;
+                        case 0x4: case 0x5: case 0x6: case 0x7:   // WRITE: 16 data bits follow
+                           if (writeEnabled_)
+                              setWord(addr, 0);
+                           argumentBitsLeft_ = 16;
+                           break;
+                        case 0xC: case 0xD: case 0xE: case 0xF:   // ERASE
+                           if (writeEnabled_) {
+                              setWord(addr, 0xFFFF);
+                              readBits_ = 0x3FFF;   // busy for a moment
+                           }
+                           command_ = 0;
+                           break;
+                        case 0x2:   // ERAL
+                           if (writeEnabled_) {
+                              for (unsigned i = 0; i < 0x80; i++)
+                                 setWord(i, 0xFFFF);
+                              readBits_ = 0xFF;
+                           }
+                           command_ = 0;
+                           break;
+                        case 0x1:   // WRAL: 16 data bits follow
+                           if (writeEnabled_)
+                              for (unsigned i = 0; i < 0x80; i++)
+                                 setWord(i, 0);
+                           argumentBitsLeft_ = 16;
+                           break;
+                     }
+                  }
+               } else {
+                  // Data bits of a WRITE / WRAL, most significant first.
+                  argumentBitsLeft_--;
+                  do_ = true;
+                  if (di_ && writeEnabled_) {
+                     unsigned const bit = 1u << argumentBitsLeft_;
+                     if (command_ & 0x100) {
+                        unsigned const addr = command_ & 0x7F;
+                        setWord(addr, word(addr) | bit);
+                     } else {
+                        for (unsigned i = 0; i < 0x80; i++)
+                           setWord(i, word(i) | bit);
+                     }
+                  }
+                  if (argumentBitsLeft_ == 0) {
+                     command_ = 0;
+                     readBits_ = 0x3FFF;
+                  }
+               }
+            }
+            clk_ = (value & 0x40) != 0;
+            break;
+      }
+   }
+
+   void Mbc7Chip::saveState(SaveState &state) const
+   {
+      state.mbc7.xLatch = xLatch_;
+      state.mbc7.yLatch = yLatch_;
+      state.mbc7.readBits = readBits_;
+      state.mbc7.command = command_;
+      state.mbc7.argumentBitsLeft = argumentBitsLeft_;
+      state.mbc7.cs = cs_;
+      state.mbc7.clk = clk_;
+      state.mbc7.di = di_;
+      state.mbc7.dout = do_;
+      state.mbc7.writeEnabled = writeEnabled_;
+      state.mbc7.latchReady = latchReady_;
+      state.mbc7.secondaryEnable = secondaryEnable_;
+      state.mbc7.ramEnable = ramEnable_;
+   }
+
+   void Mbc7Chip::loadState(SaveState const &state)
+   {
+      if (!enabled_)
+         return;   // other cartridges: these fields may be missing
+      xLatch_ = state.mbc7.xLatch;
+      yLatch_ = state.mbc7.yLatch;
+      readBits_ = state.mbc7.readBits;
+      command_ = state.mbc7.command;
+      argumentBitsLeft_ = state.mbc7.argumentBitsLeft > 16 ? 0 : state.mbc7.argumentBitsLeft;
+      cs_ = state.mbc7.cs;
+      clk_ = state.mbc7.clk;
+      di_ = state.mbc7.di;
+      do_ = state.mbc7.dout;
+      writeEnabled_ = state.mbc7.writeEnabled;
+      latchReady_ = state.mbc7.latchReady;
+      secondaryEnable_ = state.mbc7.secondaryEnable;
+      ramEnable_ = state.mbc7.ramEnable;
+   }
+
    static bool hasRtc(unsigned headerByte0x147)
    {
       switch (headerByte0x147)
@@ -750,12 +956,14 @@ namespace gambatte
       mbc->saveState(state.mem);
       rtc_.saveState(state);
       huc3_.saveState(state);
+      mbc7_.saveState(state);
    }
 
    void Cartridge::loadState(const SaveState &state)
    {
       huc3_.loadState(state);
       rtc_.loadState(state);
+      mbc7_.loadState(state);
       mbc->loadState(state.mem);
    }
 
@@ -845,7 +1053,7 @@ namespace gambatte
       unsigned rambanks = 1;
       unsigned rombanks = 2;
       bool cgb = false;
-      enum Cartridgetype { PLAIN, MBC1, MBC2, MBC3, MBC5, HUC1, HUC3, SACHEN_MMC1 } type = PLAIN;
+      enum Cartridgetype { PLAIN, MBC1, MBC2, MBC3, MBC5, MBC7, HUC1, HUC3, SACHEN_MMC1 } type = PLAIN;
       bool rumble = false;
 
       isSachen_ = detectSachenMmc1(romdata, romsize);
@@ -902,7 +1110,7 @@ namespace gambatte
             case 0x1D: gambatte_log(RETRO_LOG_INFO, "MBC5+RUMBLE+RAM ROM loaded.\n"); type = MBC5; rumble = true; break;
             case 0x1E: gambatte_log(RETRO_LOG_INFO, "MBC5+RUMBLE+RAM+BATTERY ROM loaded.\n"); type = MBC5; rumble = true; break;
             case 0x20: gambatte_log(RETRO_LOG_INFO, "MBC6 ROM not supported.\n"); return -1;
-            case 0x22: gambatte_log(RETRO_LOG_INFO, "MBC7 ROM not supported.\n"); return -1;
+            case 0x22: gambatte_log(RETRO_LOG_INFO, "MBC7 ROM+ACCELEROMETER+EEPROM loaded.\n"); type = MBC7; break;
 	     case 0xEA: type = MBC1; break; // Hack to accept 0xEA as a MBC1 (Sonic 3D Blast 5)
             case 0xFC: gambatte_log(RETRO_LOG_INFO, "Pocket Camera ROM not supported.\n"); return -1;
             case 0xFD: gambatte_log(RETRO_LOG_INFO, "Bandai TAMA5 ROM not supported.\n"); return -1;
@@ -937,6 +1145,9 @@ namespace gambatte
           * useless save memory. */
          if (type == SACHEN_MMC1)
             rambanks = 0;
+         /* MBC7: one bank holds the 256-byte EEPROM (only that part is saved). */
+         if (type == MBC7)
+            rambanks = 1;
 
          switch(forceModel){
             case 1://FORCE_DMG
@@ -966,6 +1177,8 @@ namespace gambatte
       memptrs_.reset(rombanks, rambanks, cgb ? 8 : 2);
       rtc_.set(false, 0);
       huc3_.set(false);
+      mbc7_.set(false, 0);
+      mbc7Present = false;
 
       memcpy(memptrs_.romdata(), romdata, ((romsize / 0x4000) * 0x4000ul) * sizeof(unsigned char));
       std::memset(memptrs_.romdata() + (romsize / 0x4000) * 0x4000ul, 0xFF, (rombanks - romsize / 0x4000) * 0x4000ul);
@@ -1012,6 +1225,13 @@ namespace gambatte
             break;
          case SACHEN_MMC1:
             mbc.reset(new Mbc1Sachen(memptrs_));
+            break;
+         case MBC7:
+            /* A blank EEPROM reads all ones; a save file replaces it. */
+            std::memset(memptrs_.rambankdata(), 0xFF, 0x100);
+            mbc7_.set(true, memptrs_.rambankdata());
+            mbc7Present = true;
+            mbc.reset(new Mbc7(memptrs_, &mbc7_));
             break;
       }
 

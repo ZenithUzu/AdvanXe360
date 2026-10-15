@@ -485,6 +485,7 @@ void Memory::updateOamDma(unsigned long const cc) {
 				startOamDma(lastOamDmaUpdate_ - 1);
 
 			if (oamDmaSrc) ioamhram_[oamDmaPos_] = oamDmaSrc[oamDmaPos_];
+			else if (cart_.isMbc7()) ioamhram_[oamDmaPos_] = cart_.mbc7Read(oamDmaPos_);
 			else if (cart_.isHuC3()) ioamhram_[oamDmaPos_] = cart_.HuC3Read(oamDmaPos_, cc);
 			else ioamhram_[oamDmaPos_] = cart_.rtcRead();
 
@@ -654,6 +655,9 @@ unsigned Memory::nontrivial_read(unsigned const p, unsigned long const cc) {
 
 			if (cart_.rsrambankptr())
 				return cart_.rsrambankptr()[p];
+
+			if (cart_.isMbc7())
+				return cart_.mbc7Read(p);
 
 			if (cart_.isHuC3())
 				return cart_.HuC3Read(p, cc);
@@ -1167,6 +1171,8 @@ void Memory::nontrivial_write(unsigned const p, unsigned const data, unsigned lo
 		} else if (p < 0xC000) {
 			if (cart_.wsrambankptr())
 				cart_.wsrambankptr()[p] = data;
+			else if (cart_.isMbc7())
+				cart_.mbc7Write(p, data);
 			else if (cart_.isHuC3())
 				cart_.HuC3Write(p, data);
 			else

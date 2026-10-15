@@ -449,7 +449,7 @@ public:
 
   virtual int cartHardware()
   {
-    return g_rom.empty() || !g_isGba ? 0 : g_cartHw;
+    return g_rom.empty() ? 0 : g_cartHw;
   }
 
   virtual bool romPatched()
@@ -886,7 +886,7 @@ static int sensorAmount(int action)
 // must not also move the D-pad.
 static bool sensorsUseLeftStick()
 {
-  if (!g_isGba || !g_cartHw)
+  if (!g_cartHw)
     return false;
   for (int i = 0; i < SENS_COUNT; i++) {
     bool used = (i <= SENS_TILT_DOWN) ? (g_cartHw & (UI_HW_TILT | UI_HW_GYRO)) != 0
@@ -905,7 +905,7 @@ void xboxMotionTargets(int &tiltX, int &tiltY, int &gyro)
   const int pct = uiSensorSensPercent[g_cfg.sensorSens];
   // Only for the games that have these sensors, so the sticks never
   // interfere with anything else.
-  const bool tilt = g_isGba && (g_cartHw & UI_HW_TILT);
+  const bool tilt = (g_cartHw & UI_HW_TILT) != 0;   // GBA tilt carts and GB MBC7
   const bool rot = g_isGba && (g_cartHw & UI_HW_GYRO);
   int lr = 0, ud = 0;
   if (tilt || rot)
@@ -965,8 +965,11 @@ void xboxApplyGameOverrides(bool isGba)
   // many ROM hacks, and the intro showed garbage around the picture. The
   // BIOS is still used for its system calls.
   skipBios = isGba && useBios;
-  if (!isGba)
+  if (!isGba) {
+    // Game Boy: only MBC7 cartridges have a sensor (tilt).
+    g_cartHw = gambatteHasTilt() ? UI_HW_TILT : 0;
     return;
+  }
   applySpecialCart();
   switch (g_gameCfg.saveType) {
   case SAVE_EEPROM: cpuSaveType = 1; break;

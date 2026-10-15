@@ -478,6 +478,19 @@ SaverList::SaverList() {
 	{ static const char label[] = { h,NO3,m,f,     NUL }; ADD(huc3.modeflag); }
 	{ static const char label[] = { h,NO3,i,r,c,y, NUL }; ADD(huc3.irBaseCycle); }
 	{ static const char label[] = { h,NO3,i,r,a,c, NUL }; ADD(huc3.irReceivingPulse); }
+	{ static const char label[] = { m,NO7,x,l,     NUL }; ADD(mbc7.xLatch); }
+	{ static const char label[] = { m,NO7,y,l,     NUL }; ADD(mbc7.yLatch); }
+	{ static const char label[] = { m,NO7,r,b,     NUL }; ADD(mbc7.readBits); }
+	{ static const char label[] = { m,NO7,c,m,     NUL }; ADD(mbc7.command); }
+	{ static const char label[] = { m,NO7,a,b,     NUL }; ADD(mbc7.argumentBitsLeft); }
+	{ static const char label[] = { m,NO7,c,s,     NUL }; ADD(mbc7.cs); }
+	{ static const char label[] = { m,NO7,c,k,     NUL }; ADD(mbc7.clk); }
+	{ static const char label[] = { m,NO7,d,i,     NUL }; ADD(mbc7.di); }
+	{ static const char label[] = { m,NO7,d,o,     NUL }; ADD(mbc7.dout); }
+	{ static const char label[] = { m,NO7,w,e,     NUL }; ADD(mbc7.writeEnabled); }
+	{ static const char label[] = { m,NO7,l,r,     NUL }; ADD(mbc7.latchReady); }
+	{ static const char label[] = { m,NO7,s,e,     NUL }; ADD(mbc7.secondaryEnable); }
+	{ static const char label[] = { m,NO7,r,e,     NUL }; ADD(mbc7.ramEnable); }
 	
 #undef ADD
 #undef ADDPTR

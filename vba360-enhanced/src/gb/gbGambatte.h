@@ -18,6 +18,9 @@ bool gambatteLoad();
 // True while a game runs on Gambatte.
 bool gambatteActive();
 
+// True for MBC7 cartridges (Kirby Tilt 'n' Tumble): tilt sensor.
+bool gambatteHasTilt();
+
 // True when the running game uses Game Boy Color mode.
 bool gambatteIsCgb();
 

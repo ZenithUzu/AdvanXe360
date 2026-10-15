@@ -23,6 +23,12 @@ Changes made for VBA360 (all small):
   - src/gambatte-memory.cpp: two hooks on the joypad register (FF00),
     sgbJoypWriteHook and sgbJoypIdleHook, for the Super Game Boy mode in
     ../gb/gbGambatteSgb.cpp (adapted from SameBoy, MIT license).
+  - MBC7 cartridges (Kirby Tilt 'n' Tumble, Command Master): accelerometer
+    and 93LC56 EEPROM, adapted from SameBoy (MIT license). New file
+    src/mem/mbc7.h; the mapper and chip are in src/mem/cartridge.cpp,
+    hooked like HuC3 in src/gambatte-memory.cpp, saved in
+    src/savestate.h / src/statesaver.cpp / src/initstate.cpp, and the
+    256-byte EEPROM is the save data (src/mem/cartridge_libretro.cpp).
 
 Build settings (see vbam.vcxproj): __LIBRETRO__, HAVE_STDINT_H,
 VIDEO_RGB565, WORDS_BIGENDIAN (Xbox 360), include paths include/ and src/.

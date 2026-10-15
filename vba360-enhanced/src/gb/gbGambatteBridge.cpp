@@ -19,6 +19,7 @@
 #include "../gambatte/include/gambatte.h"
 #include "../gambatte/include/gambatte_log.h"
 #include "../gambatte/include/gbcpalettes.h"
+#include "../gambatte/src/mem/mbc7.h"
 #include "gbGambatteBridge.h"
 #define XBOX_LOG_NO_REDIRECT
 #include "../Xbox/XboxLog.h"
@@ -116,6 +117,18 @@ long runFor(unsigned short *video, int pitch, unsigned *sound, unsigned soundSiz
 void setInput(unsigned (*getButtons)()) { inputFn = getButtons; }
 void setBootloader(bool (*get)(bool, unsigned char *, unsigned)) { bootFn = get; }
 void setRumble(void (*set)(bool on)) { rumbleFn = set; }
+
+bool isMbc7() { return gb && gambatte::mbc7Present; }
+
+void setAccelerometer(double x, double y)
+{
+  if (x < -2) x = -2;
+  if (x > 2) x = 2;
+  if (y < -2) y = -2;
+  if (y > 2) y = 2;
+  gambatte::mbc7AccelX = (unsigned)(0x81D0 + (int)(0x70 * x));
+  gambatte::mbc7AccelY = (unsigned)(0x81D0 + (int)(0x70 * y));
+}
 
 void setJoypHooks(void (*write)(unsigned, unsigned), unsigned (*idle)())
 {

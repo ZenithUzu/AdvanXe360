@@ -22,6 +22,7 @@
 #include "memptrs.h"
 #include "rtc.h"
 #include "huc3.h"
+#include "mbc7.h"
 #include "savestate.h"
 #include <memory>
 #include <string>
@@ -153,6 +154,10 @@ namespace gambatte
          unsigned char HuC3Read(unsigned p, unsigned long const cc) { return huc3_.read(p, cc); }
          void HuC3Write(unsigned p, unsigned data) { huc3_.write(p, data); }
 
+         bool isMbc7() const { return mbc7_.isMbc7(); }
+         unsigned char mbc7Read(unsigned p) const { return mbc7_.read(p); }
+         void mbc7Write(unsigned p, unsigned data) { mbc7_.write(p, data); }
+
          /* Sachen MMC1 (unlicensed mapper used by Sachen 4-in-1 etc.):
           * the cartridge header is bit-scrambled and a "locked" boot
           * state requires hooks outside the normal MBC write path.
@@ -205,6 +210,7 @@ namespace gambatte
          MemPtrs memptrs_;
          Rtc rtc_;
          HuC3Chip huc3_;
+         Mbc7Chip mbc7_;
          /* True only when the loaded ROM was identified as a Sachen
           * MMC1 unlicensed cart via the scrambled-logo checksum check
           * in loadROM. Used to route bootloader/VRAM hooks. */

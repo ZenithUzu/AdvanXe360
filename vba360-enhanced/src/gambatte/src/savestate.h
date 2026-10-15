@@ -222,6 +222,19 @@ struct SaveState {
 		unsigned char modeflag;
 		bool irReceivingPulse;
 	} huc3;
+
+	struct MBC7 {   /* VBA360: MBC7 (accelerometer + EEPROM) */
+		unsigned short xLatch;
+		unsigned short yLatch;
+		unsigned short readBits;
+		unsigned short command;
+		unsigned char argumentBitsLeft;
+		bool cs, clk, di, dout;
+		bool writeEnabled;
+		bool latchReady;
+		bool secondaryEnable;
+		bool ramEnable;
+	} mbc7;
 };
 
 }

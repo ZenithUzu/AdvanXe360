@@ -870,10 +870,10 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
     { "M\xe1s luz solar", "More sunlight" },
     { "Menos luz solar", "Less sunlight" } };
   const char *helps[SENS_COUNT][2] = {
-    { "Yoshi y Koro Koro. Tambi\xe9n gira en WarioWare: Twisted!", "Yoshi and Koro Koro. Also turns in WarioWare: Twisted!" },
-    { "Yoshi y Koro Koro. Tambi\xe9n gira en WarioWare: Twisted!", "Yoshi and Koro Koro. Also turns in WarioWare: Twisted!" },
-    { "Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle." },
-    { "Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle." },
+    { "Yoshi, Koro Koro y Kirby Tilt 'n' Tumble. Tambi\xe9n gira en WarioWare: Twisted!", "Yoshi, Koro Koro and Kirby Tilt 'n' Tumble. Also turns in WarioWare: Twisted!" },
+    { "Yoshi, Koro Koro y Kirby Tilt 'n' Tumble. Tambi\xe9n gira en WarioWare: Twisted!", "Yoshi, Koro Koro and Kirby Tilt 'n' Tumble. Also turns in WarioWare: Twisted!" },
+    { "Yoshi Topsy-Turvy, Koro Koro Puzzle, Kirby Tilt 'n' Tumble.", "Yoshi Topsy-Turvy, Koro Koro Puzzle, Kirby Tilt 'n' Tumble." },
+    { "Yoshi Topsy-Turvy, Koro Koro Puzzle, Kirby Tilt 'n' Tumble.", "Yoshi Topsy-Turvy, Koro Koro Puzzle, Kirby Tilt 'n' Tumble." },
     { "Boktai: sube el sol (se muestra en pantalla).", "Boktai: raises the sun (shown on screen)." },
     { "Boktai: baja el sol (se muestra en pantalla).", "Boktai: lowers the sun (shown on screen)." } };
   int lang = m_cfg.language ? 1 : 0;

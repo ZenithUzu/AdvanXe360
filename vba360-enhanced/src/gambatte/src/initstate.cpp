@@ -1355,4 +1355,19 @@ void gambatte::setInitState(SaveState &state, bool const cgb, bool const gbaCgbM
 	state.huc3.ramValue = 1;
 	state.huc3.modeflag = 2; // huc3_none
 	state.huc3.irReceivingPulse = false;
+
+	/* VBA360: MBC7 power-on state (as in SameBoy) */
+	state.mbc7.xLatch = 0x8000;
+	state.mbc7.yLatch = 0x8000;
+	state.mbc7.readBits = 0xFFFF;
+	state.mbc7.command = 0;
+	state.mbc7.argumentBitsLeft = 0;
+	state.mbc7.cs = false;
+	state.mbc7.clk = false;
+	state.mbc7.di = false;
+	state.mbc7.dout = true;
+	state.mbc7.writeEnabled = false;
+	state.mbc7.latchReady = true;
+	state.mbc7.secondaryEnable = false;
+	state.mbc7.ramEnable = false;
 }

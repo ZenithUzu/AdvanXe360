@@ -259,6 +259,13 @@ void gmbEmulate(int)
   if (!gmb)
     return;
   soundSetup();
+  if (gmbBridge::isMbc7()) {
+    // Kirby Tilt 'n' Tumble: the tilt mapped in Settings > Controls
+    // (sensor values are 2047 at rest, about 300 per full push).
+    systemUpdateMotionSensor();
+    gmbBridge::setAccelerometer((systemGetSensorX() - 2047) / 300.0,
+                                (2047 - systemGetSensorY()) / 300.0);
+  }
   // Run until Gambatte finishes a frame. With the screen off it may not
   // signal one, so stop after two frames' worth of time anyway.
   unsigned total = 0;
@@ -585,6 +592,11 @@ bool gambatteLoad()
   gmbSaveHash = saveHash();
   memset(gmbVideo, 0, sizeof(gmbVideo));
   return true;
+}
+
+bool gambatteHasTilt()
+{
+  return gmb && gmbBridge::isMbc7();
 }
 
 bool gambatteActive()
