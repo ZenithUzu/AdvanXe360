@@ -240,19 +240,30 @@ struct RowSorter
         return (int)i;
     return 0x7FFFFFFF;
   }
+  // Case-insensitive name order without building lower-case copies.
+  static int nameCmp(const std::string &a, const std::string &b)
+  {
+    size_t n = a.size() < b.size() ? a.size() : b.size();
+    for (size_t i = 0; i < n; i++) {
+      unsigned char ca = (unsigned char)a[i], cb = (unsigned char)b[i];
+      if (ca >= 'A' && ca <= 'Z') ca = (unsigned char)(ca - 'A' + 'a');
+      if (cb >= 'A' && cb <= 'Z') cb = (unsigned char)(cb - 'A' + 'a');
+      if (ca != cb)
+        return ca < cb ? -1 : 1;
+    }
+    return a.size() == b.size() ? 0 : (a.size() < b.size() ? -1 : 1);
+  }
   bool operator()(const UiDirEntry &a, const UiDirEntry &b) const
   {
     if (a.isDir != b.isDir)
       return a.isDir;   // folders always first
-    std::string la = lowerAscii(a.name), lb = lowerAscii(b.name);
     if (!a.isDir && mode == SORT_RECENT) {
       int ra = recentIndex(a.path), rb = recentIndex(b.path);
       if (ra != rb)
         return ra < rb;
     }
-    if (!a.isDir && mode == SORT_NAME_DESC)
-      return lb < la;
-    return la < lb;
+    int c = nameCmp(a.name, b.name);
+    return (!a.isDir && mode == SORT_NAME_DESC) ? c > 0 : c < 0;
   }
 };
 
@@ -625,7 +636,8 @@ void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
     return;
   }
 
-  const UiApp::Cover *cv = app.cover(r.path);
+  // New covers are read only once the list stops moving.
+  const UiApp::Cover *cv = app.cover(r.path, !app.inputHeld());
   const UiThumb *t = cv ? 0 : app.thumb(app.gameThumbPath(r.path));
   if (cv) {
     // Box art: whole image, proportions kept, centered in the preview box.

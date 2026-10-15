@@ -113,9 +113,13 @@ public:
   void openSearch();
 
   // Cover image for a ROM (covers\<name>.png/.jpg or <rom>.png/.jpg next to
-  // it), cached; 0 when there is none.
+  // it), cached; 0 when there is none. With allowLoad false only the cache
+  // is used (no disk access while the list is scrolling).
   struct Cover { std::vector<UiColor> px; int w, h; };
-  const Cover *cover(const std::string &rom);
+  enum { COVER_MAX_W = 328, COVER_MAX_H = 218 };   // the browser's preview box
+  const Cover *cover(const std::string &rom, bool allowLoad = true);
+  // A button is held right now (the list is being scrolled).
+  bool inputHeld() const { return m_prevHeld != 0; }
 
   // Thumbnails (cached by path).
   const UiThumb *thumb(const std::string &path);

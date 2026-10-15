@@ -1451,13 +1451,20 @@ void UiApp::openSearch()
   openKeyboard(tr("Buscar en esta carpeta", "Search this folder"), m_listFilter, KEYBOARD_SEARCH);
 }
 
-const UiApp::Cover *UiApp::cover(const std::string &rom)
+const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)
 {
   std::map<std::string, Cover>::iterator it = m_covers.find(rom);
   if (it != m_covers.end())
     return it->second.px.empty() ? 0 : &it->second;
-  if (m_covers.size() > 24)
-    m_covers.clear();   // a handful of images at most (they take memory)
+  if (!allowLoad)
+    return 0;
+  // Keep a few images (about 280 KB each) and the "no cover" answers.
+  int loaded = 0;
+  for (it = m_covers.begin(); it != m_covers.end(); ++it)
+    if (!it->second.px.empty())
+      loaded++;
+  if (loaded >= 8 || m_covers.size() > 200)
+    m_covers.clear();
   Cover &c = m_covers[rom];
   c.w = c.h = 0;
   std::string name = uiStripExtension(uiFileName(rom));
@@ -1469,8 +1476,8 @@ const UiApp::Cover *UiApp::cover(const std::string &rom)
   for (int i = 0; i < 4; i++) {
     if (!m_host.fileExists(candidates[i]))
       continue;
-    if (m_host.loadImageFit(candidates[i], 400, 400, c.px, c.w, c.h) &&
-        c.px.size() == (size_t)(c.w * c.h))
+    if (m_host.loadImageFit(candidates[i], COVER_MAX_W, COVER_MAX_H, c.px, c.w, c.h) &&
+        c.w > 0 && c.h > 0 && c.px.size() == (size_t)(c.w * c.h))
       return &c;
     c.px.clear();
   }
