@@ -16,6 +16,9 @@ struct UiDirEntry
   unsigned int size;  // bytes, files only
 };
 
+// What a ROM file is (UiHost::romInfo).
+enum { UI_ROM_GB = 1, UI_ROM_SGB = 2, UI_ROM_CGB = 4, UI_ROM_CGB_ONLY = 8 };
+
 // Extra hardware a cartridge has (UiHost::cartHardware).
 enum { UI_HW_SOLAR = 1, UI_HW_GYRO = 2, UI_HW_RUMBLE = 4, UI_HW_TILT = 8 };
 
@@ -54,6 +57,8 @@ public:
   virtual void sticks(int &lx, int &ly, int &rx, int &ry) { lx = ly = rx = ry = 0; }
   // Extra cartridge hardware of the running game (UI_HW_* bits).
   virtual int cartHardware() { return 0; }
+  // UI_ROM_* bits from the ROM header (0 for GBA games or unknown).
+  virtual int romInfo(const std::string &rom) { return 0; }
   // True when a .bps/.ups/.ips patch was applied to the running game.
   virtual bool romPatched() { return false; }
   // Writes the patched ROM next to the original, e.g. "Game (patched).gba".

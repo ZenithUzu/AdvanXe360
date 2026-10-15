@@ -11,9 +11,13 @@ void writeV(const char *format, va_list args, bool newline)
   if (!g_log)
     return;
   char buf[2048];
+  // _vsnprintf doesn't end a cut-off line with a 0.
+  buf[sizeof(buf) - 2] = 0;
   int n = _vsnprintf(buf, sizeof(buf) - 2, format, args);
-  if (n < 0 || n > (int)sizeof(buf) - 2)
+  if (n < 0 || n > (int)sizeof(buf) - 2) {
+    buf[sizeof(buf) - 2] = 0;
     n = (int)strlen(buf);
+  }
   buf[n] = 0;
   if (newline && (n == 0 || buf[n - 1] != '\n')) {
     buf[n++] = '\n';

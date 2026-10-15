@@ -63,6 +63,9 @@ bool uiIsImageFile(const std::string &name);
 enum UiSaveTypeOverride { SAVE_AUTO = 0, SAVE_EEPROM, SAVE_SRAM, SAVE_FLASH64, SAVE_FLASH128, SAVE_NONE, SAVE_TYPE_COUNT };
 enum UiTriState { TRI_AUTO = 0, TRI_ON, TRI_OFF };
 enum UiDirMode { DIR_NEXT_TO_ROM = 0, DIR_EMULATOR = 1 };
+// Changing an option: left / right only, a side panel, or a pop-up list
+// (A opens the panel / list; left / right work in all of them).
+enum UiOptionStyle { OPT_STYLE_PANEL = 0, OPT_STYLE_LIST, OPT_STYLE_CLASSIC, OPT_STYLE_COUNT };
 
 struct UiConfig
 {
@@ -71,6 +74,7 @@ struct UiConfig
   int hideNonGames;      // show only ROMs, archives, patches-free list
   std::string lastDir;   // folder the browser reopens
   int menuTheme;         // index into uiThemes (UiScreens.h)
+  int optionStyle;       // UiOptionStyle: how an option's values are picked
   std::string menuBackground;   // image in backgrounds\ ("" = the theme's colors)
 
   // Video
@@ -128,8 +132,14 @@ struct UiGameConfig
   int saveType;   // UiSaveTypeOverride
   int rtc;        // UiTriState
   int patch;      // 1 = auto-apply <rom>.bps/.ups/.ips, 0 = never
+  // Picture: 0 = as in Settings, 1 = the values below for this game only.
+  int custom;
+  int filter, stretch, screenEffect, gbPalette;
+  int sgbMode;    // Super Game Boy games: 0 = normal Game Boy, 1 = Super Game Boy
 
   UiGameConfig();
+  // Starts the custom values from the global settings.
+  void copyVideoFrom(const UiConfig &cfg);
   bool load(const std::string &path);
   bool save(const std::string &path) const;
 };

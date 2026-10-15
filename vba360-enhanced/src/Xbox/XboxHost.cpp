@@ -76,6 +76,13 @@ namespace {
 
 std::string g_rom;            // full path of the running game
 UiGameConfig g_gameCfg;
+
+// Picture settings in effect: Settings > Video, or the running game's own
+// ("Custom" in its game options).
+static bool gameVideoCustom() { return !g_rom.empty() && g_gameCfg.custom != 0; }
+static int videoStretch() { return gameVideoCustom() ? g_gameCfg.stretch : g_cfg.stretch; }
+static int videoEffect() { return gameVideoCustom() ? g_gameCfg.screenEffect : g_cfg.screenEffect; }
+static int videoGbPalette() { return gameVideoCustom() ? g_gameCfg.gbPalette : g_cfg.gbPalette; }
 bool g_isGba = true;
 int g_cartHw = 0;              // UI_HW_* of the running GBA cartridge
 bool g_rumbleOn = false;
@@ -204,7 +211,7 @@ Filter coreFilterFor(int uiFilter)
 
 void applySampler()
 {
-  D3DTEXTUREFILTERTYPE f = g_cfg.filter == FILTER_SHARP ? D3DTEXF_POINT : D3DTEXF_LINEAR;
+  D3DTEXTUREFILTERTYPE f = xboxVideoFilter() == FILTER_SHARP ? D3DTEXF_POINT : D3DTEXF_LINEAR;
   pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, f);
   pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, f);
   // Clamp: with the default wrap mode the smooth filter blends the
@@ -353,6 +360,34 @@ public:
   virtual bool romPatched()
   {
     return xboxRomPatched && !g_rom.empty();
+  }
+
+  virtual int romInfo(const std::string &rom)
+  {
+    std::string ext = uiExtension(rom);
+    if (ext == ".gba" || ext == ".agb" || ext == ".bin" || ext == ".elf" || ext == ".mb")
+      return 0;
+    if (ext != ".gb" && ext != ".gbc" && ext != ".cgb" && ext != ".dmg" && ext != ".sgb")
+      return UI_ROM_GB | UI_ROM_SGB;   // zip / 7z: can't tell, offer everything
+    unsigned char h[0x150];
+    FILE *f = fopen(rom.c_str(), "rb");
+    if (!f)
+      return UI_ROM_GB;
+    size_t got = fread(h, 1, sizeof(h), f);
+    fclose(f);
+    if (got < sizeof(h))
+      return UI_ROM_GB;
+    int info = UI_ROM_GB;
+    if (h[0x146] == 0x03 && h[0x14B] == 0x33)
+      info |= UI_ROM_SGB;
+    if (h[0x143] == 0xC0)
+      info |= UI_ROM_CGB | UI_ROM_CGB_ONLY;
+    else if (h[0x143] & 0x80)
+      info |= UI_ROM_CGB;
+    // Color-only games can't run on the Super Game Boy.
+    if (info & UI_ROM_CGB_ONLY)
+      info &= ~UI_ROM_SGB;
+    return info;
   }
 
   virtual bool loadImage(const std::string &path, int w, int h, std::vector<UiColor> &out)
@@ -642,8 +677,9 @@ void xboxOnGameLoading(const char *romPath)
   extern char gambatteCgbBiosFileName[2048];
   std::string gbcBios = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "bios"), "gbc_bios.bin");
   strcpy(gambatteCgbBiosFileName, g_cfg.useBios && pathExists(gbcBios) ? gbcBios.c_str() : "");
-  // Super Game Boy borders and colors (Settings > Video).
-  gambatteSgbMode = g_cfg.sgbBorders;
+  // Super Game Boy borders and colors: Settings > Video, or this game's
+  // own choice (its game options, "Custom").
+  gambatteSgbMode = g_gameCfg.custom ? (g_gameCfg.sgbMode ? 2 : 0) : g_cfg.sgbBorders;
 
   // Game Boy patches are applied inside gbLoadRom().
   gbPendingPatch = 0;
@@ -1033,15 +1069,15 @@ void xboxSetupPicture(int srcW, int srcH)
     return;
   }
   int w, h;
-  if (g_cfg.stretch == SIZE_WIDE) {
+  if (videoStretch() == SIZE_WIDE) {
     // 16:9: the whole 1280x720 screen, no margins (the picture is stretched).
     w = sw;
     h = sh;
-  } else if (g_cfg.stretch == SIZE_FULL) {
+  } else if (videoStretch() == SIZE_FULL) {
     // Fill the screen, leaving the TV-safe margins the original port used.
     w = sw - 160;
     h = sh - 80;
-  } else if (g_cfg.stretch == SIZE_INTEGER) {
+  } else if (videoStretch() == SIZE_INTEGER) {
     // Biggest whole-number zoom that fits: every console pixel gets the
     // same size (GBA x4 = 960x640, Game Boy x5 = 800x720).
     int k = sh / srcH;
@@ -1067,14 +1103,14 @@ void xboxSetupPicture(int srcW, int srcH)
   XBOX_UseCustomRect = 1;
   XBOX_EffectSource[0] = (float)srcW;
   XBOX_EffectSource[1] = (float)srcH;
-  XBOX_ScreenEffect = g_cfg.screenEffect;
+  XBOX_ScreenEffect = videoEffect();
 }
 
 static void applyGbPalette()
 {
   // 15-bit BGR colors, lightest first, the same 4 shades for the
   // background and the sprites.
-  const unsigned int *p = uiGbPalettes[g_cfg.gbPalette];
+  const unsigned int *p = uiGbPalettes[videoGbPalette()];
   for (int i = 0; i < 8; i++) {
     unsigned int c = p[i & 3];
     systemGbPalette[i] = (u16)(((c >> 19) & 0x1F) | (((c >> 11) & 0x1F) << 5) | (((c >> 3) & 0x1F) << 10));
@@ -1082,7 +1118,7 @@ static void applyGbPalette()
   gbPaletteOption = 0;
   // Gambatte (Game Boy Color games keep their own colors).
   if (gambatteActive()) {
-    if (g_cfg.gbPalette != GB_PALETTE_AUTO || !gambatteSetAutoPalette())
+    if (videoGbPalette() != GB_PALETTE_AUTO || !gambatteSetAutoPalette())
       gambatteSetDmgPalette(p);
     return;
   }
@@ -1094,11 +1130,17 @@ static void applyGbPalette()
 
 void xboxApplySettings()
 {
+  // The game options may have just changed in the in-game menu.
+  if (!g_rom.empty()) {
+    UiGameConfig fresh;
+    if (fresh.load(uiGameFile(xboxEmulatorDir(), "config", g_rom, "", ".ini")))
+      g_gameCfg = fresh;
+  }
   applySoundFlags();
   applyBorder();
   applyGbPalette();
   rtcSetTimeOffset(g_cfg.clockMode ? g_cfg.clockOffset : 0);
-  XBOX_ScreenEffect = g_cfg.screenEffect;
+  XBOX_ScreenEffect = videoEffect();
   showSpeed = g_cfg.showFps ? 2 : 0;
   if (g_cfg.frameSkip == 0) {
     autoFrameSkip = 1;
@@ -1109,11 +1151,11 @@ void xboxApplySettings()
 
   if (!emulating)
     return;
-  Filter wanted = coreFilterFor(g_cfg.filter);
-  if (wanted != g_videoFilter || g_cfg.stretch != g_videoStretch) {
+  Filter wanted = coreFilterFor(xboxVideoFilter());
+  if (wanted != g_videoFilter || videoStretch() != g_videoStretch) {
     // Texture size / scaling changed: rebuild the video surface.
     g_videoFilter = wanted;
-    g_videoStretch = g_cfg.stretch;
+    g_videoStretch = videoStretch();
     sdlInitVideo();
     filterFunction = initFilter(filter, systemColorDepth, srcWidth);
   } else {
@@ -1124,7 +1166,12 @@ void xboxApplySettings()
 
 Filter xboxSelectedFilter()
 {
-  return coreFilterFor(g_cfg.filter);
+  return coreFilterFor(xboxVideoFilter());
+}
+
+int xboxVideoFilter()
+{
+  return gameVideoCustom() ? g_gameCfg.filter : g_cfg.filter;
 }
 
 // --- Controllers ---------------------------------------------------------------------

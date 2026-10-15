@@ -21,6 +21,7 @@
 #include "gbGambatte.h"
 #include "gbGambatteBridge.h"
 #include "gbGambatteSgb.h"
+#include "../Xbox/XboxLog.h"   // last: fprintf(stdout) goes to vba360.log
 
 extern u8 *pix;
 extern bool speedup;
@@ -348,9 +349,23 @@ bool gmbWriteBattery(const char *file)
   return ok;
 }
 
-// Save states: "VBAGMB01", the state size (4 bytes, big-endian), the state;
-// in Super Game Boy mode then "SGB1", its size and the Super Game Boy state.
-const char kStateTag[8] = { 'V', 'B', 'A', 'G', 'M', 'B', '0', '1' };
+// Save states: "VBAGMB02", the state size (4 bytes, big-endian), the mode
+// it was saved in (1 byte: 1 = Game Boy Color, 2 = Super Game Boy; 3 spare),
+// the state; in Super Game Boy mode then "SGB1", its size and the Super Game
+// Boy state. "VBAGMB01" states (no mode bytes) still load.
+//
+// A state only loads in the mode it was saved in: a Game Boy-mode state put
+// into a game running in Color mode (or the other way round) crashed the
+// emulator, e.g. after switching the Super Game Boy option with "Resume
+// where I left off" on.
+const char kStateTag[8] = { 'V', 'B', 'A', 'G', 'M', 'B', '0', '2' };
+const char kStateTagV1[8] = { 'V', 'B', 'A', 'G', 'M', 'B', '0', '1' };
+const int kHeader = 16;
+
+unsigned stateMode()
+{
+  return (gmbCgb ? 1u : 0u) | (gmbSgbOn ? 2u : 0u);
+}
 const char kSgbTag[4] = { 'S', 'G', 'B', '1' };
 
 void putSize(char *p, size_t size)
@@ -367,7 +382,7 @@ size_t getSize(const char *p)
 
 size_t stateBytes()
 {
-  return 12 + gmbBridge::stateSize() + (gmbSgbOn ? 8 + gmbSgb::stateSize() : 0);
+  return kHeader + gmbBridge::stateSize() + (gmbSgbOn ? 8 + gmbSgb::stateSize() : 0);
 }
 
 bool gmbWriteStateMem(char *mem, int available, int *used)
@@ -378,9 +393,11 @@ bool gmbWriteStateMem(char *mem, int available, int *used)
     return false;
   memcpy(mem, kStateTag, 8);
   putSize(mem + 8, size);
-  gmbBridge::saveState(mem + 12);
+  mem[12] = (char)stateMode();
+  mem[13] = mem[14] = mem[15] = 0;
+  gmbBridge::saveState(mem + kHeader);
   if (gmbSgbOn) {
-    char *p = mem + 12 + size;
+    char *p = mem + kHeader + size;
     memcpy(p, kSgbTag, 4);
     putSize(p + 4, gmbSgb::stateSize());
     gmbSgb::saveState((unsigned char *)p + 8);
@@ -392,15 +409,33 @@ bool gmbWriteStateMem(char *mem, int available, int *used)
 
 bool gmbReadStateMem(const char *mem, int available)
 {
-  if (available < 12 || memcmp(mem, kStateTag, 8))
+  if (available < 12)
     return false;
+  int header;
+  if (!memcmp(mem, kStateTag, 8)) {
+    header = kHeader;
+    if (available < header)
+      return false;
+    unsigned mode = (u8)mem[12];
+    if (mode != stateMode()) {
+      fprintf(stdout, "Save state not loaded: saved in mode %u, the game runs in mode %u\n",
+              mode, stateMode());
+      return false;
+    }
+  } else if (!memcmp(mem, kStateTagV1, 8)) {
+    header = 12;
+    if (gmbSgbOn)
+      return false;   // older states were never Super Game Boy ones
+  } else {
+    return false;     // not a Gambatte state (e.g. one from the old core)
+  }
   size_t size = getSize(mem + 8);
-  if (size + 12 > (size_t)available)
+  if (size == 0 || size > (size_t)available - header)
     return false;
-  bool ok = gmbBridge::loadState(mem + 12, (unsigned)size);
+  bool ok = gmbBridge::loadState(mem + header, (unsigned)size);
   if (ok && gmbSgbOn) {
-    const char *p = mem + 12 + size;
-    size_t rest = (size_t)available - 12 - size;
+    const char *p = mem + header + size;
+    size_t rest = (size_t)available - header - size;
     if (rest >= 8 && !memcmp(p, kSgbTag, 4) && getSize(p + 4) <= rest - 8)
       gmbSgb::loadState((const unsigned char *)p + 8, (unsigned)getSize(p + 4));
   }

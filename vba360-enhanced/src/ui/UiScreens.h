@@ -93,7 +93,9 @@ struct UiMenuItem
   std::string help;     // shown at the bottom when selected
   std::string thumb;    // optional preview image for the side panel
   bool enabled;
-  UiMenuItem() : id(0), kind(ITEM_ACTION), enabled(true) {}
+  int choice;           // options: position of the current value (-1 = unknown),
+                        // so the picker lists the values in their own order
+  UiMenuItem() : id(0), kind(ITEM_ACTION), enabled(true), choice(-1) {}
 };
 
 class UiMenuScreen : public UiScreen
@@ -123,6 +125,7 @@ public:
   UiListState list;
 
   int selectedId() const;
+  const UiMenuItem *findItem(int id) const;   // 0 if not in the menu
   void selectId(int id);
 
 private:
@@ -174,6 +177,27 @@ private:
   std::string m_message;
   int m_purpose;
   std::string m_arg;
+};
+
+// --- Option picker: the values of one option in a side panel or a pop-up
+// list. Moving the selection changes the option right away (so filters and
+// backgrounds can be previewed); A or B closes it.
+class UiPickerScreen : public UiScreen
+{
+public:
+  UiPickerScreen(UiMenuScreen *menu, int itemId, const std::string &title,
+                 const std::vector<std::string> &values, int style, int selected);
+  virtual void update(UiApp &app, const UiInputState &in);
+  virtual void draw(UiApp &app, UiCanvas &c);
+  virtual bool isOverlay() const { return true; }
+
+private:
+  UiMenuScreen *m_menu;
+  int m_itemId;
+  std::string m_title;
+  std::vector<std::string> m_values;
+  int m_style;
+  UiListState m_list;
 };
 
 // Names shown for controller buttons / remappable actions.

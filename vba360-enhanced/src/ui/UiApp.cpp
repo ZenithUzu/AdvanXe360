@@ -21,9 +21,10 @@ enum
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
+  G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
   CH_ADD = 1, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000
 };
 
@@ -49,6 +50,31 @@ int wrapIndex(int v, int delta, int count)
   while (v < 0) v += count;
   while (v >= count) v -= count;
   return v;
+}
+
+// Names of the picture settings (shared by Settings > Video and the
+// per-game options).
+const char *filterName(const UiApp &app, int i)
+{
+  const char *n[FILTER_COUNT] = { app.tr("N\xedtido", "Sharp"), app.tr("Suave", "Smooth"), "Scale2x", "LQ2x" };
+  return n[i < 0 || i >= FILTER_COUNT ? 0 : i];
+}
+
+const char *sizeName(const UiApp &app, int i)
+{
+  const char *n[SIZE_COUNT] = {
+    app.tr("Original", "Original"), app.tr("Pantalla completa", "Full screen"),
+    app.tr("Entera (p\xedxel exacto)", "Integer (pixel perfect)"),
+    app.tr("16:9 (toda la pantalla)", "16:9 (whole screen)") };
+  return n[i < 0 || i >= SIZE_COUNT ? 0 : i];
+}
+
+const char *effectName(const UiApp &app, int i)
+{
+  const char *n[EFFECT_COUNT] = {
+    app.tr("Ninguno", "None"), app.tr("CRT (TV antigua)", "CRT (old TV)"),
+    app.tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)") };
+  return n[i < 0 || i >= EFFECT_COUNT ? 0 : i];
 }
 
 std::string lowerStr(std::string s)
@@ -128,7 +154,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true)
+    m_hintsAllowed(true), m_quietChange(false)
 {
 }
 
@@ -558,50 +584,50 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.subtitle = tr("C\xf3mo se ve el juego", "How the game looks");
     const char *filters[FILTER_COUNT] = {
       tr("N\xedtido", "Sharp"), tr("Suave", "Smooth"), "Scale2x", "LQ2x" };
-    m.add(V_FILTER, ITEM_OPTION, tr("Filtro de imagen", "Image filter"), filters[m_cfg.filter],
+    (m.add(V_FILTER, ITEM_OPTION, tr("Filtro de imagen", "Image filter"), filters[m_cfg.filter],
           tr("N\xedtido: p\xedxeles definidos. Suave: bilineal. Scale2x/LQ2x: suavizan bordes.",
-             "Sharp: crisp pixels. Smooth: bilinear. Scale2x/LQ2x: smooth the edges."));
+             "Sharp: crisp pixels. Smooth: bilinear. Scale2x/LQ2x: smooth the edges."))).choice = m_cfg.filter;
     const char *stretch[SIZE_COUNT] = {
       tr("Original", "Original"), tr("Pantalla completa", "Full screen"), tr("Entera (p\xedxel exacto)", "Integer (pixel perfect)"),
       tr("16:9 (toda la pantalla)", "16:9 (whole screen)") };
-    m.add(V_STRETCH, ITEM_OPTION, tr("Tama\xf1o de imagen", "Picture size"), stretch[m_cfg.stretch],
+    (m.add(V_STRETCH, ITEM_OPTION, tr("Tama\xf1o de imagen", "Picture size"), stretch[m_cfg.stretch],
           tr("Original: proporci\xf3n de la consola. Entera: zoom exacto. 16:9: llena la TV (estirada).",
-             "Original: console proportions. Integer: exact zoom. 16:9: fills the TV (stretched)."));
+             "Original: console proportions. Integer: exact zoom. 16:9: fills the TV (stretched)."))).choice = m_cfg.stretch;
     const char *effects[EFFECT_COUNT] = {
       tr("Ninguno", "None"), tr("CRT (TV antigua)", "CRT (old TV)"), tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)") };
-    m.add(V_EFFECT, ITEM_OPTION, tr("Efecto de pantalla", "Screen effect"), effects[m_cfg.screenEffect],
+    (m.add(V_EFFECT, ITEM_OPTION, tr("Efecto de pantalla", "Screen effect"), effects[m_cfg.screenEffect],
           tr("CRT: l\xedneas y m\xe1scara de TV (zfast_crt). LCD: rejilla de port\xe1til (lcd3x). Mejor con Entera.",
-             "CRT: TV scanlines and mask (zfast_crt). LCD: handheld grid (lcd3x). Best with Integer size."));
-    m.add(V_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
+             "CRT: TV scanlines and mask (zfast_crt). LCD: handheld grid (lcd3x). Best with Integer size."))).choice = m_cfg.screenEffect;
+    (m.add(V_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
           uiGbPaletteNames[m_cfg.gbPalette][m_cfg.language ? 1 : 0],
           tr("Para juegos de Game Boy (los de Color usan los suyos). Autom\xe1tica: los que les da el GBC.",
-             "For Game Boy games (Color games keep theirs). Automatic: the ones the GBC gives them."));
+             "For Game Boy games (Color games keep theirs). Automatic: the ones the GBC gives them."))).choice = m_cfg.gbPalette;
     const char *sgb[3] = { tr("Apagado", "Off"), tr("Juegos de Game Boy", "Game Boy games"),
                            tr("Tambi\xe9n compatibles con Color", "Also Color-compatible ones") };
-    m.add(V_SGB, ITEM_OPTION, tr("Super Game Boy (marcos)", "Super Game Boy (borders)"), sgb[m_cfg.sgbBorders],
+    (m.add(V_SGB, ITEM_OPTION, tr("Super Game Boy (marcos)", "Super Game Boy (borders)"), sgb[m_cfg.sgbBorders],
           tr("Marco y colores del juego en el Super Game Boy. Se aplica al abrir el juego.",
-             "The game's Super Game Boy border and colors. Applies when the game starts."));
+             "The game's Super Game Boy border and colors. Applies when the game starts."))).choice = m_cfg.sgbBorders;
     {
       // Background: black, or an image from borders\ next to default.xex
       std::vector<std::string> images = borderImages(m_host);
       int choice = borderChoice(m_cfg, images);
       std::string value = choice == 0 ? std::string(tr("Negro", "Black")) : images[choice - 1];
-      m.add(V_BORDER, ITEM_OPTION, tr("Fondo de la pantalla", "Screen background"), value,
+      (m.add(V_BORDER, ITEM_OPTION, tr("Fondo de la pantalla", "Screen background"), value,
             tr("Negro o una imagen de la carpeta borders\\ (PNG, JPG, BMP, TGA, DDS).",
-               "Black or an image from the borders\\ folder (PNG, JPG, BMP, TGA, DDS)."));
+               "Black or an image from the borders\\ folder (PNG, JPG, BMP, TGA, DDS)."))).choice = choice;
       if (choice != 0) {
         const char *fits[FIT_COUNT] = {
           tr("Centrada", "Centered"), tr("Rellenar", "Fill"), tr("Estirar", "Stretch") };
-        m.add(V_BORDER_FIT, ITEM_OPTION, tr("Ajuste del fondo", "Background fit"), fits[m_cfg.borderFit],
+        (m.add(V_BORDER_FIT, ITEM_OPTION, tr("Ajuste del fondo", "Background fit"), fits[m_cfg.borderFit],
               tr("Centrada: imagen completa al centro. Rellenar: cubre la pantalla. Estirar: deforma.",
-                 "Centered: whole image in the middle. Fill: covers the screen. Stretch: distorts."));
+                 "Centered: whole image in the middle. Fill: covers the screen. Stretch: distorts."))).choice = m_cfg.borderFit;
       }
     }
-    m.add(V_FPS, ITEM_OPTION, tr("Mostrar FPS", "Show FPS"), yesNo[m_cfg.showFps]);
+    (m.add(V_FPS, ITEM_OPTION, tr("Mostrar FPS", "Show FPS"), yesNo[m_cfg.showFps])).choice = m_cfg.showFps;
     const char *skip[5] = { tr("Autom\xe1tico", "Automatic"), "0", "1", "2", "3" };
-    m.add(V_FRAMESKIP, ITEM_OPTION, tr("Salto de cuadros", "Frame skip"), skip[m_cfg.frameSkip],
+    (m.add(V_FRAMESKIP, ITEM_OPTION, tr("Salto de cuadros", "Frame skip"), skip[m_cfg.frameSkip],
           tr("Autom\xe1tico salta cuadros s\xf3lo si el juego va lento.",
-             "Automatic only skips frames when the game runs slow."));
+             "Automatic only skips frames when the game runs slow."))).choice = m_cfg.frameSkip;
     break;
   }
 
@@ -617,11 +643,11 @@ void UiApp::buildMenu(UiMenuScreen &m)
     std::string speed = uiFastForwardSpeeds[m_cfg.ffSpeed]
                         ? intStr(uiFastForwardSpeeds[m_cfg.ffSpeed]) + "x"
                         : std::string(tr("M\xe1xima", "Maximum"));
-    m.add(E_FF_SPEED, ITEM_OPTION, tr("Velocidad de avance r\xe1pido", "Fast-forward speed"), speed);
+    (m.add(E_FF_SPEED, ITEM_OPTION, tr("Velocidad de avance r\xe1pido", "Fast-forward speed"), speed)).choice = m_cfg.ffSpeed;
     const char *modes[2] = { tr("Mantener presionado", "Hold"), tr("Pulsar para alternar", "Toggle") };
     std::string ffHelp = std::string(tr("Bot\xf3n de avance r\xe1pido: ", "Fast-forward button: ")) +
                          uiButtonName(*this, m_cfg.map[ACT_FAST_FORWARD]);
-    m.add(E_FF_MODE, ITEM_OPTION, tr("Modo de avance r\xe1pido", "Fast-forward mode"), modes[m_cfg.ffToggle], ffHelp);
+    (m.add(E_FF_MODE, ITEM_OPTION, tr("Modo de avance r\xe1pido", "Fast-forward mode"), modes[m_cfg.ffToggle], ffHelp)).choice = m_cfg.ffToggle;
     m.add(E_BIOS, ITEM_OPTION, tr("Usar BIOS original", "Use original BIOS"), yesNo[m_cfg.useBios],
           tr("Requiere bios\\gba_bios.bin. Se salta la animaci\xf3n de inicio.",
              "Needs bios\\gba_bios.bin. The boot animation is skipped."));
@@ -651,19 +677,25 @@ void UiApp::buildMenu(UiMenuScreen &m)
 
   case MENU_SETTINGS_UI: {
     m.title = tr("Interfaz e idioma", "Interface & language");
-    m.add(U_LANGUAGE, ITEM_OPTION, tr("Idioma", "Language"), m_cfg.language ? "English" : "Espa\xf1ol");
+    (m.add(U_LANGUAGE, ITEM_OPTION, tr("Idioma", "Language"), m_cfg.language ? "English" : "Espa\xf1ol")).choice = m_cfg.language;
     m.add(U_HIDE, ITEM_OPTION, tr("Mostrar s\xf3lo juegos", "Show only games"), yesNo[m_cfg.hideNonGames],
           tr("Oculta los archivos que no son ROMs en el explorador.", "Hides non-ROM files in the browser."));
-    m.add(U_THEME, ITEM_OPTION, tr("Tema de colores", "Color theme"),
+    const char *styles[OPT_STYLE_COUNT] = {
+      tr("Panel lateral", "Side panel"), tr("Lista emergente", "Pop-up list"),
+      tr("Cl\xe1sico (izquierda / derecha)", "Classic (left / right)") };
+    (m.add(U_OPTION_STYLE, ITEM_OPTION, tr("Al cambiar una opci\xf3n", "Changing an option"), styles[m_cfg.optionStyle],
+          tr("A abre los valores en un panel o una lista; izquierda/derecha siempre funcionan.",
+             "A opens the values in a panel or a list; left/right always work."))).choice = m_cfg.optionStyle;
+    (m.add(U_THEME, ITEM_OPTION, tr("Tema de colores", "Color theme"),
           uiThemes[m_cfg.menuTheme].name[m_cfg.language ? 1 : 0],
-          tr("Colores del men\xfa, inspirados en las consolas.", "Menu colors, inspired by the consoles."));
+          tr("Colores del men\xfa, inspirados en las consolas.", "Menu colors, inspired by the consoles."))).choice = m_cfg.menuTheme;
     {
       std::vector<std::string> images = menuImages(m_host);
       int choice = menuImageChoice(m_cfg, images);
-      m.add(U_BACKGROUND, ITEM_OPTION, tr("Imagen de fondo", "Background image"),
+      (m.add(U_BACKGROUND, ITEM_OPTION, tr("Imagen de fondo", "Background image"),
             choice ? images[choice - 1] : std::string(tr("Ninguna", "None")),
             tr("Una imagen de la carpeta backgrounds\\ (ideal 1280x720), oscurecida.",
-               "An image from the backgrounds\\ folder (1280x720 is best), darkened."));
+               "An image from the backgrounds\\ folder (1280x720 is best), darkened."))).choice = choice;
     }
     m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
           tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
@@ -687,6 +719,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.subtitle = "VBA360 enhanced-ai";
     m.addInfo(tr("Emulador de Game Boy Advance, Game Boy y Game Boy Color.",
                  "Game Boy Advance, Game Boy and Game Boy Color emulator."));
+    m.addInfo(tr("GB y GBC con el n\xfa""cleo Gambatte, con marcos de Super Game Boy.",
+                 "GB and GBC on the Gambatte core, with Super Game Boy borders."));
     m.addInfo(tr("No emula Classic NES Series ni accesorios como el e-Reader.",
                  "No Classic NES Series or add-ons such as the e-Reader."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA. Licencia GPL.",
@@ -838,25 +872,55 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
 {
   m.title = tr("Opciones del juego", "Game options");
   m.subtitle = uiStripExtension(uiFileName(m.arg));
-  const char *types[SAVE_TYPE_COUNT] = {
-    tr("Autom\xe1tico", "Automatic"), "EEPROM", "SRAM", "Flash 64 KB", "Flash 128 KB",
-    tr("Ninguno", "None") };
-  m.add(G_SAVE_TYPE, ITEM_OPTION, tr("Tipo de guardado", "Save type"), types[m_gameCfg.saveType],
-        tr("Autom\xe1tico detecta el tipo leyendo la ROM. C\xe1mbialo s\xf3lo si no guarda.",
-           "Automatic reads it from the ROM. Change it only if the game won't save."));
-  const char *tri[3] = { tr("Autom\xe1tico", "Automatic"), tr("Activado", "On"), tr("Desactivado", "Off") };
-  m.add(G_RTC, ITEM_OPTION, tr("Reloj (RTC)", "Clock (RTC)"), tri[m_gameCfg.rtc],
-        tr("Pok\xe9mon Rub\xed/Zafiro/Esmeralda y sus hacks usan el reloj.",
-           "Pokemon Ruby/Sapphire/Emerald and their hacks use the clock."));
+  int rom = m_host.romInfo(m.arg);
+  bool gb = (rom & UI_ROM_GB) != 0;
+
+  if (!gb) {
+    // Game Boy Advance: save chip and clock.
+    const char *types[SAVE_TYPE_COUNT] = {
+      tr("Autom\xe1tico", "Automatic"), "EEPROM", "SRAM", "Flash 64 KB", "Flash 128 KB",
+      tr("Ninguno", "None") };
+    (m.add(G_SAVE_TYPE, ITEM_OPTION, tr("Tipo de guardado", "Save type"), types[m_gameCfg.saveType],
+          tr("Autom\xe1tico detecta el tipo leyendo la ROM. C\xe1mbialo s\xf3lo si no guarda.",
+             "Automatic reads it from the ROM. Change it only if the game won't save."))).choice = m_gameCfg.saveType;
+    const char *tri[3] = { tr("Autom\xe1tico", "Automatic"), tr("Activado", "On"), tr("Desactivado", "Off") };
+    (m.add(G_RTC, ITEM_OPTION, tr("Reloj (RTC)", "Clock (RTC)"), tri[m_gameCfg.rtc],
+          tr("Pok\xe9mon Rub\xed/Zafiro/Esmeralda y sus hacks usan el reloj.",
+             "Pokemon Ruby/Sapphire/Emerald and their hacks use the clock."))).choice = m_gameCfg.rtc;
+  }
   const char *patch[2] = { tr("No aplicar", "Don't apply"), tr("Aplicar autom\xe1ticamente", "Apply automatically") };
-  m.add(G_PATCH, ITEM_OPTION, tr("Parche .bps/.ups/.ips", "Patch .bps/.ups/.ips"), patch[m_gameCfg.patch],
-        tr("Usa el parche con el mismo nombre que la ROM.", "Uses the patch with the same name as the ROM."));
+  (m.add(G_PATCH, ITEM_OPTION, tr("Parche .bps/.ups/.ips", "Patch .bps/.ups/.ips"), patch[m_gameCfg.patch],
+        tr("Usa el parche con el mismo nombre que la ROM.", "Uses the patch with the same name as the ROM."))).choice = (1 - m_gameCfg.patch);
   if (m_inGame && m_host.romPatched())
     m.add(G_SAVE_PATCHED, ITEM_ACTION, tr("Guardar ROM ya parchada", "Save patched ROM"), "",
           tr("Crea una copia con el parche aplicado junto a la ROM; carga m\xe1s r\xe1pido.",
              "Writes a copy with the patch applied next to the ROM; it loads faster."));
+
+  // Picture: the global settings, or this game's own.
+  m.addHeader(tr("Imagen de este juego", "This game's picture"));
+  const char *custom[2] = { tr("Como en Ajustes", "As in Settings"), tr("Personalizada", "Custom") };
+  (m.add(G_CUSTOM, ITEM_OPTION, tr("Configuraci\xf3n", "Settings"), custom[m_gameCfg.custom],
+        tr("Personalizada: filtro, tama\xf1o, efecto y modo s\xf3lo para este juego.",
+           "Custom: filter, size, effect and mode for this game only."))).choice = m_gameCfg.custom;
+  if (m_gameCfg.custom) {
+    if (rom & UI_ROM_SGB) {
+      const char *modes[2] = { tr("Normal", "Normal"), "Super Game Boy" };
+      (m.add(G_SGB_MODE, ITEM_OPTION, tr("Modo de juego", "Game mode"), modes[m_gameCfg.sgbMode],
+            tr("Super Game Boy: marco y colores del juego. Se aplica al iniciar el juego.",
+               "Super Game Boy: the game's border and colors. Applies when the game starts."))).choice = m_gameCfg.sgbMode;
+    }
+    (m.add(G_FILTER, ITEM_OPTION, tr("Filtro de imagen", "Image filter"), filterName(*this, m_gameCfg.filter))).choice = m_gameCfg.filter;
+    (m.add(G_STRETCH, ITEM_OPTION, tr("Tama\xf1o de imagen", "Picture size"), sizeName(*this, m_gameCfg.stretch))).choice = m_gameCfg.stretch;
+    (m.add(G_EFFECT, ITEM_OPTION, tr("Efecto de pantalla", "Screen effect"), effectName(*this, m_gameCfg.screenEffect))).choice = m_gameCfg.screenEffect;
+    bool sgbOn = (rom & UI_ROM_SGB) && m_gameCfg.sgbMode;
+    if (gb && !(rom & UI_ROM_CGB_ONLY) && !sgbOn)
+      (m.add(G_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
+            uiGbPaletteNames[m_gameCfg.gbPalette][m_cfg.language ? 1 : 0])).choice = m_gameCfg.gbPalette;
+  }
+
   if (m_inGame)
-    m.addInfo(tr("Los cambios se aplican al reiniciar el juego.", "Changes apply when the game restarts."));
+    m.addInfo(tr("La imagen cambia al momento; el resto al reiniciar el juego.",
+                 "The picture changes right away; the rest when the game restarts."));
   else
     m.add(G_PLAY, ITEM_ACTION, tr("Jugar", "Play"));
 }
@@ -1082,6 +1146,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     if (id == U_LANGUAGE) m_cfg.language ^= 1;
     else if (id == U_HIDE) m_cfg.hideNonGames ^= 1;
     else if (id == U_THEME) m_cfg.menuTheme = wrapIndex(m_cfg.menuTheme, delta, UI_THEME_COUNT);
+    else if (id == U_OPTION_STYLE) m_cfg.optionStyle = wrapIndex(m_cfg.optionStyle, delta, OPT_STYLE_COUNT);
     else if (id == U_BACKGROUND) {
       std::vector<std::string> images = menuImages(m_host);
       int choice = wrapIndex(menuImageChoice(m_cfg, images), delta, (int)images.size() + 1);
@@ -1103,10 +1168,23 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     }
     break;
   case MENU_GAME_OPTIONS:
-    settings = false;
     if (id == G_SAVE_TYPE) m_gameCfg.saveType = wrapIndex(m_gameCfg.saveType, delta, SAVE_TYPE_COUNT);
     else if (id == G_RTC) m_gameCfg.rtc = wrapIndex(m_gameCfg.rtc, delta, 3);
     else if (id == G_PATCH) m_gameCfg.patch ^= 1;
+    else if (id == G_CUSTOM) {
+      m_gameCfg.custom ^= 1;
+      if (m_gameCfg.custom && !m_quietChange)
+        m_gameCfg.copyVideoFrom(m_cfg);   // start from what the game looks like now
+    }
+    else if (id == G_SGB_MODE) m_gameCfg.sgbMode ^= 1;
+    else if (id == G_FILTER) m_gameCfg.filter = wrapIndex(m_gameCfg.filter, delta, FILTER_COUNT);
+    else if (id == G_STRETCH) m_gameCfg.stretch = wrapIndex(m_gameCfg.stretch, delta, SIZE_COUNT);
+    else if (id == G_EFFECT) m_gameCfg.screenEffect = wrapIndex(m_gameCfg.screenEffect, delta, EFFECT_COUNT);
+    else if (id == G_GB_COLORS) m_gameCfg.gbPalette = wrapIndex(m_gameCfg.gbPalette, delta, GB_PALETTE_COUNT);
+    // Saved right away so the running game (if it is this one) can use it.
+    if (!m_quietChange)
+      m_gameCfg.save(gameConfigPath(m_gameCfgRom));
+    settings = m_inGame;
     break;
   case MENU_CHEATS:
     settings = false;
@@ -1120,8 +1198,59 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     break;
   }
   rebuildMenus();
-  if (settings)
+  if (settings && !m_quietChange)
     m_host.applySettings();
+}
+
+void UiApp::openPicker(UiMenuScreen &m, int id)
+{
+  if (m_cfg.optionStyle == OPT_STYLE_CLASSIC || m.menuId == MENU_CLOCK || m.menuId == MENU_CONTROLS) {
+    onMenuChange(m, id, 1);
+    return;
+  }
+  const UiMenuItem *it = m.findItem(id);
+  if (!it)
+    return;
+  std::string title = it->label;
+  std::string start = it->value;
+  int choice = it->choice;
+
+  // List the values by stepping through them once, then back to the start.
+  std::vector<std::string> values;
+  values.push_back(start);
+  m_quietChange = true;
+  int steps = 0;
+  for (; steps < 64; steps++) {
+    onMenuChange(m, id, 1);
+    const UiMenuItem *now = m.findItem(id);
+    if (!now)
+      break;
+    if (now->value == start) {
+      steps = -1;   // back where it started
+      break;
+    }
+    values.push_back(now->value);
+  }
+  if (steps >= 0)   // didn't come back around: undo the steps taken
+    for (int i = 0; i <= steps && i < 64; i++)
+      onMenuChange(m, id, -1);
+  m_quietChange = false;
+  rebuildMenus();
+  m.selectId(id);
+  if (values.size() < 2)
+    return;
+  // values[] starts at the current one; when the option knows its position,
+  // show them in their own order with the current one selected.
+  int n = (int)values.size();
+  int sel = 0;
+  if (choice > 0 && choice < n) {
+    std::vector<std::string> ordered(n);
+    for (int k = 0; k < n; k++)
+      ordered[k] = values[(k - choice + n) % n];
+    values.swap(ordered);
+    sel = choice;
+  }
+  push(new UiPickerScreen(&m, id, title, values, m_cfg.optionStyle, sel));
 }
 
 void UiApp::onMenuSecondary(UiMenuScreen &m, int id, int button)

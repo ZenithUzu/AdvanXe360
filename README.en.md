@@ -2,7 +2,9 @@
 
 🌐 **English** · [Español](README.md)
 
-**Game Boy Advance, Game Boy and Game Boy Color emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG).
+**Game Boy Advance, Game Boy and Game Boy Color emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG), with **Super Game Boy borders**.
+
+> 🆕 **New:** **Game Boy and Game Boy Color** games now run on the **Gambatte** core (Color-only games too, such as Pokémon Crystal), and Super Game Boy games can show **their border** and colors. Each game can have **its own picture settings** (Y button).
 Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
 **[⬇️ Download the latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
@@ -25,6 +27,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **Games · Recent · Favorites · Settings** tabs (LB / RB).
 - **Drive and folder** browser (hard drive, USB, memory units, emulator folder) with a preview of the last moment played and a marker when the ROM has a patch.
 - **Spanish and English**, with a help line on every option.
+- **How an option is changed** (*Settings → Interface & language → Changing an option*): **side panel** (A opens the values on the right), **pop-up list** (in the middle) or **classic** (left / right). In the first two the change shows right away (filters, backgrounds, colors) and **B** closes the panel; left / right still work in all three.
 - **Color themes** (Default, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance and Red) and your own **background image** for the menu (*Settings → Interface & language*).
 
 **In-game menu** (right stick click; can be changed in Controls)
@@ -36,7 +39,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **Automatic BPS / UPS / IPS patching** up to 32 MB: the clean ROM is never modified.
 - **Battery saves** (`.sav`) for GBA and GB: what you save inside the game is written when you quit, when you open the menu and periodically.
 - The **save type** (Flash 64/128 KB, SRAM, EEPROM) and the **RTC clock** are detected **by reading the ROM**, not by the cartridge ID. Pokémon hacks save correctly even when they keep the original ID.
-- **Per-game options** (Y button on a game), stored by file name: save type, clock and patch.
+- **Per-game options** (Y button on a game, or *Game options* in the in-game menu), stored by file name: save type and clock (GBA), patch and **that game's picture**: *As in Settings* or *Custom* (filter, size, effect, Game Boy colors and, in Super Game Boy games, **Normal** or **Super Game Boy** mode). Settings still apply to every other game.
 - Compressed ROMs in `.zip` and `.7z`.
 
 **Game Boy and Game Boy Color** ([Gambatte](#game-boy-and-game-boy-color) core)
@@ -175,6 +178,8 @@ In **Settings → Video → Super Game Boy (borders)**:
 | **Off** (default) | Game Boy games use the palette chosen in *Colors (Game Boy)* |
 | **Game Boy games** | Games made for the Super Game Boy show **their border** and their per-area colors, as on the Super Nintendo |
 | **Also Color-compatible ones** | The same, and games that are also Game Boy Color games (Pokémon Yellow, Gold/Silver, Zelda DX...) run in Super Game Boy mode instead of in color |
+
+It can also be set **per game**: Y button → *This game's picture: Custom* → *Game mode: Normal / Super Game Boy* (only shown in games with Super Game Boy features).
 
 - It applies **when the game starts** (the picture becomes 256×224 with the border).
 - The game itself sends its border when it boots; until then, or in games without one, the frame is black. The console's generic Super Game Boy border is not included.

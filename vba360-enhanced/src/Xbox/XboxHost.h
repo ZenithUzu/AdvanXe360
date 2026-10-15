@@ -76,6 +76,8 @@ void xboxSetMenuCanvas(UiCanvas *canvas);
 // Core filter matching the "Image filter" setting.
 #include "../sdl/filters.h"
 Filter xboxSelectedFilter();
+// Image filter in effect (FILTER_*): Settings, or the game's own options.
+int xboxVideoFilter();
 
 // --- UI rendering ------------------------------------------------------------------
 bool xboxUiRendererInit();

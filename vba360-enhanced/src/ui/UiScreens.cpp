@@ -619,6 +619,14 @@ int UiMenuScreen::selectedId() const
   return items[list.sel].id;
 }
 
+const UiMenuItem *UiMenuScreen::findItem(int id) const
+{
+  for (size_t i = 0; i < items.size(); i++)
+    if (items[i].id == id && items[i].kind != ITEM_HEADER && items[i].kind != ITEM_INFO)
+      return &items[i];
+  return 0;
+}
+
 void UiMenuScreen::selectId(int id)
 {
   for (size_t i = 0; i < items.size(); i++) {
@@ -689,7 +697,7 @@ void UiMenuScreen::update(UiApp &app, const UiInputState &in)
       return;
     // In Controls, A captures the new button / stick direction instead.
     if (it.kind == ITEM_OPTION && menuId != MENU_CONTROLS)
-      app.onMenuChange(*this, id, 1);
+      app.openPicker(*this, id);
     else
       app.onMenuActivate(*this, id);
     return;
@@ -978,6 +986,91 @@ void UiCaptureScreen::draw(UiApp &app, UiCanvas &c)
 UiConfirmScreen::UiConfirmScreen(const std::string &message, int purpose, const std::string &arg)
   : m_message(message), m_purpose(purpose), m_arg(arg)
 {
+}
+
+// --- Option picker ------------------------------------------------------------
+
+UiPickerScreen::UiPickerScreen(UiMenuScreen *menu, int itemId, const std::string &title,
+                               const std::vector<std::string> &values, int style, int selected)
+  : m_menu(menu), m_itemId(itemId), m_title(title), m_values(values), m_style(style)
+{
+  m_list.sel = selected;   // the current value
+  m_list.scroll = selected > 4 ? selected - 4 : 0;
+}
+
+void UiPickerScreen::update(UiApp &app, const UiInputState &in)
+{
+  int n = (int)m_values.size();
+  int delta = 0;
+  if (in.repeat & (PAD_BIT(PAD_UP) | PAD_BIT(PAD_LEFT))) delta = -1;
+  if (in.repeat & (PAD_BIT(PAD_DOWN) | PAD_BIT(PAD_RIGHT))) delta = 1;
+  if (delta && n > 1) {
+    m_list.move(delta, n, true);
+    app.onMenuChange(*m_menu, m_itemId, delta);   // applied right away
+  }
+  if (in.pressed & (PAD_BIT(PAD_A) | PAD_BIT(PAD_B)))
+    app.pop();
+}
+
+void UiPickerScreen::draw(UiApp &app, UiCanvas &c)
+{
+  const int rh = 46;
+  int x, y, w, h;
+  if (m_style == OPT_STYLE_LIST) {
+    // Pop-up list in the middle of the screen.
+    c.fillRect(0, 0, UI_W, UI_H, 0x80000000);
+    int rows = (int)m_values.size() < 9 ? (int)m_values.size() : 9;
+    w = 560;
+    h = 96 + rows * rh + 20;
+    x = (UI_W - w) / 2;
+    y = (UI_H - h) / 2 - 20;
+    c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
+  } else {
+    // Side panel on the right, full height.
+    c.fillRect(0, 0, UI_W, UI_H, 0x60000000);
+    w = 460;
+    h = UI_H;
+    x = UI_W - w;
+    y = 0;
+    c.fillRect(x, y, w, h, uiWithAlpha(UI_COL_PANEL, 0xF8));
+    c.fillRect(x, y, 3, h, UI_COL_ACCENT);
+    y += 40;
+    h -= 40 + 80;
+  }
+  c.drawTextFit(UI_FONT_BODY, x + 28, y + 22, w - 56, m_title.c_str(), UI_COL_TEXT);
+  c.fillRect(x + 28, y + 70, w - 56, 1, COL_DIVIDER);
+  int listY = y + 82;
+  int listH = (m_style == OPT_STYLE_LIST) ? h - 96 - 10 : h - 82;
+  int visible = listH / rh;
+  if (visible < 1) visible = 1;
+  m_list.ensureVisible(visible);
+  c.setClip(x, listY, w, visible * rh);
+  for (int i = 0; i < visible; i++) {
+    int idx = m_list.scroll + i;
+    if (idx >= (int)m_values.size())
+      break;
+    int ry = listY + i * rh;
+    bool sel = idx == m_list.sel;
+    if (sel) {
+      c.fillRoundRect(x + 16, ry + 2, w - 32, rh - 4, 10, UI_COL_ROW_SEL);
+      c.fillRoundRect(x + 16, ry + 10, 4, rh - 20, 2, UI_COL_ACCENT);
+    }
+    c.drawTextFit(UI_FONT_BODY, x + 36, ry + 8, w - 72, m_values[idx].c_str(),
+                  sel ? UI_COL_TEXT : 0xFFD0D5E2);
+  }
+  c.resetClip();
+  drawScrollbar(c, x + w - 12, listY, visible * rh, m_list.scroll, visible, (int)m_values.size());
+  const char *hints[] = { app.tr("A:Listo", "A:Done"), app.tr("B:Cerrar", "B:Close") };
+  if (m_style == OPT_STYLE_LIST) {
+    app.drawHints(c, hints, 2);
+  } else {
+    // Hints inside the panel.
+    int hy = UI_H - 64;
+    c.fillRect(x + 28, hy - 8, w - 56, 1, COL_DIVIDER);
+    c.drawText(UI_FONT_SMALL, x + 28, hy + 4,
+               app.tr("Arriba/abajo: cambiar   A / B: cerrar", "Up/down: change   A / B: close"),
+               UI_COL_TEXT_DIM);
+  }
 }
 
 void UiConfirmScreen::update(UiApp &app, const UiInputState &in)

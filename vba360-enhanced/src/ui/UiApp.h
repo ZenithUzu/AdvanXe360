@@ -87,6 +87,9 @@ public:
   void onCaptured(int action, int button);
   void onMenuActivate(UiMenuScreen &menu, int itemId);
   void onMenuChange(UiMenuScreen &menu, int itemId, int delta);
+  // A on an option: its values in a side panel / list (or the next value in
+  // the classic style).
+  void openPicker(UiMenuScreen &menu, int itemId);
   void onMenuSecondary(UiMenuScreen &menu, int itemId, int button);
   void onMenuClosed(UiMenuScreen &menu);
   void toggleFavorite(const std::string &rom);
@@ -135,6 +138,10 @@ private:
   bool m_hintsAllowed;               // only the top screen draws hints
   UiGameConfig m_gameCfg;            // options of the game being edited
   std::string m_gameCfgRom;
+  // True while openPicker steps through an option's values to list them:
+  // nothing is saved or applied then.
+  bool m_quietChange;
+
   // Menu background image (Settings > Interface), loaded once per name.
   std::string m_bgName;
   std::vector<UiColor> m_bgPixels;

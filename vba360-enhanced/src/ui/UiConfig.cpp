@@ -71,6 +71,7 @@ struct ConfigReader
     else if (k == "hide_non_games") c.hideNonGames = clampInt(v, 0, 1, c.hideNonGames);
     else if (k == "last_dir") c.lastDir = v;
     else if (k == "menu_theme") c.menuTheme = clampInt(v, 0, 5, c.menuTheme);
+    else if (k == "option_style") c.optionStyle = clampInt(v, 0, OPT_STYLE_COUNT - 1, c.optionStyle);
     else if (k == "menu_background") c.menuBackground = v;
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
     else if (k == "stretch") c.stretch = clampInt(v, 0, SIZE_COUNT - 1, c.stretch);
@@ -118,13 +119,19 @@ struct GameConfigReader
     if (k == "save_type") c.saveType = clampInt(v, 0, SAVE_TYPE_COUNT - 1, c.saveType);
     else if (k == "rtc") c.rtc = clampInt(v, 0, 2, c.rtc);
     else if (k == "patch") c.patch = clampInt(v, 0, 1, c.patch);
+    else if (k == "custom") c.custom = clampInt(v, 0, 1, c.custom);
+    else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
+    else if (k == "stretch") c.stretch = clampInt(v, 0, SIZE_COUNT - 1, c.stretch);
+    else if (k == "screen_effect") c.screenEffect = clampInt(v, 0, EFFECT_COUNT - 1, c.screenEffect);
+    else if (k == "gb_palette") c.gbPalette = clampInt(v, 0, GB_PALETTE_COUNT - 1, c.gbPalette);
+    else if (k == "sgb_mode") c.sgbMode = clampInt(v, 0, 1, c.sgbMode);
   }
 };
 
 } // namespace
 
 UiConfig::UiConfig()
-  : language(0), hideNonGames(1), menuTheme(0),
+  : language(0), hideNonGames(1), menuTheme(0), optionStyle(OPT_STYLE_PANEL),
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), border(0), borderFit(FIT_CENTER),
     screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1),
@@ -181,7 +188,7 @@ bool UiConfig::save(const std::string &path) const
     return false;
   fprintf(f, "# VBA360 settings\n");
   fprintf(f, "language=%d\nhide_non_games=%d\nlast_dir=%s\n", language, hideNonGames, lastDir.c_str());
-  fprintf(f, "menu_theme=%d\nmenu_background=%s\n", menuTheme, menuBackground.c_str());
+  fprintf(f, "menu_theme=%d\nmenu_background=%s\noption_style=%d\n", menuTheme, menuBackground.c_str(), optionStyle);
   fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nborder_image=%s\nborder_fit=%d\n",
           filter, stretch, border, borderImage.c_str(), borderFit);
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",
@@ -200,7 +207,20 @@ bool UiConfig::save(const std::string &path) const
   return true;
 }
 
-UiGameConfig::UiGameConfig() : saveType(SAVE_AUTO), rtc(TRI_AUTO), patch(1) {}
+UiGameConfig::UiGameConfig()
+  : saveType(SAVE_AUTO), rtc(TRI_AUTO), patch(1), custom(0),
+    filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), screenEffect(EFFECT_NONE), gbPalette(0), sgbMode(1)
+{
+}
+
+void UiGameConfig::copyVideoFrom(const UiConfig &cfg)
+{
+  filter = cfg.filter;
+  stretch = cfg.stretch;
+  screenEffect = cfg.screenEffect;
+  gbPalette = cfg.gbPalette;
+  sgbMode = cfg.sgbBorders ? 1 : 0;
+}
 
 bool UiGameConfig::load(const std::string &path)
 {
@@ -214,6 +234,8 @@ bool UiGameConfig::save(const std::string &path) const
   if (!f)
     return false;
   fprintf(f, "save_type=%d\nrtc=%d\npatch=%d\n", saveType, rtc, patch);
+  fprintf(f, "custom=%d\nfilter=%d\nstretch=%d\nscreen_effect=%d\ngb_palette=%d\nsgb_mode=%d\n",
+          custom, filter, stretch, screenEffect, gbPalette, sgbMode);
   fclose(f);
   return true;
 }

@@ -2,7 +2,9 @@
 
 🌐 [English](README.en.md) · **Español**
 
-Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG).
+Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG), con **marcos de Super Game Boy**.
+
+> 🆕 **Novedades:** los juegos de **Game Boy y Game Boy Color** corren ahora en el núcleo **Gambatte** (también los que son solo de Color, como Pokémon Cristal), y los juegos de Super Game Boy pueden mostrar **su marco** y sus colores. Cada juego puede tener **su propia configuración de imagen** (botón Y).
 Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
 **[⬇️ Descargar la última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
@@ -25,6 +27,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Pestañas **Juegos · Recientes · Favoritos · Ajustes** (LB / RB).
 - Explorador de **unidades y carpetas** (disco duro, USB, unidades de memoria, carpeta del emulador) con vista previa del último momento jugado y aviso si la ROM tiene parche.
 - **Español e inglés**, con una línea de ayuda en cada opción.
+- **Cómo se cambia una opción** (*Ajustes → Interfaz e idioma → Al cambiar una opción*): **panel lateral** (A abre los valores a la derecha), **lista emergente** (en el centro) o **clásico** (izquierda / derecha). En los dos primeros el cambio se ve al momento (filtros, fondos, colores) y **B** cierra el panel; izquierda / derecha siguen funcionando en los tres.
 - **Temas de colores** (Predeterminado, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance y Rojo) e **imagen de fondo** propia para el menú (*Ajustes → Interfaz e idioma*).
 
 **Menú dentro del juego** (clic del stick derecho; se puede cambiar en Controles)
@@ -36,7 +39,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - **Parches BPS / UPS / IPS automáticos** hasta 32 MB: la ROM limpia no se modifica.
 - **Guardado de batería** (`.sav`) en GBA y GB: lo que guardas dentro del juego se escribe al salir, al abrir el menú y periódicamente.
 - El **tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM) y el **reloj RTC** se detectan **leyendo la ROM**, no por el ID del cartucho. Así guardan bien los hacks de Pokémon aunque conserven el ID original.
-- **Opciones por juego** (botón Y sobre un juego), guardadas por nombre de archivo: tipo de guardado, reloj y parche.
+- **Opciones por juego** (botón Y sobre un juego, o *Opciones del juego* en el menú dentro del juego), guardadas por nombre de archivo: tipo de guardado y reloj (GBA), parche y la **imagen de ese juego**: *Como en Ajustes* o *Personalizada* (filtro, tamaño, efecto, colores de Game Boy y, en juegos de Super Game Boy, modo **Normal** o **Super Game Boy**). Lo de Ajustes sigue valiendo para todos los demás juegos.
 - ROMs comprimidas en `.zip` y `.7z`.
 
 **Game Boy y Game Boy Color** (núcleo [Gambatte](#game-boy-y-game-boy-color))
@@ -175,6 +178,8 @@ En **Ajustes → Video → Super Game Boy (marcos)**:
 | **Apagado** (por defecto) | Los juegos de Game Boy usan la paleta elegida en *Colores (Game Boy)* |
 | **Juegos de Game Boy** | Los juegos hechos para el Super Game Boy muestran **su marco** y sus colores por zonas, como en el Super Nintendo |
 | **También compatibles con Color** | Igual, y además los juegos que también son de Game Boy Color (Pokémon Amarillo, Oro/Plata, Zelda DX...) se juegan en modo Super Game Boy en vez de a color |
+
+También se puede elegir **por juego**: botón Y → *Imagen de este juego: Personalizada* → *Modo de juego: Normal / Super Game Boy* (solo aparece en los juegos que tienen funciones de Super Game Boy).
 
 - Se aplica **al abrir el juego** (la imagen pasa a 256×224 con el marco).
 - El marco lo envía el propio juego al arrancar; mientras tanto, o en juegos sin marco, el borde se ve negro. El marco genérico del Super Game Boy no se incluye.
