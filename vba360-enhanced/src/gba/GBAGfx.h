@@ -103,6 +103,52 @@ static inline void gfxClearArray(u32 *array)
 	}
 }
 
+// One 8-pixel row of a text-mode tile (VBA-Next's tiled rendering: a
+// whole tile row per map read instead of re-reading the map entry and
+// re-testing the flips for every pixel).
+static inline void gfxTileRow256(u16 data, int tileY, const u8 *charBase,
+                                 const u16 *palette, u32 prio, u32 *out)
+{
+  if(data & 0x0800)
+    tileY = 7 - tileY;
+  const u8 *t = charBase + ((data & 0x3FF) << 6) + (tileY << 3);
+  if(data & 0x0400) {
+    for(int i = 0; i < 8; i++) {
+      u8 c = t[7 - i];
+      out[i] = c ? (READ16LE(&palette[c]) | prio) : 0x80000000;
+    }
+  } else {
+    for(int i = 0; i < 8; i++) {
+      u8 c = t[i];
+      out[i] = c ? (READ16LE(&palette[c]) | prio) : 0x80000000;
+    }
+  }
+}
+
+static inline void gfxTileRow16(u16 data, int tileY, const u8 *charBase,
+                                const u16 *palette, u32 prio, u32 *out)
+{
+  if(data & 0x0800)
+    tileY = 7 - tileY;
+  const u8 *t = charBase + ((data & 0x3FF) << 5) + (tileY << 2);
+  const u16 *pal = palette + ((data >> 8) & 0xF0);
+  // The 8 pixels of the row, left to right (low nibble first).
+  u32 row = t[0] | (t[1] << 8) | (t[2] << 16) | ((u32)t[3] << 24);
+  if(data & 0x0400) {
+    for(int i = 7; i >= 0; i--) {
+      u32 c = row & 15;
+      out[i] = c ? (READ16LE(&pal[c]) | prio) : 0x80000000;
+      row >>= 4;
+    }
+  } else {
+    for(int i = 0; i < 8; i++) {
+      u32 c = row & 15;
+      out[i] = c ? (READ16LE(&pal[c]) | prio) : 0x80000000;
+      row >>= 4;
+    }
+  }
+}
+
 static inline void gfxDrawTextScreen(u16 control, u16 hofs, u16 vofs,
 				     u32 *line)
 {
@@ -113,7 +159,6 @@ static inline void gfxDrawTextScreen(u16 control, u16 hofs, u16 vofs,
   int sizeX = 256;
   int sizeY = 256;
 
-  int tileXOdd = 0;
   switch((control >> 14) & 3) {
   case 0:
     break;
@@ -154,80 +199,36 @@ static inline void gfxDrawTextScreen(u16 control, u16 hofs, u16 vofs,
   }
 
   int yshift = ((yyy>>3)<<5);
-  if((control) & 0x80) {
-    u16 *screenSource = screenBase + ((xxx>>8) << 10) + ((xxx & 255)>>3) + yshift;
-	for(u32 x = 0; x < 240u; x++) {
-      u16 data = READ16LE(screenSource);
+  int tileY = yyy & 7;
+  bool c256 = (control & 0x80) != 0;
+  u16 *screenSource = screenBase + ((xxx>>8) << 10) + ((xxx & 255)>>3) + yshift;
+  int first = xxx & 7;   // pixels of the first tile already scrolled off
+  int x = 0;
+  u32 tmp[8];
 
-      int tile = data & 0x3FF;
-      int tileX = (xxx & 7);
-      int tileY = yyy & 7;
-
-      if(tileX == 7)
-        ++screenSource;
-
-      if(data & 0x0400)
-        tileX = 7 - tileX;
-      if(data & 0x0800)
-        tileY = 7 - tileY;
-
-	  u8 color = charBase[(tile<<6)  + (tileY<<3) + tileX];
-
-      line[x] = color ? (READ16LE(&palette[color]) | prio): 0x80000000;
-
-      ++xxx;
-      if(xxx == 256) {
-        if(sizeX > 256)
-          screenSource = screenBase + 0x400 + yshift;
-        else {
-          screenSource = screenBase + yshift;
-          xxx = 0;
-        }
-      } else if(xxx >= sizeX) {
-        xxx = 0;
-        screenSource = screenBase + yshift;
-      }
+  while(x < 240) {
+    u16 data = READ16LE(screenSource);
+    int n = 8 - first;          // pixels of this tile on screen
+    if(n > 240 - x)
+      n = 240 - x;
+    if(first == 0 && n == 8) {
+      if(c256) gfxTileRow256(data, tileY, charBase, palette, prio, &line[x]);
+      else     gfxTileRow16(data, tileY, charBase, palette, prio, &line[x]);
+    } else {
+      if(c256) gfxTileRow256(data, tileY, charBase, palette, prio, tmp);
+      else     gfxTileRow16(data, tileY, charBase, palette, prio, tmp);
+      for(int i = 0; i < n; i++)
+        line[x + i] = tmp[first + i];
     }
-  } else { 
-    u16 *screenSource = screenBase + ((xxx>>8) << 10) +((xxx&255)>>3) + yshift; 
-	for(u32 x = 0; x < 240u; ++x) {
-      u16 data = READ16LE(screenSource);
-
-      int tile = data & 0x3FF;
-      int tileX = (xxx & 7);
-      int tileY = yyy & 7;
- 
-      if(tileX == 7)
-        ++screenSource;
-
-      if(data & 0x0400)
-        tileX = 7 - tileX;
-      if(data & 0x0800)
-        tileY = 7 - tileY;
-
-      u8 color = charBase[(tile<<5) + (tileY<<2) + (tileX>>1)];
-
-	  tileXOdd = (tileX & 1) - 1; 
-
-	  color = isel(tileXOdd, color >> 4, color & 0x0F);
-
-	  //(tileX & 1) ? color >>= 4 : color &= 0x0F;
-
-      int pal = (data>>8) & 0xF0;
-      line[x] = color ? (READ16LE(&palette[pal + color])|prio): 0x80000000;
-
-      ++xxx;
-      if(xxx == 256) {
-        if(sizeX > 256)
-          screenSource = screenBase + 0x400 + yshift;
-        else {
-          screenSource = screenBase + yshift;
-          xxx = 0;
-        }
-      } else if(xxx >= sizeX) {
-        xxx = 0;
-        screenSource = screenBase + yshift;
-      }
+    x += n;
+    xxx += 8 - first;
+    first = 0;
+    ++screenSource;
+    if(xxx == 256 && sizeX > 256)
+      screenSource = screenBase + 0x400 + yshift;
+    else if(xxx >= sizeX) {
+      xxx = 0;
+      screenSource = screenBase + yshift;
     }
   }
   if(mosaicOn) {
@@ -322,7 +323,42 @@ static inline void gfxDrawRotScreen(u16 control,
     realY -= y*dmy;
   }
 
-  if(control & 0x2000) {
+  if(dx > 0 && dy == 0) {
+    // Common case: no rotation and no flip, so the row is the same for the
+    // whole line (VBA-Next). Map and tile row are worked out only once.
+    if(control & 0x2000) {
+      int yyy = (realY >> 8) & maskY;
+      const u8 *mapRow = screenBase + ((yyy>>3)<<yshift);
+      const u8 *charRow = charBase + ((yyy & 7)<<3);
+      for(u32 x = 0; x < 240u; ++x) {
+        int xxx = (realX >> 8) & maskX;
+        u8 color = charRow[(mapRow[xxx>>3]<<6) + (xxx & 7)];
+        line[x] = color ? (READ16LE(&palette[color])|prio): 0x80000000;
+        realX += dx;
+      }
+    } else {
+      for(u32 x = 0; x < 240u; ++x)
+        line[x] = 0x80000000;
+      int yyy = realY >> 8;
+      if(unsigned(yyy) < sizeY) {
+        const u8 *mapRow = screenBase + ((yyy>>3)<<yshift);
+        const u8 *charRow = charBase + ((yyy & 7)<<3);
+        // Only the pixels that land inside the map (signed: Summon
+        // Night 2 fix in VBA-Next).
+        int x0 = (-realX + dx - 1) / dx;
+        int x1 = ((int)(sizeX << 8) - realX + dx - 1) / dx;
+        if(x0 < 0) x0 = 0;
+        if(x1 > 240) x1 = 240;
+        realX += dx * x0;
+        for(int x = x0; x < x1; ++x) {
+          int xxx = realX >> 8;
+          u8 color = charRow[(mapRow[xxx>>3]<<6) + (xxx & 7)];
+          line[x] = color ? (READ16LE(&palette[color])|prio): 0x80000000;
+          realX += dx;
+        }
+      }
+    }
+  } else if(control & 0x2000) {
     for(u32 x = 0; x < 240u; ++x) {
       int xxx = (realX >> 8) & maskX;
       int yyy = (realY >> 8) & maskY;
