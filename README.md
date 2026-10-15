@@ -48,6 +48,12 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Juegos de **Game Boy** y **Game Boy Color** (`.gb`, `.gbc`), con sus colores, guardado de batería, reloj (Pokémon Oro/Plata/Cristal) y vibración en los cartuchos que la traen.
 - Los juegos de Game Boy se pueden ver con una paleta fija o con la **automática**, los colores que les daba el Game Boy Color.
 - **Super Game Boy:** el **marco** y los colores que cada juego traía para el Super Game Boy (Pokémon Rojo/Azul/Amarillo, Donkey Kong, Kirby...). Ver [Super Game Boy](#super-game-boy).
+- **Kirby Tilt 'n' Tumble** (cartucho MBC7, con sensor de inclinación y su propia memoria de guardado): se inclina con el stick, como los juegos de GBA con sensor. Ver [Juegos con sensores](#juegos-con-sensores).
+
+**Núcleo de GBA más rápido y compatible** (mejoras tomadas de [VBA-Next](https://github.com/libretro/vba-next))
+- Los fondos se dibujan de 8 en 8 píxeles en vez de uno por uno, y los fondos con rotación que no están girando usan un camino rápido. La imagen es **idéntica** a la de antes (comparada cuadro por cuadro); el dibujo de fondos hace unas 60 % menos operaciones.
+- El proyecto compila con las opciones de velocidad del compilador de Xbox 360 que usaba VBA-Next.
+- Arreglos: la memoria de guardado también responde en su dirección espejo (0x0F000000) y con el valor repetido en lecturas de 16/32 bits, como en la consola; lecturas desalineadas de VRAM; tiempo de las multiplicaciones; rotación de 32 bits en Thumb.
 
 **Trucos**
 - Están en **Opciones del juego** (botón Y sobre un juego, o *Opciones de este juego* en el menú dentro del juego) → **Trucos y códigos**. El emulador sabe si el juego es de GBA o de GB/GBC y ofrece los tipos que corresponden:
@@ -58,7 +64,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 
 **Ajustes**
 - **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa, **entero** (píxel exacto: GBA x4, GB x5) o **16:9** (llena toda la TV, imagen estirada); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (41 opciones: gris, verde clásico, Game Boy original, Pocket, Light, las **32 paletas oficiales de Super Game Boy** de la 1-A a la 4-H, sepia, azul, rojo y **automática**, como en el Game Boy Color); **fondo negro o con imagen propia** (centrada, rellenar o estirar); **corrección de color de GBA** (*Suave* o *Como la pantalla real*: quita los colores chillones que los juegos usaban para compensar la pantalla oscura del GBA; fórmula del shader *gba-color* de Pokefan531); **mezcla de cuadros** (*Mezclar 2 cuadros* quita el parpadeo de los sprites que se encienden y apagan cada cuadro, como en Golden Sun o F-Zero; *Estela de LCD* imita el rastro de la pantalla original); mostrar FPS y salto de cuadros.
-- **Audio:** sonido y silenciar durante el avance rápido.
+- **Audio:** sonido, silenciar durante el avance rápido, **volumen** (25 % a 200 %) y **retraso del sonido** (Normal 100 ms, Bajo 60 ms o Mínimo 40 ms: con menos retraso el sonido va más pegado a la imagen; si oyes cortes, vuelve a Normal).
 - **Emulación:** velocidad y modo del avance rápido, BIOS original opcional y formato de los códigos de 16 dígitos.
 - **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir, continuar donde lo dejaste y **copias de seguridad del `.sav`**: al abrir un juego se guarda una copia de su partida en `saves\backups\` (las 3 últimas: `-1` es la más nueva). Si un hack o un truco daña la partida, copia la de respaldo encima del `.sav`.
 - **Controles:** todos los botones reasignables (también turbo A/B, avance rápido, menú, guardado y carga rápida). Puedes elegir de la lista o simplemente presionar el botón nuevo.
@@ -132,7 +138,7 @@ En **Ajustes → Video**:
 
 ## Juegos con sensores
 
-Algunos cartuchos de GBA traían hardware extra. El emulador lo reconoce solo, por el código del juego, y lo imita con el control:
+Algunos cartuchos de GBA (y uno de Game Boy Color) traían hardware extra. El emulador lo reconoce solo, por el código del juego, y lo imita con el control:
 
 | Juego | Hardware del cartucho | Cómo se usa en la Xbox |
 |---|---|---|
@@ -140,6 +146,7 @@ Algunos cartuchos de GBA traían hardware extra. El emulador lo reconoce solo, p
 | *WarioWare: Twisted!* | Giroscopio + vibración | Girar = **stick derecho** a la izquierda o a la derecha; la vibración pasa al control |
 | *Drill Dozer* | Vibración | La vibración pasa al control |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Sensor de inclinación | Inclinar = **stick derecho** |
+| *Kirby Tilt 'n' Tumble* (GBC) | Acelerómetro + memoria EEPROM (MBC7) | Inclinar = **stick derecho**; la partida se guarda en el `.sav` (256 bytes) |
 
 En **Ajustes → Controles**, más abajo de los botones, está la sección **Sensores de movimiento**. Cada movimiento se mapea a una dirección de stick, igual que los botones:
 
@@ -238,7 +245,8 @@ Probado en consola (BadUpdate + Aurora). Proyecto en desarrollo: si encuentras e
 - **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
 - **Efectos de pantalla:** adaptados de [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* de Greg Hogan (GPL v2+) para CRT y *lcd3x* de Gigaherz (dominio público) para LCD.
 - **Núcleo de Game Boy y Game Boy Color:** [Gambatte](https://github.com/libretro/gambatte-libretro), de **Sindre Aamås** y los colaboradores de gambatte-libretro (libretro), GPL v2. Detalles de la versión usada en [`src/gambatte/README-VBA360.txt`](vba360-enhanced/src/gambatte/README-VBA360.txt).
-- **Super Game Boy:** marcos y colores adaptados de [SameBoy](https://github.com/LIJI32/SameBoy), de **Lior Halphon** (licencia MIT).
+- **Super Game Boy y cartuchos MBC7:** marcos, colores, acelerómetro y EEPROM adaptados de [SameBoy](https://github.com/LIJI32/SameBoy), de **Lior Halphon** (licencia MIT).
+- **Mejoras del núcleo de GBA:** dibujo por bloques, camino rápido de fondos rotados, opciones del compilador y arreglos de memoria tomados de [VBA-Next](https://github.com/libretro/vba-next) (libretro, GPL v2).
 - **Paletas de Game Boy:** tomadas del mismo core Gambatte: Game Boy original, Pocket, Light, las 32 de Super Game Boy y las automáticas del Game Boy Color.
 - **Sensores del cartucho** (sol, giroscopio, vibración): adaptados de la [VisualBoyAdvance-M actual](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
 - **Sonido de Game Boy y lectura de archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de Shay Green (blargg).

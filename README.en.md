@@ -48,6 +48,12 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **Game Boy** and **Game Boy Color** games (`.gb`, `.gbc`), with their colors, battery saves, clock (Pokémon Gold/Silver/Crystal) and rumble on the carts that have it.
 - Game Boy games can use a fixed palette or the **automatic** one: the colors the Game Boy Color gave them.
 - **Super Game Boy:** the **border** and colors each game had for the Super Game Boy (Pokémon Red/Blue/Yellow, Donkey Kong, Kirby...). See [Super Game Boy](#super-game-boy).
+- **Kirby Tilt 'n' Tumble** (MBC7 cartridge, with a tilt sensor and its own save memory): tilt with the stick, like the GBA sensor games. See [Games with sensors](#games-with-sensors).
+
+**Faster, more compatible GBA core** (improvements taken from [VBA-Next](https://github.com/libretro/vba-next))
+- Backgrounds are drawn 8 pixels at a time instead of one by one, and rotation backgrounds that are not turning use a fast path. The picture is **identical** to before (compared frame by frame); background drawing takes about 60% fewer operations.
+- The project builds with the Xbox 360 compiler speed options VBA-Next used.
+- Fixes: the save memory also answers at its mirror address (0x0F000000) and with the byte repeated on 16/32-bit reads, as on the console; unaligned VRAM reads; multiply timing; Thumb rotate by 32.
 
 **Cheats**
 - They are in **Game options** (Y button on a game, or *Options for this game* in the in-game menu) → **Cheats and codes**. The emulator knows whether the game is GBA or GB/GBC and offers the matching types:
@@ -58,7 +64,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 
 **Settings**
 - **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen, **integer** (pixel perfect: GBA x4, GB x5) or **16:9** (fills the whole TV, stretched picture); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (41 choices: gray, classic green, original Game Boy, Pocket, Light, the **32 official Super Game Boy palettes** 1-A to 4-H, sepia, blue, red and **automatic**, as on the Game Boy Color); **black or custom-image background** (centered, fill or stretch); **GBA color correction** (*Soft* or *Like the real screen*: tones down the loud colors games used to make up for the GBA's dark screen; math from Pokefan531's *gba-color* shader); **frame blending** (*Mix 2 frames* removes the flicker of sprites that blink every frame, as in Golden Sun or F-Zero; *LCD ghosting* imitates the original screen's trail); FPS counter and frame skip.
-- **Audio:** sound and mute during fast forward.
+- **Audio:** sound, mute during fast forward, **volume** (25% to 200%) and **sound delay** (Normal 100 ms, Low 60 ms or Lowest 40 ms: less delay keeps the sound closer to the picture; if it crackles, go back to Normal).
 - **Emulation:** fast forward speed and mode, optional real BIOS and format of 16-digit codes.
 - **Saving:** save and state folders (next to the ROM or in the emulator folder), save state on exit, resume where you left off and **`.sav` backups**: when a game starts, a copy of its save goes to `saves\backups\` (the last 3: `-1` is the newest). If a hack or a cheat breaks the save, copy the backup over the `.sav`.
 - **Controls:** every button can be remapped (also turbo A/B, fast forward, menu, quick save and quick load). Pick from the list or just press the new button.
@@ -132,7 +138,7 @@ In **Settings → Video**:
 
 ## Games with sensors
 
-Some GBA cartridges carried extra hardware. The emulator recognizes them by their game code and imitates it with the controller:
+Some GBA cartridges (and one Game Boy Color one) carried extra hardware. The emulator recognizes them by their game code and imitates it with the controller:
 
 | Game | Cartridge hardware | How to use it on the Xbox |
 |---|---|---|
@@ -140,6 +146,7 @@ Some GBA cartridges carried extra hardware. The emulator recognizes them by thei
 | *WarioWare: Twisted!* | Gyroscope + rumble | Rotate = **right stick** left or right; rumble goes to the controller |
 | *Drill Dozer* | Rumble | Rumble goes to the controller |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Tilt sensor | Tilt = **right stick** |
+| *Kirby Tilt 'n' Tumble* (GBC) | Accelerometer + EEPROM memory (MBC7) | Tilt = **right stick**; the game saves to the `.sav` (256 bytes) |
 
 In **Settings → Controls**, below the buttons, there is a **Motion sensors** section. Each movement is mapped to a stick direction, just like the buttons:
 
@@ -238,7 +245,8 @@ Tested on console (BadUpdate + Aurora). Work in progress: if you find bugs, plea
 - **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
 - **Screen effects:** adapted from [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* by Greg Hogan (GPL v2+) for CRT and *lcd3x* by Gigaherz (public domain) for LCD.
 - **Game Boy and Game Boy Color core:** [Gambatte](https://github.com/libretro/gambatte-libretro), by **Sindre Aamås** and the gambatte-libretro contributors (libretro), GPL v2. Details of the version used in [`src/gambatte/README-VBA360.txt`](vba360-enhanced/src/gambatte/README-VBA360.txt).
-- **Super Game Boy:** borders and colors adapted from [SameBoy](https://github.com/LIJI32/SameBoy), by **Lior Halphon** (MIT license).
+- **Super Game Boy and MBC7 cartridges:** borders, colors, accelerometer and EEPROM adapted from [SameBoy](https://github.com/LIJI32/SameBoy), by **Lior Halphon** (MIT license).
+- **GBA core improvements:** tiled drawing, fast path for rotation backgrounds, compiler options and memory fixes taken from [VBA-Next](https://github.com/libretro/vba-next) (libretro, GPL v2).
 - **Game Boy palettes:** from the same Gambatte core: original Game Boy, Pocket, Light, the 32 Super Game Boy presets and the Game Boy Color's automatic palettes.
 - **Cartridge sensors** (sun, gyroscope, rumble): adapted from [current VisualBoyAdvance-M](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
 - **Game Boy sound and archive reading:** Gb_Apu, Blip_Buffer and File_Extractor by Shay Green (blargg).
