@@ -1273,7 +1273,7 @@ static INSN_REGPARM void thumb41_3(u32 opcode)
   u32 val = value;
   if(val) {
     value = value & 0x1f;
-    if(val == 0) {
+    if(value == 0) {   // rotate by 32, 64...: value kept, carry = bit 31
       C_FLAG = (reg[dest].I & 0x80000000 ? true : false);
     } else {
       ROR_RD_RS;

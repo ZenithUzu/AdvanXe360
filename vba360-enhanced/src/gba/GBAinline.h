@@ -95,17 +95,20 @@ static inline u32 CPUReadMemory(u32 address)
   case 5:
     value = READ32LE(((u32 *)&paletteRAM[address & 0x3fC]));
     break;
-  case 6:
-    address = (address & 0x1fffc);
-    if (((DISPCNT & 7) >2) && ((address & 0x1C000) == 0x18000))
+  case 6: {
+    // A local copy: the unaligned rotation below needs the original
+    // low address bits (VBA-Next fix).
+    u32 addr = (address & 0x1fffc);
+    if (((DISPCNT & 7) >2) && ((addr & 0x1C000) == 0x18000))
     {
       value = 0;
       break;
     }
-    if ((address & 0x18000) == 0x18000)
-      address &= 0x17fff;
-    value = READ32LE(((u32 *)&vram[address]));
+    if ((addr & 0x18000) == 0x18000)
+      addr &= 0x17ffc;
+    value = READ32LE(((u32 *)&vram[addr]));
     break;
+  }
   case 7:
     value = READ32LE(((u32 *)&oam[address & 0x3FC]));
     break;
@@ -122,9 +125,10 @@ static inline u32 CPUReadMemory(u32 address)
       return eepromRead(address);
     goto unreadable;
   case 14:
+  case 15:   // the save chip is mirrored at 0x0F000000 too
     if(cpuFlashEnabled | cpuSramEnabled)
-      // no need to swap this
-      return flashRead(address);
+      // 8-bit bus: wider reads see the same byte repeated
+      return flashRead(address) * 0x01010101;
     // default
   default:
 unreadable:
@@ -231,17 +235,18 @@ static inline u32 CPUReadHalfWord(u32 address)
   case 5:
     value = READ16LE(((u16 *)&paletteRAM[address & 0x3fe]));
     break;
-  case 6:
-    address = (address & 0x1fffe);
-    if (((DISPCNT & 7) >2) && ((address & 0x1C000) == 0x18000))
+  case 6: {
+    u32 addr = (address & 0x1fffe);
+    if (((DISPCNT & 7) >2) && ((addr & 0x1C000) == 0x18000))
     {
       value = 0;
       break;
     }
-    if ((address & 0x18000) == 0x18000)
-      address &= 0x17fff;
-    value = READ16LE(((u16 *)&vram[address]));
+    if ((addr & 0x18000) == 0x18000)
+      addr &= 0x17fff;
+    value = READ16LE(((u16 *)&vram[addr]));
     break;
+  }
   case 7:
     value = READ16LE(((u16 *)&oam[address & 0x3fe]));
     break;
@@ -261,9 +266,9 @@ static inline u32 CPUReadHalfWord(u32 address)
       return  eepromRead(address);
     goto unreadable;
   case 14:
+  case 15:
     if(cpuFlashEnabled | cpuSramEnabled)
-      // no need to swap this
-      return flashRead(address);
+      return flashRead(address) * 0x0101;
     // default
   default:
 unreadable:
@@ -346,6 +351,7 @@ static inline u8 CPUReadByte(u32 address)
       return eepromRead(address);
     goto unreadable;
   case 14:
+  case 15:
     if(cpuSramEnabled | cpuFlashEnabled)
       return flashRead(address);
     if(cpuEEPROMSensorEnabled) {
@@ -461,6 +467,7 @@ static inline void CPUWriteMemory(u32 address, u32 value)
     }
     goto unwritable;
   case 0x0E:
+  case 0x0F:
     if((!eepromInUse) | cpuSramEnabled | cpuFlashEnabled) {
       (*cpuSaveGameFunc)(address, (u8)value);
       break;
@@ -563,6 +570,7 @@ static inline void CPUWriteHalfWord(u32 address, u16 value)
     }
     goto unwritable;
   case 14:
+  case 15:
     if((!eepromInUse) | cpuSramEnabled | cpuFlashEnabled) {
       (*cpuSaveGameFunc)(address, (u8)value);
       break;
@@ -699,6 +707,7 @@ static inline void CPUWriteByte(u32 address, u8 b)
     }
     goto unwritable;
   case 14:
+  case 15:
     if ((saveType != 5) && ((!eepromInUse) | cpuSramEnabled | cpuFlashEnabled)) {
 
       //if(!cpuEEPROMEnabled && (cpuSramEnabled | cpuFlashEnabled)) {
