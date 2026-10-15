@@ -2,7 +2,7 @@
 
 🌐 **English** · [Español](README.md)
 
-**Game Boy Advance and Game Boy emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG).
+**Game Boy Advance, Game Boy and Game Boy Color emulator for Xbox 360** (homebrew; works with BadUpdate / RGH / JTAG).
 Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
 **[⬇️ Download the latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
@@ -38,12 +38,16 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **Per-game options** (Y button on a game), stored by file name: save type, clock and patch.
 - Compressed ROMs in `.zip` and `.7z`.
 
+**Game Boy and Game Boy Color** ([Gambatte](#game-boy-and-game-boy-color) core)
+- **Game Boy** and **Game Boy Color** games (`.gb`, `.gbc`), with their colors, battery saves, clock (Pokémon Gold/Silver/Crystal) and rumble on the carts that have it.
+- Game Boy games can use a fixed palette or the **automatic** one: the colors the Game Boy Color gave them.
+
 **Cheats**
 - GameShark, Action Replay, CodeBreaker and VBA codes.
 - Typed with an **on-screen keyboard** or **imported** from `.cht` / `.txt` files (RetroArch format too). Saved per game.
 
 **Settings**
-- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen, **integer** (pixel perfect: GBA x4, GB x5) or **16:9** (fills the whole TV, stretched picture); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (40 palettes: gray, classic green, original Game Boy, Pocket, Light, the **32 official Super Game Boy palettes** 1-A to 4-H, plus sepia, blue and red); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
+- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen, **integer** (pixel perfect: GBA x4, GB x5) or **16:9** (fills the whole TV, stretched picture); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (41 choices: gray, classic green, original Game Boy, Pocket, Light, the **32 official Super Game Boy palettes** 1-A to 4-H, sepia, blue, red and **automatic**, as on the Game Boy Color); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
 - **Audio:** sound and mute during fast forward.
 - **Emulation:** fast forward speed and mode, optional real BIOS and format of 16-digit codes.
 - **Saving:** save and state folders (next to the ROM or in the emulator folder), save state on exit and resume where you left off.
@@ -114,7 +118,7 @@ In **Settings → Video**:
   - **CRT (old TV):** scanlines that get thinner on bright colors plus a phosphor-grille mask. Adapted from the *zfast_crt* shader by Greg Hogan (GPL v2+), taken from [libretro/glsl-shaders → `crt/shaders/zfast_crt.glsl`](https://github.com/libretro/glsl-shaders/blob/master/crt/shaders/zfast_crt.glsl).
   - **LCD (handheld screen):** a fine grid and red/green/blue sub-pixels, like a handheld's screen. Adapted from the *lcd3x* shader by Gigaherz (public domain), taken from [libretro/glsl-shaders → `handheld/shaders/lcd3x.glsl`](https://github.com/libretro/glsl-shaders/blob/master/handheld/shaders/lcd3x.glsl).
   - Both were translated from GLSL (RetroArch) to HLSL for the Xbox 360 and work for GBA and GB. They look best with **Picture size → Integer**.
-- **Colors (Game Boy):** 40 palettes for Game Boy games. The original Game Boy (DMG), Pocket, Light and the **32 Super Game Boy** presets (1-A to 4-H) come from RetroArch's Gambatte core: [libretro/gambatte-libretro → `libgambatte/libretro/gbcpalettes.h`](https://github.com/libretro/gambatte-libretro/blob/master/libgambatte/libretro/gbcpalettes.h) (Sindre Aamås, GPL v2). Plus Gray (original), Classic green and the extras Sepia, Blue and Red.
+- **Colors (Game Boy):** 41 choices for Game Boy games (Game Boy Color games always keep their own colors). **Automatic** gives each game the colors the Game Boy Color picked for it at boot (or the Super Game Boy ones when those are more colorful); games not on that list are shown in gray. The original Game Boy (DMG), Pocket, Light and the **32 Super Game Boy** presets (1-A to 4-H) come from RetroArch's Gambatte core: [libretro/gambatte-libretro → `libgambatte/libretro/gbcpalettes.h`](https://github.com/libretro/gambatte-libretro/blob/master/libgambatte/libretro/gbcpalettes.h) (Sindre Aamås, GPL v2). Plus Gray (original), Classic green and the extras Sepia, Blue and Red.
 
 ## Games with sensors
 
@@ -150,13 +154,24 @@ The solar sensor, gyroscope and rumble were adapted from current VisualBoyAdvanc
 
 GBA games with a clock (Pokémon Ruby/Sapphire/Emerald, Boktai...) use the console time. **Settings → Game clock → Custom** lets you pick another year, month, day, hour and minute; from there the clock keeps running. *Back to the console time* undoes it.
 
+## Game Boy and Game Boy Color
+
+Game Boy and Game Boy Color games run on **Gambatte**, a very accurate core by Sindre Aamås, taken from [libretro/gambatte-libretro](https://github.com/libretro/gambatte-libretro) (GPL v2), the one RetroArch uses. That is why **Game Boy Color-only** games (Pokémon Crystal, Super Mario Bros. Deluxe, Zelda: Oracle of Seasons...) and modern homebrew work.
+
+- **Colors:** Game Boy Color games look like they did on its screen (Gambatte's "accurate" color correction). Game Boy games use the palette in *Settings → Video → Colors (Game Boy)*.
+- **Saves:** the `.sav` is the cartridge memory as is, so saves from other emulators work. On carts with a clock (Pokémon Gold/Silver/Crystal) the clock is stored at the end of the same file. **Save states** made with earlier versions of the emulator don't load for Game Boy games.
+- **Cheats:** GameShark (`01XXXXXX`) and Game Genie (`XXX-XXX-XXX`).
+- **BIOS (optional):** with *Real BIOS* on, `bios\gb_bios.bin` (256 bytes) and `bios\gbc_bios.bin` (2304 bytes) show the boot logo. Without them games start directly.
+- A few carts with special hardware that Gambatte doesn't emulate, such as *Kirby Tilt 'n' Tumble* (tilt sensor) or the *Game Boy Camera*, don't work yet.
+
 ## Folders the emulator creates
 
-Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` and `bios\` (put `gba_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
+Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\` and `bios\` (put `gba_bios.bin`, `gb_bios.bin` or `gbc_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
 
 ## Limitations
 
-- **Game Boy Advance and Game Boy; not Game Boy Color.** Game Boy (`.gb`) games work. Cartridges made for both consoles ("black" `.gbc` carts) start in Game Boy mode with the chosen palette. Games made **only** for the Game Boy Color (such as Pokémon Crystal or Super Mario Bros. Deluxe) are not supported.
+- **Super Game Boy:** the borders and the colors each game asked the Super Game Boy for are not emulated (its 32 fixed palettes are available).
+- **Game Boy Color (new):** Gambatte support is recent; if a game fails, please open an *issue*.
 - **Some GBA games that need add-ons don't work:**
   - **Classic NES Series / Famicom Mini** (the NES games for GBA, such as *Super Mario Bros.*): they use special protections and don't start.
   - Accessories such as the **e-Reader** or the link cable are not emulated either.
@@ -180,7 +195,8 @@ Tested on console (BadUpdate + Aurora). Work in progress: if you find bugs, plea
 - **AI programming:** **Claude** (by [Anthropic](https://www.anthropic.com)). Wrote the code changes and documentation of this fork.
 - **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
 - **Screen effects:** adapted from [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* by Greg Hogan (GPL v2+) for CRT and *lcd3x* by Gigaherz (public domain) for LCD.
-- **Game Boy palettes:** taken from the [Gambatte libretro core](https://github.com/libretro/gambatte-libretro) (Sindre Aamås, GPL v2): original Game Boy, Pocket, Light and the 32 Super Game Boy presets.
+- **Game Boy and Game Boy Color core:** [Gambatte](https://github.com/libretro/gambatte-libretro), by **Sindre Aamås** and the gambatte-libretro contributors (libretro), GPL v2. Details of the version used in [`src/gambatte/README-VBA360.txt`](vba360-enhanced/src/gambatte/README-VBA360.txt).
+- **Game Boy palettes:** from the same Gambatte core: original Game Boy, Pocket, Light, the 32 Super Game Boy presets and the Game Boy Color's automatic palettes.
 - **Cartridge sensors** (sun, gyroscope, rumble): adapted from [current VisualBoyAdvance-M](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
 - **Game Boy sound and archive reading:** Gb_Apu, Blip_Buffer and File_Extractor by Shay Green (blargg).
 

@@ -393,6 +393,7 @@ const char *const uiGbPaletteNames[GB_PALETTE_COUNT][2] = {
   { "Sepia", "Sepia" },
   { "Azul", "Blue" },
   { "Rojo", "Red" },
+  { "Autom\xe1tica (Game Boy Color)", "Automatic (Game Boy Color)" },
 };
 
 // 4 shades, lightest first (0xRRGGBB). The Game Boy, Pocket, Light and the
@@ -440,6 +441,8 @@ const unsigned int uiGbPalettes[GB_PALETTE_COUNT][4] = {
   { 0xF8F0D8, 0xC8A878, 0x806040, 0x302010 },
   { 0xE0F8F8, 0x88C0F0, 0x4060A8, 0x102040 },
   { 0xF8E0E0, 0xE08888, 0xA03030, 0x300808 },
+  // Automatic: games with no Game Boy Color colors use gray.
+  { 0xF8F8F8, 0xA8A8A8, 0x606060, 0x000000 },
 };
 
 const int uiSensorSensPercent[SENSOR_SENS_COUNT] = { 50, 75, 100, 150, 200 };

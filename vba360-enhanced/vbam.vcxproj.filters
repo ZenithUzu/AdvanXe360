@@ -17,6 +17,9 @@
     <Filter Include="Source Files\gb">
       <UniqueIdentifier>{f13cad9f-269e-45c2-b030-89d1a3a22698}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\gambatte">
+      <UniqueIdentifier>{8b1f3c52-6a4e-4d1e-9f27-3c5a0e9d7b41}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\gba">
       <UniqueIdentifier>{178c779e-b0be-4191-b4fa-ca7aa1f49714}</UniqueIdentifier>
     </Filter>
@@ -100,6 +103,99 @@
     </ClCompile>
     <ClCompile Include="src\filters\simpleFilter.cpp">
       <Filter>Source Files\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\bootloader.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\cpu.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\gambatte-memory.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\gambatte.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\initstate.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\interrupter.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\interruptrequester.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\cartridge.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\cartridge_libretro.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\huc3.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\memptrs.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\rtc.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel1.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel2.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel3.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel4.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\duty_unit.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\envelope_unit.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\length_counter.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\statesaver.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\tima.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\ly_counter.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\lyc_irq.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\next_m0_time.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\ppu.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\sprite_mapper.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video_libretro.cpp">
+      <Filter>Source Files\gambatte</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbGambatte.cpp">
+      <Filter>Source Files\gb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbGambatteBridge.cpp">
+      <Filter>Source Files\gb</Filter>
     </ClCompile>
     <ClCompile Include="src\gb\GB.cpp">
       <Filter>Source Files\gb</Filter>

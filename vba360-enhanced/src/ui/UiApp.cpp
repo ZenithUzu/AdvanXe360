@@ -534,8 +534,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
              "CRT: TV scanlines and mask (zfast_crt). LCD: handheld grid (lcd3x). Best with Integer size."));
     m.add(V_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
           uiGbPaletteNames[m_cfg.gbPalette][m_cfg.language ? 1 : 0],
-          tr("Paleta para juegos de Game Boy, al estilo de Super Game Boy.",
-             "Palette for Game Boy games, in the style of the Super Game Boy."));
+          tr("Para juegos de Game Boy (los de Color usan los suyos). Autom\xe1tica: los que les da el GBC.",
+             "For Game Boy games (Color games keep theirs). Automatic: the ones the GBC gives them."));
     {
       // Background: black, or an image from borders\ next to default.xex
       std::vector<std::string> images = borderImages(m_host);
@@ -629,10 +629,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
   case MENU_ABOUT:
     m.title = tr("Acerca de", "About");
     m.subtitle = "VBA360 enhanced-ai";
-    m.addInfo(tr("Emulador de Game Boy Advance y Game Boy.",
-                 "Game Boy Advance and Game Boy emulator."));
-    m.addInfo(tr("No emula Game Boy Color, Classic NES Series ni accesorios como el e-Reader.",
-                 "No Game Boy Color, Classic NES Series or add-ons such as the e-Reader."));
+    m.addInfo(tr("Emulador de Game Boy Advance, Game Boy y Game Boy Color.",
+                 "Game Boy Advance, Game Boy and Game Boy Color emulator."));
+    m.addInfo(tr("No emula Classic NES Series ni accesorios como el e-Reader.",
+                 "No Classic NES Series or add-ons such as the e-Reader."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA. Licencia GPL.",
                  "Hobby project, made with the help of AI. GPL license."));
     m.addInfo(tr("Men\xfa en juego: clic del stick derecho (configurable en Controles).",
@@ -653,6 +653,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
           "VisualBoyAdvance (1999-2004).", "VisualBoyAdvance (1999-2004)." },
         { "N\xfa""cleo", "Core", "Equipo de VBA-M",
           "VisualBoyAdvance-M; tambi\xe9n c\xf3""digo de VBA-GX.", "VisualBoyAdvance-M; also code from VBA-GX." },
+        { "N\xfa""cleo de Game Boy y Color", "Game Boy and Color core", "Gambatte (Sindre Aam\xe5s)",
+          "gambatte-libretro (equipo de libretro), GPL v2.", "gambatte-libretro (libretro team), GPL v2." },
         { "Sensores del cartucho", "Cartridge sensors", "Equipo de VBA-M",
           "Sensor solar, giroscopio y vibraci\xf3n, de la VBA-M actual.",
           "Solar sensor, gyroscope and rumble, from current VBA-M." },
@@ -663,8 +665,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
         { "Efecto LCD", "LCD effect", "Gigaherz",
           "Adaptado de lcd3x (libretro, dominio p\xfa""blico).", "Adapted from lcd3x (libretro, public domain)." },
         { "Paletas de Game Boy", "Game Boy palettes", "Gambatte (Sindre Aam\xe5s)",
-          "Paletas DMG, Pocket, Light y Super Game Boy del core de libretro.",
-          "DMG, Pocket, Light and Super Game Boy palettes from the libretro core." },
+          "Paletas DMG, Pocket, Light, Super Game Boy y las autom\xe1ticas del GBC.",
+          "DMG, Pocket, Light, Super Game Boy and the GBC's automatic palettes." },
         { "Fuente", "Typeface", "Inter (Rasmus Andersson)",
           "SIL Open Font License.", "SIL Open Font License." },
         { "Librer\xed""as", "Libraries", "zlib, libpng, SDL",

@@ -379,6 +379,155 @@
     <ClCompile Include="src\gb\gbPrinter.cpp" />
     <ClCompile Include="src\gb\gbSGB.cpp" />
     <ClCompile Include="src\gb\gbSound.cpp" />
+    <ClCompile Include="src\gambatte\src\bootloader.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_bootloader.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\cpu.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_cpu.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\gambatte-memory.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_gambatte-memory.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\gambatte.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_gambatte.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\initstate.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_initstate.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\interrupter.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_interrupter.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\interruptrequester.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_interruptrequester.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\cartridge.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_mem_cartridge.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\cartridge_libretro.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_mem_cartridge_libretro.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\huc3.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_mem_huc3.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\memptrs.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_mem_memptrs.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\mem\rtc.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_mem_rtc.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel1.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound_channel1.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel2.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound_channel2.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel3.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound_channel3.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\channel4.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound_channel4.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\duty_unit.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound_duty_unit.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\envelope_unit.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound_envelope_unit.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\sound\length_counter.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_sound_length_counter.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\statesaver.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_statesaver.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\tima.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_tima.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_video.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\ly_counter.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_video_ly_counter.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\lyc_irq.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_video_lyc_irq.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\next_m0_time.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_video_next_m0_time.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\ppu.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_video_ppu.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video\sprite_mapper.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_video_sprite_mapper.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gambatte\src\video_libretro.cpp">
+      <AdditionalIncludeDirectories>src\gambatte\include;src\gambatte\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)gambatte_video_libretro.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\gb\gbGambatte.cpp" />
+    <ClCompile Include="src\gb\gbGambatteBridge.cpp">
+      <PreprocessorDefinitions>__LIBRETRO__;HAVE_STDINT_H;VIDEO_RGB565;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="src\gba\agbprint.cpp" />
     <ClCompile Include="src\gba\armdis.cpp" />
     <ClCompile Include="src\gba\bios.cpp" />

@@ -49,6 +49,7 @@
 #include "../gb/gbGlobals.h"
 #include "../gb/gbCheats.h"
 #include "../gb/gbSound.h"
+#include "../gb/gbGambatte.h"
 #include "../Util.h"
 
 #include "debugger.h"
@@ -1617,11 +1618,19 @@ int gba_main(char *path, char *fname)
     cartridgeType = (int)type;
 
     if(type == IMAGE_GB) {
-      // Game Boy only (no Game Boy Color mode): games made for both run
-      // in their Game Boy mode, with the palette from the settings.
+      // Game Boy and Game Boy Color run on Gambatte. gbLoadRom() still loads
+      // and patches the ROM (the menus use gbRom); the old VBA-M core is
+      // only used for cartridges Gambatte doesn't support, in Game Boy mode.
       gbEmulatorType = 3;
       failed = !gbLoadRom(szFile);
-      if(!failed) {
+      if(!failed && gambatteLoad()) {
+        fprintf(stdout, "GB ROM loaded on Gambatte: size=%d type=%02x cgbflag=%02x cgb=%d\n",
+                gbRomSize, gbRom[0x147], gbRom[0x143], (int)gambatteIsCgb());
+        cartridgeType = IMAGE_GB;
+        emulator = GambatteSystem;
+        gbBorderOn = 0;
+        xboxApplyGameOverrides(false);
+      } else if(!failed) {
         gbGetHardwareType();
         fprintf(stdout, "GB ROM loaded: size=%d type=%02x romsize=%02x ramsize=%02x cgbflag=%02x hardware=%d\n",
                 gbRomSize, gbRom[0x147], gbRom[0x148], gbRom[0x149], gbRom[0x143], gbHardware);

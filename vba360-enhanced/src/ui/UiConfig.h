@@ -52,7 +52,9 @@ enum { SENSOR_SENS_COUNT = 5, SENSOR_DEADZONE_COUNT = 4 };
 extern const int uiSensorSensPercent[SENSOR_SENS_COUNT];     // 50 .. 200
 extern const int uiSensorDeadzone[SENSOR_DEADZONE_COUNT];    // raw stick units
 // Colors for (original, non-color) Game Boy games.
-enum { GB_PALETTE_COUNT = 40 };
+// The last one, "Automatic", gives each game the colors the Game Boy Color
+// picks for it (its table in uiGbPalettes is only the fallback).
+enum { GB_PALETTE_AUTO = 40, GB_PALETTE_COUNT = 41 };
 extern const char *const uiGbPaletteNames[GB_PALETTE_COUNT][2];   // [i][0] = Spanish, [i][1] = English
 // 4 shades (lightest first) per palette, 0xRRGGBB.
 extern const unsigned int uiGbPalettes[GB_PALETTE_COUNT][4];

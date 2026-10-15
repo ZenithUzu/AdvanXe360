@@ -23,6 +23,7 @@
 #include "../gba/Sound.h"
 #include "../gb/gb.h"
 #include "../gb/gbCheats.h"
+#include "../gb/gbGambatte.h"
 #include "../sdl/filters.h"
 
 // --- Things owned by other modules -------------------------------------------
@@ -632,6 +633,10 @@ void xboxOnGameLoading(const char *romPath)
   // Game Boy boot ROM (optional, only used by GB/SGB games).
   std::string gbBios = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "bios"), "gb_bios.bin");
   strcpy(gbBiosFileName, g_cfg.useBios && pathExists(gbBios) ? gbBios.c_str() : "");
+  // Game Boy Color boot ROM (Game Boy Color games).
+  extern char gambatteCgbBiosFileName[2048];
+  std::string gbcBios = uiJoinPath(uiJoinPath(xboxEmulatorDir(), "bios"), "gbc_bios.bin");
+  strcpy(gambatteCgbBiosFileName, g_cfg.useBios && pathExists(gbcBios) ? gbcBios.c_str() : "");
 
   // Game Boy patches are applied inside gbLoadRom().
   gbPendingPatch = 0;
@@ -1068,6 +1073,12 @@ static void applyGbPalette()
     systemGbPalette[i] = (u16)(((c >> 19) & 0x1F) | (((c >> 11) & 0x1F) << 5) | (((c >> 3) & 0x1F) << 10));
   }
   gbPaletteOption = 0;
+  // Gambatte (Game Boy Color games keep their own colors).
+  if (gambatteActive()) {
+    if (g_cfg.gbPalette != GB_PALETTE_AUTO || !gambatteSetAutoPalette())
+      gambatteSetDmgPalette(p);
+    return;
+  }
   // A Game Boy game is running: recolor it right away.
   if (emulating && cartridgeType == 1 && !gbCgbMode && !gbSgbMode)
     for (int i = 0; i < 8; i++)
