@@ -38,17 +38,12 @@ uint32_t inputReadJoypad(int)
 // Tilt sensor (WarioWare: Twisted!, Yoshi Topsy-Turvy...): right stick.
 void inputUpdateMotionSensor()
 {
-  int x, y;
-  xboxGetRightStick(x, y);
-  const int dz = 6000;
-  int tx = (x > dz || x < -dz) ? 2047 - x * 300 / 32767 : 2047;
-  int ty = (y > dz || y < -dz) ? 2047 - y * 300 / 32767 : 2047;
+  // Axis, direction, sensitivity and dead zone come from Settings -> Sensors.
+  int tx, ty, tz;
+  xboxMotionTargets(tx, ty, tz);
   // Ease towards the target so movement is smooth.
   sensorX += (tx - sensorX) / 4;
   sensorY += (ty - sensorY) / 4;
-  // Rotation (WarioWare: Twisted!): right stick left/right, about -180..180
-  // like VBA-M's gyro (its +-1800 range divided by 10).
-  int tz = (x > dz || x < -dz) ? x * 180 / 32767 : 0;
   sensorZ += (tz - sensorZ) / 2;
 }
 

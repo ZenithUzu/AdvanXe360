@@ -122,12 +122,18 @@ Algunos cartuchos de GBA traían hardware extra. El emulador lo reconoce solo, p
 
 | Juego | Hardware del cartucho | Cómo se usa en la Xbox |
 |---|---|---|
-| *Boktai 1 y 2*, *Shin Bokura no Taiyou* | Sensor de luz solar + reloj | El nivel de sol se elige en el **menú del juego → Luz solar** (0 a 10) o en *Ajustes → Emulación → Luz solar (Boktai)* |
+| *Boktai 1 y 2*, *Shin Bokura no Taiyou* | Sensor de luz solar + reloj | **Stick derecho arriba = más sol, abajo = menos** (0 a 10; aparece en pantalla). En el nivel 10 se llenan todas las barras |
 | *WarioWare: Twisted!* | Giroscopio + vibración | Girar = **stick derecho** a la izquierda o a la derecha; la vibración pasa al control |
 | *Drill Dozer* | Vibración | La vibración pasa al control |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Sensor de inclinación | Inclinar = **stick derecho** |
 
-El sensor solar, el giroscopio y la vibración se adaptaron de la VisualBoyAdvance-M actual ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+), incluidos los niveles de sol de su versión de escritorio.
+En **Ajustes → Sensores (stick derecho)** puedes cambiar todo: qué eje del stick usa cada sensor (horizontal o vertical, normal o invertido, o ninguno), la **sensibilidad** (50 % a 200 %) y la **zona muerta**.
+
+El sensor solar, el giroscopio y la vibración se adaptaron de la VisualBoyAdvance-M actual ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+). La escala de sol se amplió respecto a la de VBA-M (que en el nivel máximo solo mostraba 6 de 8 barras en Boktai).
+
+## Reloj de los juegos
+
+Los juegos de GBA con reloj (Pokémon Rubí/Zafiro/Esmeralda, Boktai...) usan la hora de la consola. En **Ajustes → Reloj de los juegos → Personalizada** puedes elegir otro año, mes, día, hora y minuto; a partir de ahí el reloj sigue avanzando normal. *Volver a la hora de la consola* lo deshace.
 
 ## Carpetas que crea el emulador
 

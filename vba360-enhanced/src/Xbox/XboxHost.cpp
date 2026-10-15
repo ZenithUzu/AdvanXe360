@@ -692,16 +692,61 @@ static void applySpecialCart()
   }
 }
 
-// Boktai solar sensor: light level from the settings (0..10), as the
-// darkness value the cartridge compares against (same steps as VBA-M).
+// Boktai solar sensor: light level (0..10) as the darkness value the
+// cartridge compares against. VBA-M stops at 0x50, which Boktai shows as
+// only 6 of its 8 bars; this scale keeps going down to a very bright 0x18
+// so 10 fills the gauge.
 u8 xboxSunDarkness()
 {
   static const u8 kDarkness[11] = {
-    0xE8, 0xE0, 0xDA, 0xD0, 0xC8, 0xC0, 0xB0, 0xA0, 0x88, 0x70, 0x50 };
+    0xE8, 0xD8, 0xC8, 0xB4, 0xA0, 0x8C, 0x78, 0x64, 0x50, 0x34, 0x18 };
   int level = g_cfg.sunLevel;
   if (level < 0) level = 0;
   if (level > 10) level = 10;
   return kDarkness[level];
+}
+
+// Tilt / rotation targets from the right stick, as set in Settings ->
+// Sensors (axis, direction, sensitivity, dead zone). Tilt is centred on
+// 2047 like the cartridge's sensor; rotation is about -360..360.
+void xboxMotionTargets(int &tiltX, int &tiltY, int &gyro)
+{
+  const int dz = uiSensorDeadzone[g_cfg.sensorDeadzone];
+  const int pct = uiSensorSensPercent[g_cfg.sensorSens];
+  int vx = uiAxisValue(g_cfg.tiltXAxis, g_rightX, g_rightY);
+  int vy = uiAxisValue(g_cfg.tiltYAxis, g_rightX, g_rightY);
+  int vz = uiAxisValue(g_cfg.gyroAxis, g_rightX, g_rightY);
+  if (vx > -dz && vx < dz) vx = 0;
+  if (vy > -dz && vy < dz) vy = 0;
+  if (vz > -dz && vz < dz) vz = 0;
+  tiltX = 2047 - vx * 3 * pct / 32767;
+  tiltY = 2047 - vy * 3 * pct / 32767;
+  gyro = vz * 9 * pct / (5 * 32767);
+}
+
+// Boktai: the sunlight goes up / down with the stick axis chosen in
+// Settings -> Sensors (one step at once, then every quarter second).
+static void updateSunFromStick()
+{
+  static int repeat = 0;
+  if (!g_isGba || !(g_cartHw & UI_HW_SOLAR) || g_cfg.sunAxis == AXIS_NONE)
+    return;
+  int v = uiAxisValue(g_cfg.sunAxis, g_rightX, g_rightY);
+  int dir = v > 16000 ? 1 : (v < -16000 ? -1 : 0);
+  if (dir == 0) {
+    repeat = 0;
+    return;
+  }
+  if (repeat-- > 0)
+    return;
+  repeat = 15;
+  int level = g_cfg.sunLevel + dir;
+  if (level < 0) level = 0;
+  if (level > 10) level = 10;
+  g_cfg.sunLevel = level;
+  char msg[32];
+  sprintf(msg, g_cfg.language ? "Sunlight: %d/10" : "Luz solar: %d/10", level);
+  systemScreenMessage(msg);
 }
 
 // Cartridge rumble motor -> controller vibration (every connected pad).
@@ -766,6 +811,8 @@ void xboxOnGameStarted()
 void xboxOnGameExiting()
 {
   xboxCartridgeRumble(false);
+  if (g_ui)
+    g_ui->saveAll();   // keeps the sunlight level changed with the stick
   saveCheats();
   saveFrameThumb(uiGameFile(xboxEmulatorDir(), "thumbs", g_rom, "", ".tmb"));
   if (g_cfg.autoSaveState)
@@ -816,6 +863,7 @@ void xboxPollEvents()
   }
   unsigned int pressed = pads & ~g_prevPads;
   g_prevPads = pads;
+  updateSunFromStick();
 
   // Fast forward
   int ffButton = g_cfg.map[ACT_FAST_FORWARD];
@@ -995,6 +1043,7 @@ void xboxApplySettings()
   applySoundFlags();
   applyBorder();
   applyGbPalette();
+  rtcSetTimeOffset(g_cfg.clockMode ? g_cfg.clockOffset : 0);
   XBOX_ScreenEffect = g_cfg.screenEffect;
   showSpeed = g_cfg.showFps ? 2 : 0;
   if (g_cfg.frameSkip == 0) {

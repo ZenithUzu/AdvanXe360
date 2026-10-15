@@ -62,6 +62,8 @@ unsigned int xboxReadPads(bool includeSticks);
 void xboxGetRightStick(int &x, int &y);
 // Boktai solar sensor darkness for the sunlight setting (0xE8 dark .. 0x50 sun).
 u8 xboxSunDarkness();
+// Tilt (centred on 2047) and rotation targets from the right stick.
+void xboxMotionTargets(int &tiltX, int &tiltY, int &gyro);
 // Cartridge rumble -> controller vibration.
 void xboxCartridgeRumble(bool on);
 

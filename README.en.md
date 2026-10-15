@@ -122,12 +122,18 @@ Some GBA cartridges carried extra hardware. The emulator recognizes them by thei
 
 | Game | Cartridge hardware | How to use it on the Xbox |
 |---|---|---|
-| *Boktai 1 and 2*, *Shin Bokura no Taiyou* | Solar light sensor + clock | Pick the sun level in the **in-game menu → Sunlight** (0 to 10) or in *Settings → Emulation → Sunlight (Boktai)* |
+| *Boktai 1 and 2*, *Shin Bokura no Taiyou* | Solar light sensor + clock | **Right stick up = more sun, down = less** (0 to 10, shown on screen). Level 10 fills every bar |
 | *WarioWare: Twisted!* | Gyroscope + rumble | Rotate = **right stick** left or right; rumble goes to the controller |
 | *Drill Dozer* | Rumble | Rumble goes to the controller |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Tilt sensor | Tilt = **right stick** |
 
-The solar sensor, gyroscope and rumble were adapted from current VisualBoyAdvance-M ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+), including its desktop version's sun levels.
+**Settings → Sensors (right stick)** lets you change everything: which stick axis each sensor uses (horizontal or vertical, normal or inverted, or none), the **sensitivity** (50% to 200%) and the **dead zone**.
+
+The solar sensor, gyroscope and rumble were adapted from current VisualBoyAdvance-M ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+). The sun scale was extended beyond VBA-M's (whose maximum only showed 6 of Boktai's 8 bars).
+
+## Game clock
+
+GBA games with a clock (Pokémon Ruby/Sapphire/Emerald, Boktai...) use the console time. **Settings → Game clock → Custom** lets you pick another year, month, day, hour and minute; from there the clock keeps running. *Back to the console time* undoes it.
 
 ## Folders the emulator creates
 

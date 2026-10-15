@@ -2,6 +2,7 @@
 #include "UiScreens.h"
 
 #include <ctype.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,12 +12,14 @@ namespace {
 // Item ids (unique within a menu)
 enum
 {
-  Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_SUN, Q_CHEATS, Q_GAME_OPTIONS,
+  Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
 
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   A_SOUND = 1, A_MUTE_FF,
-  E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA, E_SUN,
+  E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
+  SN_TILT_X = 1, SN_TILT_Y, SN_GYRO, SN_SUN, SN_SENS, SN_DEADZONE, SN_RESET,
+  K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR,
   C_RESET = 1, C_ACTION_BASE = 100,
@@ -421,8 +424,70 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_SETTINGS_EMU, ITEM_SUBMENU, tr("Emulaci\xf3n", "Emulation"));
     m.add(MENU_SETTINGS_SAVES, ITEM_SUBMENU, tr("Guardado", "Saving"));
     m.add(MENU_CONTROLS, ITEM_SUBMENU, tr("Controles", "Controls"));
+    m.add(MENU_SENSORS, ITEM_SUBMENU, tr("Sensores (stick derecho)", "Sensors (right stick)"));
+    m.add(MENU_CLOCK, ITEM_SUBMENU, tr("Reloj de los juegos", "Game clock"));
     m.add(MENU_SETTINGS_UI, ITEM_SUBMENU, tr("Interfaz e idioma", "Interface & language"));
     break;
+
+  case MENU_SENSORS: {
+    m.title = tr("Sensores", "Sensors");
+    m.subtitle = tr("Stick derecho para los cartuchos con sensores", "Right stick for cartridges with sensors");
+    const char *axes[AXIS_COUNT] = {
+      tr("Ninguno", "None"),
+      tr("Horizontal", "Horizontal"), tr("Horizontal (invertido)", "Horizontal (inverted)"),
+      tr("Vertical", "Vertical"), tr("Vertical (invertido)", "Vertical (inverted)") };
+    m.add(SN_TILT_X, ITEM_OPTION, tr("Inclinaci\xf3n izquierda / derecha", "Tilt left / right"), axes[m_cfg.tiltXAxis],
+          tr("Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle."));
+    m.add(SN_TILT_Y, ITEM_OPTION, tr("Inclinaci\xf3n adelante / atr\xe1s", "Tilt forward / back"), axes[m_cfg.tiltYAxis],
+          tr("Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle."));
+    m.add(SN_GYRO, ITEM_OPTION, tr("Giro", "Rotation"), axes[m_cfg.gyroAxis],
+          tr("WarioWare: Twisted! Invertido gira al otro lado.", "WarioWare: Twisted! Inverted turns the other way."));
+    m.add(SN_SUN, ITEM_OPTION, tr("Luz solar", "Sunlight"), axes[m_cfg.sunAxis],
+          tr("Boktai: hacia arriba (o a la derecha) = m\xe1s sol; invertido al rev\xe9s.",
+             "Boktai: up (or right) = more sun; inverted the other way round."));
+    char pct[16];
+    sprintf(pct, "%d%%", uiSensorSensPercent[m_cfg.sensorSens]);
+    m.add(SN_SENS, ITEM_OPTION, tr("Sensibilidad", "Sensitivity"), pct,
+          tr("Cu\xe1nto inclina o gira con el stick al tope.", "How far it tilts or turns with the stick all the way."));
+    sprintf(pct, "%d%%", (uiSensorDeadzone[m_cfg.sensorDeadzone] * 100 + 16383) / 32767);
+    m.add(SN_DEADZONE, ITEM_OPTION, tr("Zona muerta", "Dead zone"), pct,
+          tr("Movimiento del stick que se ignora (evita que se mueva solo).",
+             "Stick movement that is ignored (stops drifting)."));
+    m.addInfo(std::string(tr("Luz solar actual: ", "Current sunlight: ")) + intStr(m_cfg.sunLevel) + "/10");
+    m.add(SN_RESET, ITEM_ACTION, tr("Restablecer sensores", "Reset sensors"));
+    break;
+  }
+
+  case MENU_CLOCK: {
+    m.title = tr("Reloj de los juegos", "Game clock");
+    m.subtitle = tr("Para juegos de GBA con reloj (Pok\xe9mon Rub\xed/Zafiro/Esmeralda, Boktai...)",
+                    "For GBA games with a clock (Pokemon Ruby/Sapphire/Emerald, Boktai...)");
+    const char *modes[2] = { tr("Hora de la consola", "Console time"), tr("Personalizada", "Custom") };
+    m.add(K_MODE, ITEM_OPTION, tr("Hora", "Time"), modes[m_cfg.clockMode],
+          tr("Personalizada: elige fecha y hora; despu\xe9s el reloj sigue avanzando.",
+             "Custom: pick a date and time; the clock keeps running from there."));
+    time_t now = time(NULL) + (m_cfg.clockMode ? m_cfg.clockOffset : 0);
+    struct tm t = *localtime(&now);
+    char buf[48];
+    if (m_cfg.clockMode) {
+      sprintf(buf, "%04d", t.tm_year + 1900);
+      m.add(K_YEAR, ITEM_OPTION, tr("A\xf1o", "Year"), buf);
+      sprintf(buf, "%02d", t.tm_mon + 1);
+      m.add(K_MONTH, ITEM_OPTION, tr("Mes", "Month"), buf);
+      sprintf(buf, "%02d", t.tm_mday);
+      m.add(K_DAY, ITEM_OPTION, tr("D\xed""a", "Day"), buf);
+      sprintf(buf, "%02d", t.tm_hour);
+      m.add(K_HOUR, ITEM_OPTION, tr("Hora", "Hour"), buf);
+      sprintf(buf, "%02d", t.tm_min);
+      m.add(K_MINUTE, ITEM_OPTION, tr("Minuto", "Minute"), buf);
+      m.add(K_NOW, ITEM_ACTION, tr("Volver a la hora de la consola", "Back to the console time"));
+    }
+    sprintf(buf, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
+    m.addInfo(std::string(tr("Fecha y hora para los juegos: ", "Date and time for games: ")) + buf);
+    m.addInfo(tr("Se aplica al reiniciar el juego o cuando el juego vuelve a leer el reloj.",
+                 "Takes effect when the game restarts or reads the clock again."));
+    break;
+  }
 
   case MENU_SETTINGS_VIDEO: {
     m.title = tr("Video", "Video");
@@ -495,9 +560,6 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(E_GSA, ITEM_OPTION, tr("C\xf3""digos de 16 d\xedgitos", "16-digit codes"), gsa[m_cfg.gsaV3],
           tr("Formato de los trucos XXXXXXXX YYYYYYYY que agregues.",
              "Format of the XXXXXXXX YYYYYYYY cheats you add."));
-    m.add(E_SUN, ITEM_OPTION, tr("Luz solar (Boktai)", "Sunlight (Boktai)"), intStr(m_cfg.sunLevel) + " / 10",
-          tr("Lo que mide el sensor solar de Boktai: 0 = oscuro, 10 = sol pleno.",
-             "What Boktai's solar sensor reads: 0 = dark, 10 = full sun."));
     break;
   }
 
@@ -622,14 +684,15 @@ void UiApp::buildQuickMenu(UiMenuScreen &m)
         std::string(tr("Tambi\xe9n con ", "Also with ")) + uiButtonName(*this, m_cfg.map[ACT_FAST_FORWARD]));
   int hw = m_host.cartHardware();
   if (hw & UI_HW_SOLAR)
-    m.add(Q_SUN, ITEM_OPTION, tr("Luz solar", "Sunlight"), intStr(m_cfg.sunLevel) + " / 10",
-          tr("Sensor solar del cartucho: 0 = oscuro, 10 = sol pleno.",
-             "The cartridge's solar sensor: 0 = dark, 10 = full sun."));
+    m.addInfo(std::string(tr("Luz solar: ", "Sunlight: ")) + intStr(m_cfg.sunLevel) +
+              tr("/10. C\xe1mbiala con el stick derecho (Ajustes > Sensores).",
+                 "/10. Change it with the right stick (Settings > Sensors)."));
   if (hw & UI_HW_GYRO)
-    m.addInfo(tr("Giro: stick derecho a la izquierda o a la derecha.",
-                 "Rotation: right stick left or right."));
+    m.addInfo(tr("Giro: stick derecho (configurable en Ajustes > Sensores).",
+                 "Rotation: right stick (configurable in Settings > Sensors)."));
   else if (hw & UI_HW_TILT)
-    m.addInfo(tr("Inclinaci\xf3n: stick derecho.", "Tilt: right stick."));
+    m.addInfo(tr("Inclinaci\xf3n: stick derecho (configurable en Ajustes > Sensores).",
+                 "Tilt: right stick (configurable in Settings > Sensors)."));
 
   std::vector<UiCheatInfo> cheats;
   m_host.listCheats(cheats);
@@ -800,6 +863,31 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     }
     return;
 
+  case MENU_SENSORS:
+    if (id == SN_RESET) {
+      UiConfig def;
+      m_cfg.tiltXAxis = def.tiltXAxis;
+      m_cfg.tiltYAxis = def.tiltYAxis;
+      m_cfg.gyroAxis = def.gyroAxis;
+      m_cfg.sunAxis = def.sunAxis;
+      m_cfg.sensorSens = def.sensorSens;
+      m_cfg.sensorDeadzone = def.sensorDeadzone;
+      saveAll();
+      rebuildMenus();
+      toast(tr("Sensores restablecidos", "Sensors reset"));
+    }
+    return;
+
+  case MENU_CLOCK:
+    if (id == K_NOW) {
+      m_cfg.clockMode = 0;
+      m_cfg.clockOffset = 0;
+      saveAll();
+      rebuildMenus();
+      m_host.applySettings();
+    }
+    return;
+
   case MENU_CONTROLS:
     if (id == C_RESET)
       openConfirm(tr("\xbfRestablecer todos los controles?", "Reset all controls?"), CONFIRM_RESET_CONTROLS, "");
@@ -843,8 +931,6 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     settings = false;
     if (id == Q_SLOT)
       m_cfg.stateSlot = wrapIndex(m_cfg.stateSlot - 1, delta, kStateSlots) + 1;
-    else if (id == Q_SUN)
-      m_cfg.sunLevel = wrapIndex(m_cfg.sunLevel, delta, 11);
     else if (id == Q_FF)
       fastForward = !fastForward;
     break;
@@ -863,6 +949,34 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == V_FPS) m_cfg.showFps ^= 1;
     else if (id == V_FRAMESKIP) m_cfg.frameSkip = wrapIndex(m_cfg.frameSkip, delta, 5);
     break;
+  case MENU_SENSORS:
+    if (id == SN_TILT_X) m_cfg.tiltXAxis = wrapIndex(m_cfg.tiltXAxis, delta, AXIS_COUNT);
+    else if (id == SN_TILT_Y) m_cfg.tiltYAxis = wrapIndex(m_cfg.tiltYAxis, delta, AXIS_COUNT);
+    else if (id == SN_GYRO) m_cfg.gyroAxis = wrapIndex(m_cfg.gyroAxis, delta, AXIS_COUNT);
+    else if (id == SN_SUN) m_cfg.sunAxis = wrapIndex(m_cfg.sunAxis, delta, AXIS_COUNT);
+    else if (id == SN_SENS) m_cfg.sensorSens = wrapIndex(m_cfg.sensorSens, delta, SENSOR_SENS_COUNT);
+    else if (id == SN_DEADZONE) m_cfg.sensorDeadzone = wrapIndex(m_cfg.sensorDeadzone, delta, SENSOR_DEADZONE_COUNT);
+    break;
+  case MENU_CLOCK:
+    if (id == K_MODE) {
+      m_cfg.clockMode ^= 1;
+    } else if (id >= K_YEAR && id <= K_MINUTE) {
+      time_t base = time(NULL);
+      time_t now = base + m_cfg.clockOffset;
+      struct tm t = *localtime(&now);
+      if (id == K_YEAR) t.tm_year += delta;
+      else if (id == K_MONTH) t.tm_mon += delta;
+      else if (id == K_DAY) t.tm_mday += delta;
+      else if (id == K_HOUR) t.tm_hour += delta;
+      else t.tm_min += delta;
+      t.tm_isdst = -1;
+      time_t nt = mktime(&t);
+      struct tm check = *localtime(&nt);
+      // The GBA clock stores two-digit years: keep it within 2000-2099.
+      if (nt != (time_t)-1 && check.tm_year >= 100 && check.tm_year <= 199)
+        m_cfg.clockOffset = (int)(nt - base);
+    }
+    break;
   case MENU_SETTINGS_AUDIO:
     if (id == A_SOUND) m_cfg.sound ^= 1;
     else if (id == A_MUTE_FF) m_cfg.muteFastForward ^= 1;
@@ -872,7 +986,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == E_FF_MODE) m_cfg.ffToggle ^= 1;
     else if (id == E_BIOS) m_cfg.useBios ^= 1;
     else if (id == E_GSA) m_cfg.gsaV3 ^= 1;
-    else if (id == E_SUN) m_cfg.sunLevel = wrapIndex(m_cfg.sunLevel, delta, 11);
+
     break;
   case MENU_SETTINGS_SAVES:
     if (id == S_SAVE_DIR) m_cfg.saveDirMode ^= 1;

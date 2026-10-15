@@ -81,6 +81,14 @@ struct ConfigReader
     else if (k == "use_bios") c.useBios = clampInt(v, 0, 1, c.useBios);
     else if (k == "gsa_v3") c.gsaV3 = clampInt(v, 0, 1, c.gsaV3);
     else if (k == "sun_level") c.sunLevel = clampInt(v, 0, 10, c.sunLevel);
+    else if (k == "tilt_x_axis") c.tiltXAxis = clampInt(v, 0, AXIS_COUNT - 1, c.tiltXAxis);
+    else if (k == "tilt_y_axis") c.tiltYAxis = clampInt(v, 0, AXIS_COUNT - 1, c.tiltYAxis);
+    else if (k == "gyro_axis") c.gyroAxis = clampInt(v, 0, AXIS_COUNT - 1, c.gyroAxis);
+    else if (k == "sun_axis") c.sunAxis = clampInt(v, 0, AXIS_COUNT - 1, c.sunAxis);
+    else if (k == "sensor_sensitivity") c.sensorSens = clampInt(v, 0, SENSOR_SENS_COUNT - 1, c.sensorSens);
+    else if (k == "sensor_deadzone") c.sensorDeadzone = clampInt(v, 0, SENSOR_DEADZONE_COUNT - 1, c.sensorDeadzone);
+    else if (k == "clock_mode") c.clockMode = clampInt(v, 0, 1, c.clockMode);
+    else if (k == "clock_offset") c.clockOffset = clampInt(v, -2000000000, 2000000000, c.clockOffset);
     else if (k == "save_dir") c.saveDirMode = clampInt(v, 0, 1, c.saveDirMode);
     else if (k == "state_dir") c.stateDirMode = clampInt(v, 0, 1, c.stateDirMode);
     else if (k == "auto_save_state") c.autoSaveState = clampInt(v, 0, 1, c.autoSaveState);
@@ -114,6 +122,8 @@ UiConfig::UiConfig()
     screenEffect(EFFECT_NONE), gbPalette(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1),
     ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0), sunLevel(7),
+    tiltXAxis(AXIS_RS_X), tiltYAxis(AXIS_RS_Y), gyroAxis(AXIS_RS_X), sunAxis(AXIS_RS_Y),
+    sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
     autoSaveState(0), autoLoadState(0), stateSlot(1)
 {
@@ -164,6 +174,9 @@ bool UiConfig::save(const std::string &path) const
           screenEffect, gbPalette, showFps, frameSkip);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\n", sound, muteFastForward);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);
+  fprintf(f, "tilt_x_axis=%d\ntilt_y_axis=%d\ngyro_axis=%d\nsun_axis=%d\nsensor_sensitivity=%d\nsensor_deadzone=%d\n",
+          tiltXAxis, tiltYAxis, gyroAxis, sunAxis, sensorSens, sensorDeadzone);
+  fprintf(f, "clock_mode=%d\nclock_offset=%d\n", clockMode, clockOffset);
   fprintf(f, "save_dir=%d\nstate_dir=%d\nauto_save_state=%d\nauto_load_state=%d\nstate_slot=%d\n",
           saveDirMode, stateDirMode, autoSaveState, autoLoadState, stateSlot);
   for (int i = 0; i < ACT_COUNT; i++)
@@ -417,6 +430,20 @@ const unsigned int uiGbPalettes[GB_PALETTE_COUNT][4] = {
   { 0xE0F8F8, 0x88C0F0, 0x4060A8, 0x102040 },
   { 0xF8E0E0, 0xE08888, 0xA03030, 0x300808 },
 };
+
+const int uiSensorSensPercent[SENSOR_SENS_COUNT] = { 50, 75, 100, 150, 200 };
+const int uiSensorDeadzone[SENSOR_DEADZONE_COUNT] = { 3000, 6000, 9000, 12000 };
+
+int uiAxisValue(int axis, int x, int y)
+{
+  switch (axis) {
+  case AXIS_RS_X: return x;
+  case AXIS_RS_X_INV: return -x;
+  case AXIS_RS_Y: return y;
+  case AXIS_RS_Y_INV: return -y;
+  default: return 0;
+  }
+}
 
 bool uiIsImageFile(const std::string &name)
 {

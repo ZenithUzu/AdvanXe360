@@ -11,6 +11,8 @@ bool rtcIsEnabled();
 void rtcEnableSolar(bool);    // Boktai solar sensor
 void rtcEnableGyro(bool);     // WarioWare: Twisted! rotation sensor
 void rtcEnableRumble(bool);   // WarioWare: Twisted!, Drill Dozer
+// Custom game time: seconds added to the console clock (0 = real time).
+void rtcSetTimeOffset(int seconds);
 void rtcReset();
 
 void rtcReadGame(gzFile gzFile);

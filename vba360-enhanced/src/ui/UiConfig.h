@@ -36,6 +36,13 @@ enum UiPictureSize { SIZE_ORIGINAL = 0, SIZE_FULL, SIZE_INTEGER, SIZE_WIDE, SIZE
 enum UiBorderFit { FIT_CENTER = 0, FIT_FILL, FIT_STRETCH, FIT_COUNT };
 // Screen effect drawn over the game picture.
 enum UiScreenEffect { EFFECT_NONE = 0, EFFECT_SCANLINES, EFFECT_GRID, EFFECT_COUNT };
+// Where a cartridge sensor reads from: right stick axis, optionally inverted.
+enum UiAxis { AXIS_NONE = 0, AXIS_RS_X, AXIS_RS_X_INV, AXIS_RS_Y, AXIS_RS_Y_INV, AXIS_COUNT };
+// Signed axis value (-32767..32767) for raw right stick x/y (y up = +).
+int uiAxisValue(int axis, int x, int y);
+enum { SENSOR_SENS_COUNT = 5, SENSOR_DEADZONE_COUNT = 4 };
+extern const int uiSensorSensPercent[SENSOR_SENS_COUNT];     // 50 .. 200
+extern const int uiSensorDeadzone[SENSOR_DEADZONE_COUNT];    // raw stick units
 // Colors for (original, non-color) Game Boy games.
 enum { GB_PALETTE_COUNT = 40 };
 extern const char *const uiGbPaletteNames[GB_PALETTE_COUNT][2];   // [i][0] = Spanish, [i][1] = English
@@ -75,6 +82,18 @@ struct UiConfig
   int useBios;
   int gsaV3;             // treat 16-digit codes as GameShark v3 / Action Replay
   int sunLevel;          // Boktai solar sensor: 0 = dark ... 10 = full sun
+
+  // Sensors (right stick)
+  int tiltXAxis;         // UiAxis for tilt left/right (Yoshi, Koro Koro)
+  int tiltYAxis;         // UiAxis for tilt forward/back
+  int gyroAxis;          // UiAxis for rotation (WarioWare: Twisted!)
+  int sunAxis;           // UiAxis that raises/lowers the sunlight (Boktai)
+  int sensorSens;        // index into uiSensorSensPercent
+  int sensorDeadzone;    // index into uiSensorDeadzone
+
+  // Game clock (GBA real-time clock)
+  int clockMode;         // 0 = console time, 1 = custom
+  int clockOffset;       // custom: seconds added to the console time
 
   // Saves
   int saveDirMode;       // UiDirMode for battery saves (.sav)

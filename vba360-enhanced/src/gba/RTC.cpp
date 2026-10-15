@@ -51,6 +51,14 @@ bool rtcIsEnabled()
   return rtcEnabled;
 }
 
+// Seconds added to the console clock (custom game time).
+static int rtcTimeOffset = 0;
+
+void rtcSetTimeOffset(int seconds)
+{
+  rtcTimeOffset = seconds;
+}
+
 void rtcEnableSolar(bool e)
 {
   rtcSolarEnabled = e;
@@ -191,6 +199,7 @@ bool rtcWrite(u32 address, u16 value)
                 time_t long_time;
 
                 time( &long_time );                /* Get time as long integer. */
+                long_time += rtcTimeOffset;        /* custom game time */
                 newtime = localtime( &long_time ); /* Convert to local time. */
 
                 rtcClockData.dataLen = 7;
@@ -210,6 +219,7 @@ bool rtcWrite(u32 address, u16 value)
                 time_t long_time;
 
                 time( &long_time );                /* Get time as long integer. */
+                long_time += rtcTimeOffset;        /* custom game time */
                 newtime = localtime( &long_time ); /* Convert to local time. */
 
                 rtcClockData.dataLen = 3;

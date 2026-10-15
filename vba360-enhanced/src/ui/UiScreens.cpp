@@ -261,6 +261,8 @@ void UiHomeScreen::buildRows(UiApp &app)
       { MENU_SETTINGS_EMU, "Emulaci\xf3n", "Emulation", "Velocidad, BIOS y trucos", "Speed, BIOS and cheats" },
       { MENU_SETTINGS_SAVES, "Guardado", "Saving", "Carpetas y guardado autom\xe1tico", "Folders and auto save" },
       { MENU_CONTROLS, "Controles", "Controls", "Configura cada bot\xf3n", "Configure every button" },
+      { MENU_SENSORS, "Sensores", "Sensors", "Stick derecho: inclinaci\xf3n, giro y luz solar", "Right stick: tilt, rotation and sunlight" },
+      { MENU_CLOCK, "Reloj de los juegos", "Game clock", "Hora de la consola o personalizada", "Console time or a custom one" },
       { MENU_SETTINGS_UI, "Interfaz e idioma", "Interface & language", "Idioma y lista de juegos", "Language and game list" },
       { MENU_ABOUT, "Acerca de", "About", "Versi\xf3n y cr\xe9""ditos", "Version and credits" },
       { -1, "Salir al Dashboard", "Exit to Dashboard", "Cierra el emulador", "Close the emulator" }
