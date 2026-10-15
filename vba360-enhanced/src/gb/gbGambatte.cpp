@@ -179,22 +179,13 @@ void applyCheats()
 
 void drawFrame()
 {
+  // The Xbox frontend always uses 32-bit color (like the other cores here).
   const unsigned short *src = gmbVideo;
-  if (systemColorDepth == 16) {
-    for (int y = 0; y < 144; y++) {
-      u16 *dest = (u16 *)pix + 162 * (y + 1);
-      for (int x = 0; x < 160; x++) {
-        unsigned c = *src++;
-        *dest++ = systemColorMap16[(c >> 11) | ((c >> 1) & 0x3E0) | ((c & 0x1F) << 10)];
-      }
-    }
-  } else {
-    for (int y = 0; y < 144; y++) {
-      u32 *dest = (u32 *)pix + 161 * (y + 1);
-      for (int x = 0; x < 160; x++) {
-        unsigned c = *src++;
-        *dest++ = systemColorMap32[(c >> 11) | ((c >> 1) & 0x3E0) | ((c & 0x1F) << 10)];
-      }
+  for (int y = 0; y < 144; y++) {
+    u32 *dest = (u32 *)pix + 161 * (y + 1);
+    for (int x = 0; x < 160; x++) {
+      unsigned c = *src++;
+      *dest++ = systemColorMap32[(c >> 11) | ((c >> 1) & 0x3E0) | ((c & 0x1F) << 10)];
     }
   }
 }
