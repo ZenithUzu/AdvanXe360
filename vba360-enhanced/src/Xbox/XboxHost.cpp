@@ -2,6 +2,7 @@
 // files and the in-game menu loop.
 #include <xtl.h>
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <algorithm>
 #include <string>
@@ -24,6 +25,7 @@
 #include "../gb/gb.h"
 #include "../gb/gbCheats.h"
 #include "../gb/gbGambatte.h"
+#include "../Util.h"
 #include "../sdl/filters.h"
 
 // --- Things owned by other modules -------------------------------------------
@@ -83,6 +85,17 @@ static bool gameVideoCustom() { return !g_rom.empty() && g_gameCfg.custom != 0; 
 static int videoStretch() { return gameVideoCustom() ? g_gameCfg.stretch : g_cfg.stretch; }
 static int videoEffect() { return gameVideoCustom() ? g_gameCfg.screenEffect : g_cfg.screenEffect; }
 static int videoGbPalette() { return gameVideoCustom() ? g_gameCfg.gbPalette : g_cfg.gbPalette; }
+
+// GBA color table in use (-1 = rebuild) and the last frame for blending.
+static int g_colorMapMode = -1;
+static std::vector<u32> g_prevFrame;
+static bool g_prevValid = false;
+
+// Buttons in effect: Settings > Controls, or the running game's own map.
+static const int *ctlMap()
+{
+  return (!g_rom.empty() && g_gameCfg.customControls) ? g_gameCfg.map : g_cfg.map;
+}
 bool g_isGba = true;
 int g_cartHw = 0;              // UI_HW_* of the running GBA cartridge
 bool g_rumbleOn = false;
@@ -477,6 +490,12 @@ public:
     return xboxLoadImagePixels(path.c_str(), w, h, out);
   }
 
+  virtual bool loadImageFit(const std::string &path, int maxW, int maxH,
+                            std::vector<UiColor> &out, int &w, int &h)
+  {
+    return xboxLoadImageFit(path.c_str(), maxW, maxH, out, w, h);
+  }
+
   virtual bool savePatchedRom(std::string &savedTo)
   {
     if (!romPatched())
@@ -679,7 +698,7 @@ void resetFrameTiming()
 
 bool padDown(unsigned int pads, int action)
 {
-  int b = g_cfg.map[action];
+  int b = ctlMap()[action];
   return b >= 0 && b < PAD_BUTTON_COUNT && (pads & PAD_BIT(b)) != 0;
 }
 
@@ -738,7 +757,8 @@ std::string xboxCheatListPath()
 void xboxCreateFolders()
 {
   static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios", "borders", "backgrounds",
-                                "cheats\\gba", "cheats\\gb" };
+                                "cheats\\gba", "cheats\\gb",
+                                "saves\\backups", "covers" };
   for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++)
     ensureDir(uiJoinPath(xboxEmulatorDir(), dirs[i]));
 }
@@ -972,6 +992,8 @@ void xboxOnGameStarted()
   g_waitRelease = true;
   g_prevPads = 0;
   g_videoStretch = -1;   // force the first video setup
+  g_colorMapMode = -1;   // the core rebuilt the color table at load
+  g_prevValid = false;
   xboxApplySettings();
   resetFrameTiming();
   g_settleFrames = 30;
@@ -1035,7 +1057,7 @@ void xboxPollEvents()
   updateSunFromStick();
 
   // Fast forward
-  int ffButton = g_cfg.map[ACT_FAST_FORWARD];
+  int ffButton = ctlMap()[ACT_FAST_FORWARD];
   if (ffButton < PAD_BUTTON_COUNT) {
     if (g_cfg.ffToggle) {
       if ((pressed & PAD_BIT(ffButton)) && g_ui) {
@@ -1050,14 +1072,14 @@ void xboxPollEvents()
   applySoundFlags();
 
   // Quick save / load
-  if (g_cfg.map[ACT_QUICK_SAVE] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(g_cfg.map[ACT_QUICK_SAVE]))) {
+  if (ctlMap()[ACT_QUICK_SAVE] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(ctlMap()[ACT_QUICK_SAVE]))) {
     bool ok = g_host.saveState(g_cfg.stateSlot);
     systemScreenMessage(ok ? (g_cfg.language ? "State saved" : "Estado guardado")
                            : (g_cfg.language ? "Save failed" : "Error al guardar"));
     if (g_ui) g_ui->invalidateThumb(xboxStateThumbPath(g_cfg.stateSlot));
     resetFrameTiming();
   }
-  if (g_cfg.map[ACT_QUICK_LOAD] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(g_cfg.map[ACT_QUICK_LOAD]))) {
+  if (ctlMap()[ACT_QUICK_LOAD] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(ctlMap()[ACT_QUICK_LOAD]))) {
     bool ok = g_host.loadState(g_cfg.stateSlot);
     systemScreenMessage(ok ? (g_cfg.language ? "State loaded" : "Estado cargado")
                            : (g_cfg.language ? "Empty slot" : "Ranura vacia"));
@@ -1066,7 +1088,9 @@ void xboxPollEvents()
 
   // In-game menu: only the configured button (right stick click by
   // default). Start + Select belong to the game (soft reset in many titles).
-  int menuButton = g_cfg.map[ACT_MENU];
+  int menuButton = ctlMap()[ACT_MENU];
+  if (menuButton >= PAD_BUTTON_COUNT)
+    menuButton = PAD_RS;   // the menu must always be reachable
   if (menuButton < PAD_BUTTON_COUNT && (pressed & PAD_BIT(menuButton)))
     runInGameMenu();
 }
@@ -1213,6 +1237,129 @@ static void applyGbPalette()
       gbPalette[i] = systemGbPalette[i];
 }
 
+// --- GBA color correction ------------------------------------------------------
+// The GBA screen was dark and washed out, so games used strong colors that
+// look garish on a TV. Same math as Pokefan531's gba-color shader (libretro,
+// public domain), baked into the 15-bit -> screen color table the core
+// already uses for every pixel: no cost while playing.
+static void applyColorMap()
+{
+  int mode = (emulating && cartridgeType == 0) ? g_cfg.gbaColor : 0;
+  if (mode == g_colorMapMode)
+    return;
+  g_colorMapMode = mode;
+  if (!mode) {
+    utilUpdateSystemColorMaps();
+    return;
+  }
+  // 1 = soft (gamma 2.2 in), 2 = like the real screen (the shader's
+  // default "darken screen" 1.0: gamma 3.2 in).
+  const float inGamma = mode == 2 ? 3.2f : 2.2f;
+  const float lum = 0.94f;
+  float lin[32];
+  for (int v = 0; v < 32; v++)
+    lin[v] = (float)pow(v / 31.0, (double)inGamma) * lum;
+  unsigned char out[1024];   // linear 0..1 -> 8-bit with gamma 1/2.2
+  for (int i = 0; i < 1024; i++)
+    out[i] = (unsigned char)(pow(i / 1023.0, 1.0 / 2.2) * 255.0 + 0.5);
+  int rs = systemRedShift - 3, gs = systemGreenShift - 3, bs = systemBlueShift - 3;
+  if (rs < 0) rs = 0;
+  if (gs < 0) gs = 0;
+  if (bs < 0) bs = 0;
+  for (int i = 0; i < 0x8000; i++) {
+    float r = lin[i & 31], g = lin[(i >> 5) & 31], b = lin[(i >> 10) & 31];
+    float R = 0.82f * r + 0.24f * g - 0.06f * b;
+    float G = 0.125f * r + 0.665f * g + 0.21f * b;
+    float B = 0.195f * r + 0.075f * g + 0.73f * b;
+    int ri = (int)(R * 1023.0f + 0.5f), gi = (int)(G * 1023.0f + 0.5f), bi = (int)(B * 1023.0f + 0.5f);
+    ri = ri < 0 ? 0 : ri > 1023 ? 1023 : ri;
+    gi = gi < 0 ? 0 : gi > 1023 ? 1023 : gi;
+    bi = bi < 0 ? 0 : bi > 1023 ? 1023 : bi;
+    u32 c = ((u32)out[ri] << rs) | ((u32)out[gi] << gs) | ((u32)out[bi] << bs);
+    systemColorMap32[i] = c;
+    systemColorMap32[i | 0x8000] = c;
+  }
+}
+
+// --- Frame blending (anti-flicker) ----------------------------------------------
+// Games that blink sprites every other frame to fake transparency (Golden
+// Sun, F-Zero...) relied on the slow LCD; mixing each frame with the last
+// one looks like the real screen. 1 = mix 2 frames, 2 = LCD ghosting (a
+// longer trail).
+void xboxBlendFrame()
+{
+  int mode = g_cfg.frameBlend;
+  if (!mode || !pix || srcWidth <= 0 || srcHeight <= 0 || systemColorDepth != 32) {
+    g_prevValid = false;
+    return;
+  }
+  int pitch = srcPitch / 4;
+  u32 *row = (u32 *)(pix + srcPitch);
+  size_t n = (size_t)srcWidth * srcHeight;
+  if (!g_prevValid || g_prevFrame.size() != n) {
+    g_prevFrame.resize(n);
+    for (int y = 0; y < srcHeight; y++)
+      memcpy(&g_prevFrame[(size_t)y * srcWidth], row + y * pitch, srcWidth * 4);
+    g_prevValid = true;
+    return;
+  }
+  u32 *prev = &g_prevFrame[0];
+  for (int y = 0; y < srcHeight; y++, row += pitch) {
+    for (int x = 0; x < srcWidth; x++, prev++) {
+      u32 c = row[x], p = *prev;
+      u32 m = ((c & 0xFEFEFEFE) >> 1) + ((p & 0xFEFEFEFE) >> 1);
+      row[x] = m;
+      *prev = mode == 1 ? c : m;
+    }
+  }
+}
+
+// --- .sav backups -----------------------------------------------------------------
+// When a game starts, its save is copied to saves\backups\<game>-1.sav, the
+// older copies moving to -2 and -3, so a bad hack or cheat can't wipe it.
+static bool readWholeFile(const std::string &path, std::vector<unsigned char> &data)
+{
+  FILE *f = fopen(path.c_str(), "rb");
+  if (!f)
+    return false;
+  fseek(f, 0, SEEK_END);
+  long size = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  bool ok = size >= 0 && size <= 4 * 1024 * 1024;
+  if (ok) {
+    data.resize((size_t)size);
+    ok = size == 0 || fread(&data[0], 1, (size_t)size, f) == (size_t)size;
+  }
+  fclose(f);
+  return ok;
+}
+
+void xboxBackupSave(const char *savPath)
+{
+  if (!g_cfg.saveBackups || g_rom.empty() || !savPath || !pathExists(savPath))
+    return;
+  std::vector<unsigned char> cur, last;
+  if (!readWholeFile(savPath, cur) || cur.empty())
+    return;
+  std::string b[3];
+  for (int i = 0; i < 3; i++) {
+    char suffix[8];
+    sprintf(suffix, "-%d", i + 1);
+    b[i] = uiGameFile(xboxEmulatorDir(), "saves\\backups", g_rom, suffix, ".sav");
+  }
+  if (readWholeFile(b[0], last) && last == cur)
+    return;   // already the newest copy
+  DeleteFile(b[2].c_str());
+  rename(b[1].c_str(), b[2].c_str());
+  rename(b[0].c_str(), b[1].c_str());
+  FILE *f = fopen(b[0].c_str(), "wb");
+  if (f) {
+    bool ok = fwrite(&cur[0], 1, cur.size(), f) == cur.size();
+    ok = fclose(f) == 0 && ok;
+    fprintf(stdout, "Save backup %s: %s\n", b[0].c_str(), ok ? "ok" : "FAILED");
+  }
+}
+
 void xboxApplySettings()
 {
   // The game options may have just changed in the in-game menu.
@@ -1247,6 +1394,7 @@ void xboxApplySettings()
     XBOX_RestoreVideoState();
   }
   applySampler();
+  applyColorMap();
 }
 
 Filter xboxSelectedFilter()

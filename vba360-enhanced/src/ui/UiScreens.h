@@ -65,6 +65,8 @@ private:
   void drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
   void drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
   int rowHeight() const;
+  void jumpLetter(int dir);
+  void cycleSort(UiApp &app);
 
   int m_tab;
   std::string m_dir;                 // "" = drive list
@@ -72,6 +74,7 @@ private:
   std::vector<Row> m_rows;
   UiListState m_list[TAB_COUNT];
   bool m_dirError;
+  std::string m_filter;              // list filter the rows were built with
 };
 
 // --- Generic list menu (settings pages, quick menu, cheats, controls) --------
@@ -137,7 +140,9 @@ private:
 class UiKeyboardScreen : public UiScreen
 {
 public:
-  UiKeyboardScreen(const std::string &title, const std::string &text, int purpose);
+  // full: letters and digits (names, searches); otherwise the code keys
+  // (0-9, A-F, ':' and '-').
+  UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full = false);
   virtual void update(UiApp &app, const UiInputState &in);
   virtual void draw(UiApp &app, UiCanvas &c);
   virtual bool isOverlay() const { return true; }
@@ -147,6 +152,10 @@ private:
   std::string m_text;
   int m_purpose;
   int m_row, m_col;
+  bool m_full;
+  int keyRows() const { return m_full ? 4 : 3; }
+  int keyCols() const { return m_full ? 10 : 6; }
+  const char *keyLabel(int r, int c) const;
 };
 
 // --- Waits for a button press to remap a control -----------------------------

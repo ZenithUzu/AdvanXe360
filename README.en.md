@@ -26,6 +26,8 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - New interface, simple and fast, drawn by the emulator itself (the original XUI scenes are no longer used).
 - **Games · Recent · Favorites · Settings** tabs (LB / RB).
 - **Drive and folder** browser (hard drive, USB, memory units, emulator folder) with a preview of the last moment played and a marker when the ROM has a patch.
+- **Search and sort** in the Games tab: **BACK** opens a keyboard to search by name (B clears the search), **START** changes the order (A-Z, Z-A or recently played) and **LT / RT** jump to the previous / next letter.
+- **Box art:** when there is an image with the game's name, it is shown in the preview. See [Box art](#box-art).
 - **Spanish and English**, with a help line on every option.
 - **How an option is changed** (*Settings → Interface & language → Changing an option*): **side panel** (A opens the values on the right), **pop-up list** (in the middle) or **classic** (left / right). In the first two the change shows right away (filters, backgrounds, colors) and **B** closes the panel; left / right still work in all three.
 - **Color themes** (Default, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance and Red) and your own **background image** for the menu (*Settings → Interface & language*).
@@ -39,7 +41,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **Automatic BPS / UPS / IPS patching** up to 32 MB: the clean ROM is never modified.
 - **Battery saves** (`.sav`) for GBA and GB: what you save inside the game is written when you quit, when you open the menu and periodically.
 - The **save type** (Flash 64/128 KB, SRAM, EEPROM) and the **RTC clock** are detected **by reading the ROM**, not by the cartridge ID. Pokémon hacks save correctly even when they keep the original ID.
-- **Per-game options** (Y button on a game, or *Game options* in the in-game menu), stored by file name: save type and clock (GBA), patch and **that game's picture**: *As in Settings* or *Custom* (filter, size, effect, Game Boy colors and, in Super Game Boy games, **Normal** or **Super Game Boy** mode). Settings still apply to every other game.
+- **Per-game options** (Y button on a game, or *Game options* in the in-game menu), stored by file name: save type and clock (GBA), patch, **that game's picture**: *As in Settings* or *Custom* (filter, size, effect, Game Boy colors and, in Super Game Boy games, **Normal** or **Super Game Boy** mode) and **that game's buttons** (*As in Settings* or *Custom*, with its own *Set up buttons* screen). Settings still apply to every other game.
 - Compressed ROMs in `.zip` and `.7z`.
 
 **Game Boy and Game Boy Color** ([Gambatte](#game-boy-and-game-boy-color) core)
@@ -55,10 +57,10 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - Each game keeps **its own list**, separated by console (`cheats\gba\` and `cheats\gb\`), even when the game isn't running; a GB code is never applied to a GBA game or the other way round. Lists from earlier versions are converted automatically the first time.
 
 **Settings**
-- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen, **integer** (pixel perfect: GBA x4, GB x5) or **16:9** (fills the whole TV, stretched picture); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (41 choices: gray, classic green, original Game Boy, Pocket, Light, the **32 official Super Game Boy palettes** 1-A to 4-H, sepia, blue, red and **automatic**, as on the Game Boy Color); **black or custom-image background** (centered, fill or stretch); FPS counter and frame skip.
+- **Video:** filter (sharp, smooth, Scale2x, LQ2x); original size (GBA 3:2, GB 10:9), full screen, **integer** (pixel perfect: GBA x4, GB x5) or **16:9** (fills the whole TV, stretched picture); **screen effect** (CRT-style scanlines or LCD-style grid); **Game Boy colors** (41 choices: gray, classic green, original Game Boy, Pocket, Light, the **32 official Super Game Boy palettes** 1-A to 4-H, sepia, blue, red and **automatic**, as on the Game Boy Color); **black or custom-image background** (centered, fill or stretch); **GBA color correction** (*Soft* or *Like the real screen*: tones down the loud colors games used to make up for the GBA's dark screen; math from Pokefan531's *gba-color* shader); **frame blending** (*Mix 2 frames* removes the flicker of sprites that blink every frame, as in Golden Sun or F-Zero; *LCD ghosting* imitates the original screen's trail); FPS counter and frame skip.
 - **Audio:** sound and mute during fast forward.
 - **Emulation:** fast forward speed and mode, optional real BIOS and format of 16-digit codes.
-- **Saving:** save and state folders (next to the ROM or in the emulator folder), save state on exit and resume where you left off.
+- **Saving:** save and state folders (next to the ROM or in the emulator folder), save state on exit, resume where you left off and **`.sav` backups**: when a game starts, a copy of its save goes to `saves\backups\` (the last 3: `-1` is the newest). If a hack or a cheat breaks the save, copy the backup over the `.sav`.
 - **Controls:** every button can be remapped (also turbo A/B, fast forward, menu, quick save and quick load). Pick from the list or just press the new button.
 
 ## Screenshots
@@ -189,6 +191,12 @@ It can also be set **per game**: Y button → *This game's picture: Custom* → 
 - Save states include the border and the colors.
 - Adapted from [SameBoy](https://github.com/LIJI32/SameBoy) (`Core/sgb.c`, by Lior Halphon, MIT license).
 
+## Box art
+
+Put a game's cover in the `covers\` folder next to `default.xex`, with **the same name as the ROM** and a `.png` or `.jpg` extension. For example, for `Pokemon Emerald.gba` use `covers\Pokemon Emerald.png`. An image next to the ROM with the same name (`Pokemon Emerald.png`) works too.
+
+The cover is shown in the preview to the right of the list, keeping its proportions. Games without a cover show the thumbnail of the last session as before. About 400×400 pixels is enough; bigger images work too but take a little longer to load.
+
 ## Menu: themes and background image
 
 In **Settings → Interface & language**:
@@ -198,7 +206,7 @@ In **Settings → Interface & language**:
 
 ## Folders the emulator creates
 
-Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\` and `bios\` (put `gba_bios.bin`, `gb_bios.bin` or `gbc_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
+Next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\` (box art), `saves\backups\` (save copies) and `bios\` (put `gba_bios.bin`, `gb_bios.bin` or `gbc_bios.bin` there if you want to use the real BIOS). Settings are stored in `vba360.ini`.
 
 The **`vba360.log`** file (next to `default.xex`) records what happens in each session: the game opened, the core used, saves and errors. If something fails, send it along with your report.
 

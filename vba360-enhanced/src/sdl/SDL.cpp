@@ -1040,6 +1040,7 @@ void sdlReadBattery()
 {
   std::string path = xboxBatteryPath();
   if (!path.empty()) {
+    xboxBackupSave(path.c_str());
     bool ok = emulator.emuReadBattery(path.c_str());
     fprintf(stdout, "Battery load %s: %s\n", path.c_str(), ok ? "ok" : "none");
   }
@@ -1954,6 +1955,7 @@ void systemDrawScreen()
 {
   if (xboxSkipFrame())
     return;
+  xboxBlendFrame();
 
   unsigned int destPitch = surface->pitch;
   u8 *screen;

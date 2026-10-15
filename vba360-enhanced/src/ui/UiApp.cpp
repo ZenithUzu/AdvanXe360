@@ -18,24 +18,25 @@ enum
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
 
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
+  V_GBA_COLOR, V_BLEND,
   A_SOUND = 1, A_MUTE_FF,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
-  S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
+  S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
   CH_ADD = 1, CH_TYPE, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000,
-  G_CHEATS = 40
+  G_CHEATS = 40, G_CONTROLS_MODE, G_CONTROLS
 };
 
 // Confirm / keyboard purposes
 enum
 {
   CONFIRM_QUIT = 1, CONFIRM_DELETE_CHEAT, CONFIRM_RESET_CONTROLS, CONFIRM_RESET_GAME,
-  KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC
+  KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC, KEYBOARD_SEARCH
 };
 
 const int kStateSlots = 9;   // slots 1..9 (0 is the automatic one)
@@ -133,7 +134,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1)
+    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1)
 {
 }
 
@@ -507,6 +508,8 @@ void UiApp::openMenu(int menuId, const std::string &rom)
   UiMenuScreen *m = new UiMenuScreen(menuId, m_inGame);
   m->arg = rom;
   m_imageCache.clear();   // pick up images copied since the last time
+  if (menuId == MENU_CONTROLS)
+    m_ctlForGame = !rom.empty();   // opened from a game's options
   if (menuId == MENU_GAME_OPTIONS) {
     m_gameCfg = UiGameConfig();
     m_gameCfg.load(gameConfigPath(rom));
@@ -628,6 +631,16 @@ void UiApp::buildMenu(UiMenuScreen &m)
                  "Centered: whole image in the middle. Fill: covers the screen. Stretch: distorts."))).choice = m_cfg.borderFit;
       }
     }
+    {
+      const char *cc[3] = { tr("Apagada", "Off"), tr("Suave", "Soft"), tr("Como la pantalla real", "Like the real screen") };
+      (m.add(V_GBA_COLOR, ITEM_OPTION, tr("Correcci\xf3n de color (GBA)", "Color correction (GBA)"), cc[m_cfg.gbaColor],
+             tr("Colores menos chillones, como en la pantalla del GBA (gba-color de Pokefan531).",
+                "Less garish colors, like on the GBA screen (Pokefan531's gba-color)."))).choice = m_cfg.gbaColor;
+      const char *bl[3] = { tr("Apagada", "Off"), tr("Mezclar 2 cuadros", "Mix 2 frames"), tr("Estela de LCD", "LCD ghosting") };
+      (m.add(V_BLEND, ITEM_OPTION, tr("Mezcla de cuadros", "Frame blending"), bl[m_cfg.frameBlend],
+             tr("Quita el parpadeo de sprites (Golden Sun, F-Zero...), como el LCD de la consola.",
+                "Removes sprite flicker (Golden Sun, F-Zero...), like the console's LCD."))).choice = m_cfg.frameBlend;
+    }
     (m.add(V_FPS, ITEM_OPTION, tr("Mostrar FPS", "Show FPS"), yesNo[m_cfg.showFps])).choice = m_cfg.showFps;
     const char *skip[5] = { tr("Autom\xe1tico", "Automatic"), "0", "1", "2", "3" };
     (m.add(V_FRAMESKIP, ITEM_OPTION, tr("Salto de cuadros", "Frame skip"), skip[m_cfg.frameSkip],
@@ -677,6 +690,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
           tr("Al salir del juego se crea un estado autom\xe1tico.", "Leaving a game writes an automatic state."));
     m.add(S_AUTO_LOAD, ITEM_OPTION, tr("Continuar donde lo dej\xe9", "Resume where I left off"), yesNo[m_cfg.autoLoadState],
           tr("Al abrir un juego se carga el estado autom\xe1tico.", "Opening a game loads the automatic state."));
+    m.add(S_BACKUPS, ITEM_OPTION, tr("Copias de seguridad del .sav", "Save (.sav) backups"),
+          m_cfg.saveBackups ? tr("3 copias", "3 copies") : tr("No", "No"),
+          tr("Al abrir un juego copia su partida a saves\\backups (guarda las 3 \xfaltimas).",
+             "Opening a game copies its save to saves\\backups (keeps the last 3)."));
     break;
   }
 
@@ -820,17 +837,19 @@ void UiApp::buildQuickMenu(UiMenuScreen &m)
 void UiApp::buildControlsMenu(UiMenuScreen &m)
 {
   m.title = tr("Controles", "Controls");
+  if (m_ctlForGame)
+    m.title = std::string(tr("Controles de ", "Controls for ")) + uiStripExtension(uiFileName(m.arg));
   m.subtitle = tr("A: presiona el bot\xf3n nuevo  \xb7  \xab\xbb: elige de la lista",
                   "A: press the new button  \xb7  \xab\xbb: pick from the list");
   m.hints.push_back(tr("X:Sin asignar", "X:Unassign"));
   m.hints.push_back(tr("START:Restablecer", "START:Defaults"));
   m.addHeader(tr("GAME BOY ADVANCE", "GAME BOY ADVANCE"));
   for (int a = ACT_GBA_A; a <= ACT_GBA_RIGHT; a++)
-    m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a), uiButtonName(*this, m_cfg.map[a]));
+    m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a), uiButtonName(*this, ctlMap()[a]));
   m.addHeader(tr("FUNCIONES", "SHORTCUTS"));
   for (int a = ACT_TURBO_A; a < ACT_COUNT; a++) {
     UiMenuItem &it = m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a),
-                           uiButtonName(*this, m_cfg.map[a]));
+                           uiButtonName(*this, ctlMap()[a]));
     if (a == ACT_MENU)
       it.help = tr("Este bot\xf3n no se puede dejar sin asignar.", "This button can't be left unassigned.");
     else if (a == ACT_FAST_FORWARD)
@@ -839,6 +858,8 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
   }
   m.add(C_RESET, ITEM_ACTION, tr("Restablecer controles", "Reset controls"));
 
+  if (m_ctlForGame)
+    return;   // the sensors stay in Settings > Controls
   // Cartridge sensors (only active in the games that have them)
   m.addHeader(tr("SENSORES DE MOVIMIENTO", "MOTION SENSORS"));
   const char *names[SENS_COUNT][2] = {
@@ -931,6 +952,15 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
       (m.add(G_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
             uiGbPaletteNames[m_gameCfg.gbPalette][m_cfg.language ? 1 : 0])).choice = m_gameCfg.gbPalette;
   }
+
+  // Buttons: the ones in Settings, or this game's own.
+  m.addHeader(tr("Controles de este juego", "This game's controls"));
+  const char *ctl[2] = { tr("Como en Ajustes", "As in Settings"), tr("Personalizados", "Custom") };
+  (m.add(G_CONTROLS_MODE, ITEM_OPTION, tr("Botones", "Buttons"), ctl[m_gameCfg.customControls],
+         tr("Personalizados: botones s\xf3lo para este juego (empiezan como los de Ajustes).",
+            "Custom: buttons for this game only (they start as the ones in Settings)."))).choice = m_gameCfg.customControls;
+  if (m_gameCfg.customControls)
+    m.add(G_CONTROLS, ITEM_SUBMENU, tr("Configurar botones", "Set up buttons"));
 
   if (m_inGame)
     m.addInfo(tr("La imagen cambia al momento; el resto al reiniciar el juego.",
@@ -1096,7 +1126,10 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     return;
 
   case MENU_GAME_OPTIONS:
-    if (id == G_CHEATS) {
+    if (id == G_CONTROLS) {
+      m_gameCfg.save(gameConfigPath(m_gameCfgRom));
+      openMenu(MENU_CONTROLS, m.arg);
+    } else if (id == G_CHEATS) {
       m_gameCfg.save(gameConfigPath(m_gameCfgRom));
       m_cheatTypeIdx = 0;
       openMenu(MENU_CHEATS, m.arg);
@@ -1160,6 +1193,8 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
       m_cfg.borderImage = choice != 0 ? images[choice - 1] : std::string();
     }
     else if (id == V_FPS) m_cfg.showFps ^= 1;
+    else if (id == V_GBA_COLOR) m_cfg.gbaColor = wrapIndex(m_cfg.gbaColor, delta, 3);
+    else if (id == V_BLEND) m_cfg.frameBlend = wrapIndex(m_cfg.frameBlend, delta, 3);
     else if (id == V_FRAMESKIP) m_cfg.frameSkip = wrapIndex(m_cfg.frameSkip, delta, 5);
     break;
   case MENU_CLOCK:
@@ -1198,6 +1233,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == S_STATE_DIR) m_cfg.stateDirMode ^= 1;
     else if (id == S_AUTO_SAVE) m_cfg.autoSaveState ^= 1;
     else if (id == S_AUTO_LOAD) m_cfg.autoLoadState ^= 1;
+    else if (id == S_BACKUPS) m_cfg.saveBackups ^= 1;
     break;
   case MENU_SETTINGS_UI:
     if (id == U_LANGUAGE) m_cfg.language ^= 1;
@@ -1218,10 +1254,13 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
       m_cfg.sensorSens = wrapIndex(m_cfg.sensorSens, delta, SENSOR_SENS_COUNT);
     } else if (id >= C_ACTION_BASE) {
       int a = id - C_ACTION_BASE;
+      int *map = ctlMap();
       // cycle through every button plus "unassigned"
-      m_cfg.map[a] = wrapIndex(m_cfg.map[a], delta, PAD_BUTTON_COUNT + 1);
-      if (a == ACT_MENU && m_cfg.map[a] == PAD_NONE)
-        m_cfg.map[a] = wrapIndex(m_cfg.map[a], delta, PAD_BUTTON_COUNT + 1);
+      map[a] = wrapIndex(map[a], delta, PAD_BUTTON_COUNT + 1);
+      if (a == ACT_MENU && map[a] == PAD_NONE)
+        map[a] = wrapIndex(map[a], delta, PAD_BUTTON_COUNT + 1);
+      if (m_ctlForGame && !m_quietChange)
+        m_gameCfg.save(gameConfigPath(m_gameCfgRom));
     }
     break;
   case MENU_GAME_OPTIONS:
@@ -1234,6 +1273,11 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
         m_gameCfg.copyVideoFrom(m_cfg);   // start from what the game looks like now
     }
     else if (id == G_SGB_MODE) m_gameCfg.sgbMode ^= 1;
+    else if (id == G_CONTROLS_MODE) {
+      m_gameCfg.customControls ^= 1;
+      if (m_gameCfg.customControls && !m_quietChange)
+        m_gameCfg.copyControlsFrom(m_cfg);
+    }
     else if (id == G_FILTER) m_gameCfg.filter = wrapIndex(m_gameCfg.filter, delta, FILTER_COUNT);
     else if (id == G_STRETCH) m_gameCfg.stretch = wrapIndex(m_gameCfg.stretch, delta, SIZE_COUNT);
     else if (id == G_EFFECT) m_gameCfg.screenEffect = wrapIndex(m_gameCfg.screenEffect, delta, EFFECT_COUNT);
@@ -1293,6 +1337,11 @@ int UiApp::romInfo(const std::string &rom)
   int info = m_host.romInfo(rom);
   m_romInfoCache[rom] = info;
   return info;
+}
+
+int *UiApp::ctlMap()
+{
+  return m_ctlForGame ? m_gameCfg.map : m_cfg.map;
 }
 
 void UiApp::openPicker(UiMenuScreen &m, int id)
@@ -1358,7 +1407,9 @@ void UiApp::onMenuSecondary(UiMenuScreen &m, int id, int button)
 {
   if (m.menuId == MENU_CONTROLS) {
     if (button == PAD_X && id >= C_ACTION_BASE && id - C_ACTION_BASE != ACT_MENU) {
-      m_cfg.map[id - C_ACTION_BASE] = PAD_NONE;
+      ctlMap()[id - C_ACTION_BASE] = PAD_NONE;
+      if (m_ctlForGame)
+        m_gameCfg.save(gameConfigPath(m_gameCfgRom));
       rebuildMenus();
       m_host.applySettings();
     } else if (button == PAD_X && id >= SN_MAP_BASE && id < SN_MAP_BASE + SENS_COUNT) {
@@ -1381,22 +1432,62 @@ void UiApp::onMenuClosed(UiMenuScreen &m)
     request(UI_REQ_RESUME);
     return;
   }
-  if (m.menuId == MENU_GAME_OPTIONS)
+  if (m.menuId == MENU_GAME_OPTIONS || (m.menuId == MENU_CONTROLS && m_ctlForGame))
     m_gameCfg.save(gameConfigPath(m_gameCfgRom));
   else if (m.menuId != MENU_CHEATS && m.menuId != MENU_ABOUT)
     saveAll();
+  if (m.menuId == MENU_CONTROLS)
+    m_ctlForGame = false;
   pop();
 }
 
 void UiApp::openKeyboard(const std::string &title, const std::string &initial, int purpose)
 {
-  push(new UiKeyboardScreen(title, initial, purpose));
+  push(new UiKeyboardScreen(title, initial, purpose, purpose != KEYBOARD_CHEAT));
+}
+
+void UiApp::openSearch()
+{
+  openKeyboard(tr("Buscar en esta carpeta", "Search this folder"), m_listFilter, KEYBOARD_SEARCH);
+}
+
+const UiApp::Cover *UiApp::cover(const std::string &rom)
+{
+  std::map<std::string, Cover>::iterator it = m_covers.find(rom);
+  if (it != m_covers.end())
+    return it->second.px.empty() ? 0 : &it->second;
+  if (m_covers.size() > 24)
+    m_covers.clear();   // a handful of images at most (they take memory)
+  Cover &c = m_covers[rom];
+  c.w = c.h = 0;
+  std::string name = uiStripExtension(uiFileName(rom));
+  std::string base = uiStripExtension(rom);
+  std::string covers = uiJoinPath(m_host.emulatorDir(), "covers");
+  const std::string candidates[4] = {
+    uiJoinPath(covers, name + ".png"), uiJoinPath(covers, name + ".jpg"),
+    base + ".png", base + ".jpg" };
+  for (int i = 0; i < 4; i++) {
+    if (!m_host.fileExists(candidates[i]))
+      continue;
+    if (m_host.loadImageFit(candidates[i], 400, 400, c.px, c.w, c.h) &&
+        c.px.size() == (size_t)(c.w * c.h))
+      return &c;
+    c.px.clear();
+  }
+  return 0;
 }
 
 void UiApp::onKeyboardDone(int purpose, const std::string &text, bool accepted)
 {
   if (!accepted)
     return;
+  if (purpose == KEYBOARD_SEARCH) {
+    std::string f = text;
+    while (!f.empty() && f[f.size() - 1] == ' ')
+      f.erase(f.size() - 1);
+    m_listFilter = f;
+    return;   // the browser rebuilds its list when it is back on top
+  }
   if (purpose == KEYBOARD_CHEAT_DESC) {
     // Second step: the name. The code was checked in the first step.
     std::string desc = text;
@@ -1457,7 +1548,12 @@ void UiApp::onConfirm(int purpose, const std::string &arg)
     rebuildMenus();
     break;
   case CONFIRM_RESET_CONTROLS:
-    m_cfg.resetControls();
+    if (m_ctlForGame) {
+      m_gameCfg.copyControlsFrom(m_cfg);   // back to the ones in Settings
+      m_gameCfg.save(gameConfigPath(m_gameCfgRom));
+    } else {
+      m_cfg.resetControls();
+    }
     saveAll();
     rebuildMenus();
     m_host.applySettings();
@@ -1480,12 +1576,15 @@ void UiApp::onCaptured(int action, int button)
   if (action < 0 || action >= ACT_COUNT)
     return;
   // A button can only do one GBA job: swap with whoever had it.
+  int *map = ctlMap();
   if (action <= ACT_GBA_RIGHT) {
     for (int a = ACT_GBA_A; a <= ACT_GBA_RIGHT; a++)
-      if (a != action && m_cfg.map[a] == button)
-        m_cfg.map[a] = m_cfg.map[action];
+      if (a != action && map[a] == button)
+        map[a] = map[action];
   }
-  m_cfg.map[action] = button;
+  map[action] = button;
+  if (m_ctlForGame)
+    m_gameCfg.save(gameConfigPath(m_gameCfgRom));
   rebuildMenus();
   m_host.applySettings();
   toast(std::string(uiActionName(*this, action)) + ": " + uiButtonName(*this, button));

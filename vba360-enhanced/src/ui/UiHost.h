@@ -80,6 +80,10 @@ public:
 
   // Decodes an image file (PNG, JPG, BMP...) scaled to w x h, 0xAARRGGBB.
   virtual bool loadImage(const std::string &path, int w, int h, std::vector<UiColor> &out) { return false; }
+  // The same keeping the image's proportions, at most maxW x maxH; w / h get
+  // the size used.
+  virtual bool loadImageFit(const std::string &path, int maxW, int maxH,
+                            std::vector<UiColor> &out, int &w, int &h) { return false; }
 
   // --- System --------------------------------------------------------------
   virtual void quitToDashboard() = 0;

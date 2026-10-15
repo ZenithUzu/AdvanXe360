@@ -94,6 +94,12 @@ void xboxApplyGameSampler();
 void xboxUiPresent(const UiCanvas &canvas, bool changed = true);
 // Decodes an image (PNG, JPG, BMP, TGA, DDS) scaled to w x h for the menu.
 bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out);
+// The same keeping the proportions, at most maxW x maxH (covers).
+bool xboxLoadImageFit(const char *path, int maxW, int maxH, std::vector<UiColor> &out, int &w, int &h);
+// Mixes the new frame in pix with the last one (Settings > Video).
+void xboxBlendFrame();
+// Copies the game's .sav to saves\backups before the session writes it.
+void xboxBackupSave(const char *savPath);
 
 // Implemented in sdl/SDL.cpp
 void sdlWriteState(int num);

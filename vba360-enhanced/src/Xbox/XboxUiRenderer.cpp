@@ -279,3 +279,17 @@ bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &o
   tex->Release();
   return ok;
 }
+
+bool xboxLoadImageFit(const char *path, int maxW, int maxH, std::vector<UiColor> &out, int &w, int &h)
+{
+  D3DXIMAGE_INFO info;
+  if (!pDevice || FAILED(D3DXGetImageInfoFromFileA(path, &info)) || !info.Width || !info.Height)
+    return false;
+  w = (int)info.Width;
+  h = (int)info.Height;
+  if (w > maxW) { h = h * maxW / w; w = maxW; }
+  if (h > maxH) { w = w * maxH / h; h = maxH; }
+  if (w < 1) w = 1;
+  if (h < 1) h = 1;
+  return xboxLoadImagePixels(path, w, h, out);
+}

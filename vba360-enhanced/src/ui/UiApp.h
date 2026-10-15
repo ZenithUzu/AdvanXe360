@@ -99,10 +99,23 @@ public:
   // a menu is open; ROM header info (UI_ROM_*), cached.
   const std::vector<std::string> &cachedImages(const char *folder);
   int romInfo(const std::string &rom);
+  // Button map being edited: Settings, or the game's (controls opened from
+  // its game options).
+  int *ctlMap();
   void onMenuSecondary(UiMenuScreen &menu, int itemId, int button);
   void onMenuClosed(UiMenuScreen &menu);
   void toggleFavorite(const std::string &rom);
   void launch(const std::string &rom);
+
+  // Game list search (Games tab): the text typed, "" = no filter.
+  const std::string &listFilter() const { return m_listFilter; }
+  void setListFilter(const std::string &f) { m_listFilter = f; }
+  void openSearch();
+
+  // Cover image for a ROM (covers\<name>.png/.jpg or <rom>.png/.jpg next to
+  // it), cached; 0 when there is none.
+  struct Cover { std::vector<UiColor> px; int w, h; };
+  const Cover *cover(const std::string &rom);
 
   // Thumbnails (cached by path).
   const UiThumb *thumb(const std::string &path);
@@ -150,6 +163,9 @@ private:
   // True while openPicker steps through an option's values to list them:
   // nothing is saved or applied then.
   bool m_quietChange;
+  bool m_ctlForGame;
+  std::string m_listFilter;
+  std::map<std::string, Cover> m_covers;
 
   // Cheats menu: the game, the code type picked, the code waiting for its name.
   std::string m_cheatRom;

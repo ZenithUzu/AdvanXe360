@@ -81,6 +81,10 @@ struct ConfigReader
     else if (k == "screen_effect") c.screenEffect = clampInt(v, 0, EFFECT_COUNT - 1, c.screenEffect);
     else if (k == "gb_palette") c.gbPalette = clampInt(v, 0, GB_PALETTE_COUNT - 1, c.gbPalette);
     else if (k == "sgb_borders") c.sgbBorders = clampInt(v, 0, 2, c.sgbBorders);
+    else if (k == "gba_color") c.gbaColor = clampInt(v, 0, 2, c.gbaColor);
+    else if (k == "frame_blend") c.frameBlend = clampInt(v, 0, 2, c.frameBlend);
+    else if (k == "save_backups") c.saveBackups = clampInt(v, 0, 1, c.saveBackups);
+    else if (k == "list_sort") c.listSort = clampInt(v, 0, SORT_COUNT - 1, c.listSort);
     else if (k == "show_fps") c.showFps = clampInt(v, 0, 1, c.showFps);
     else if (k == "frame_skip") c.frameSkip = clampInt(v, 0, 4, c.frameSkip);
     else if (k == "sound") c.sound = clampInt(v, 0, 1, c.sound);
@@ -125,20 +129,26 @@ struct GameConfigReader
     else if (k == "screen_effect") c.screenEffect = clampInt(v, 0, EFFECT_COUNT - 1, c.screenEffect);
     else if (k == "gb_palette") c.gbPalette = clampInt(v, 0, GB_PALETTE_COUNT - 1, c.gbPalette);
     else if (k == "sgb_mode") c.sgbMode = clampInt(v, 0, 1, c.sgbMode);
+    else if (k == "custom_controls") c.customControls = clampInt(v, 0, 1, c.customControls);
+    else if (k.compare(0, 4, "ctl_") == 0) {
+      for (int i = 0; i < ACT_COUNT; i++)
+        if (k.compare(4, std::string::npos, kActionKeys[i]) == 0)
+          c.map[i] = clampInt(v, 0, PAD_NONE, c.map[i]);
+    }
   }
 };
 
 } // namespace
 
 UiConfig::UiConfig()
-  : language(0), hideNonGames(1), menuTheme(0), optionStyle(OPT_STYLE_PANEL),
+  : language(0), hideNonGames(1), menuTheme(0), optionStyle(OPT_STYLE_PANEL), listSort(SORT_NAME),
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), border(0), borderFit(FIT_CENTER),
-    screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), showFps(0), frameSkip(0),
+    screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), gbaColor(0), frameBlend(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1),
     ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0), sunLevel(7),
     sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
-    autoSaveState(0), autoLoadState(0), stateSlot(1)
+    autoSaveState(0), autoLoadState(0), stateSlot(1), saveBackups(1)
 {
   resetControls();
 }
@@ -188,11 +198,13 @@ bool UiConfig::save(const std::string &path) const
     return false;
   fprintf(f, "# VBA360 settings\n");
   fprintf(f, "language=%d\nhide_non_games=%d\nlast_dir=%s\n", language, hideNonGames, lastDir.c_str());
-  fprintf(f, "menu_theme=%d\nmenu_background=%s\noption_style=%d\n", menuTheme, menuBackground.c_str(), optionStyle);
+  fprintf(f, "menu_theme=%d\nmenu_background=%s\noption_style=%d\nlist_sort=%d\n",
+          menuTheme, menuBackground.c_str(), optionStyle, listSort);
   fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nborder_image=%s\nborder_fit=%d\n",
           filter, stretch, border, borderImage.c_str(), borderFit);
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",
           screenEffect, gbPalette, sgbBorders, showFps, frameSkip);
+  fprintf(f, "gba_color=%d\nframe_blend=%d\nsave_backups=%d\n", gbaColor, frameBlend, saveBackups);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\n", sound, muteFastForward);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);
   fprintf(f, "sensor_sensitivity=%d\nsensor_deadzone=%d\n", sensorSens, sensorDeadzone);
@@ -209,8 +221,18 @@ bool UiConfig::save(const std::string &path) const
 
 UiGameConfig::UiGameConfig()
   : saveType(SAVE_AUTO), rtc(TRI_AUTO), patch(1), custom(0),
-    filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), screenEffect(EFFECT_NONE), gbPalette(0), sgbMode(1)
+    filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), screenEffect(EFFECT_NONE), gbPalette(0), sgbMode(1),
+    customControls(0)
 {
+  UiConfig defaults;
+  for (int i = 0; i < ACT_COUNT; i++)
+    map[i] = defaults.map[i];
+}
+
+void UiGameConfig::copyControlsFrom(const UiConfig &cfg)
+{
+  for (int i = 0; i < ACT_COUNT; i++)
+    map[i] = cfg.map[i];
 }
 
 void UiGameConfig::copyVideoFrom(const UiConfig &cfg)
@@ -236,6 +258,10 @@ bool UiGameConfig::save(const std::string &path) const
   fprintf(f, "save_type=%d\nrtc=%d\npatch=%d\n", saveType, rtc, patch);
   fprintf(f, "custom=%d\nfilter=%d\nstretch=%d\nscreen_effect=%d\ngb_palette=%d\nsgb_mode=%d\n",
           custom, filter, stretch, screenEffect, gbPalette, sgbMode);
+  fprintf(f, "custom_controls=%d\n", customControls);
+  if (customControls)
+    for (int i = 0; i < ACT_COUNT; i++)
+      fprintf(f, "ctl_%s=%d\n", kActionKeys[i], map[i]);
   fclose(f);
   return true;
 }

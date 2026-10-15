@@ -65,6 +65,7 @@ enum UiTriState { TRI_AUTO = 0, TRI_ON, TRI_OFF };
 enum UiDirMode { DIR_NEXT_TO_ROM = 0, DIR_EMULATOR = 1 };
 // Changing an option: left / right only, a side panel, or a pop-up list
 // (A opens the panel / list; left / right work in all of them).
+enum UiListSort { SORT_NAME = 0, SORT_NAME_DESC, SORT_RECENT, SORT_COUNT };
 enum UiOptionStyle { OPT_STYLE_PANEL = 0, OPT_STYLE_LIST, OPT_STYLE_CLASSIC, OPT_STYLE_COUNT };
 
 struct UiConfig
@@ -75,6 +76,7 @@ struct UiConfig
   std::string lastDir;   // folder the browser reopens
   int menuTheme;         // index into uiThemes (UiScreens.h)
   int optionStyle;       // UiOptionStyle: how an option's values are picked
+  int listSort;          // UiListSort: game list order
   std::string menuBackground;   // image in backgrounds\ ("" = the theme's colors)
 
   // Video
@@ -86,6 +88,8 @@ struct UiConfig
   int screenEffect;      // UiScreenEffect
   int gbPalette;         // index into uiGbPalettes
   int sgbBorders;        // Super Game Boy: 0 off, 1 Game Boy games, 2 also Color-compatible ones
+  int gbaColor;          // GBA color correction: 0 off, 1 soft, 2 like the real screen
+  int frameBlend;        // 0 off, 1 mix 2 frames (anti-flicker), 2 LCD ghosting
   int showFps;
   int frameSkip;         // 0 = auto, 1..4 = fixed 0..3
 
@@ -115,6 +119,7 @@ struct UiConfig
   int autoSaveState;     // write state slot 0 ("auto") when leaving a game
   int autoLoadState;     // load it when starting the game
   int stateSlot;
+  int saveBackups;       // keep the last 3 copies of each .sav (saves\backups)
 
   // Controls: pad button for every UiAction (PAD_NONE = unassigned)
   int map[ACT_COUNT];
@@ -136,10 +141,14 @@ struct UiGameConfig
   int custom;
   int filter, stretch, screenEffect, gbPalette;
   int sgbMode;    // Super Game Boy games: 0 = normal Game Boy, 1 = Super Game Boy
+  // Buttons: 0 = as in Settings > Controls, 1 = map below for this game only.
+  int customControls;
+  int map[ACT_COUNT];
 
   UiGameConfig();
   // Starts the custom values from the global settings.
   void copyVideoFrom(const UiConfig &cfg);
+  void copyControlsFrom(const UiConfig &cfg);
   bool load(const std::string &path);
   bool save(const std::string &path) const;
 };

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 
 const UiColor UI_COL_TEXT     = 0xFFE9ECF4;
 const UiColor UI_COL_TEXT_DIM = 0xFF98A2B8;
@@ -206,6 +207,55 @@ UiHomeScreen::UiHomeScreen(UiApp &app, const std::string &selectRom)
     openDir(app, "", "");
 }
 
+static std::string lowerAscii(const std::string &s)
+{
+  std::string r(s);
+  for (size_t i = 0; i < r.size(); i++)
+    if (r[i] >= 'A' && r[i] <= 'Z')
+      r[i] = (char)(r[i] - 'A' + 'a');
+  return r;
+}
+
+// First letter used to jump (A..Z, '#' for digits / symbols).
+static char rowInitial(const std::string &name)
+{
+  for (size_t i = 0; i < name.size(); i++) {
+    char ch = name[i];
+    if (ch >= 'a' && ch <= 'z') return (char)(ch - 'a' + 'A');
+    if (ch >= 'A' && ch <= 'Z') return ch;
+    if (ch != ' ' && ch != '[' && ch != '(' && ch != '_' && ch != '-' && ch != '.')
+      return '#';
+  }
+  return '#';
+}
+
+struct RowSorter
+{
+  int mode;
+  const std::vector<std::string> *recents;
+  int recentIndex(const std::string &path) const
+  {
+    for (size_t i = 0; i < recents->size(); i++)
+      if ((*recents)[i] == path)
+        return (int)i;
+    return 0x7FFFFFFF;
+  }
+  bool operator()(const UiDirEntry &a, const UiDirEntry &b) const
+  {
+    if (a.isDir != b.isDir)
+      return a.isDir;   // folders always first
+    std::string la = lowerAscii(a.name), lb = lowerAscii(b.name);
+    if (!a.isDir && mode == SORT_RECENT) {
+      int ra = recentIndex(a.path), rb = recentIndex(b.path);
+      if (ra != rb)
+        return ra < rb;
+    }
+    if (!a.isDir && mode == SORT_NAME_DESC)
+      return lb < la;
+    return la < lb;
+  }
+};
+
 int UiHomeScreen::rowHeight() const
 {
   return m_tab == TAB_GAMES ? 52 : 68;
@@ -227,9 +277,17 @@ void UiHomeScreen::openDir(UiApp &app, const std::string &dir, const std::string
         m_entries.push_back(all[i]);
     }
   }
+  if (m_dir != dir)
+    app.setListFilter("");   // a search only applies to the folder it was made in
   m_dir = dir;
   if (!m_dirError)
     app.cfg().lastDir = dir;
+  if (!dir.empty()) {
+    RowSorter sorter;
+    sorter.mode = app.cfg().listSort;
+    sorter.recents = &app.recents().items();
+    std::stable_sort(m_entries.begin(), m_entries.end(), sorter);
+  }
   m_list[TAB_GAMES] = UiListState();
   if (!selectName.empty()) {
     for (size_t i = 0; i < m_entries.size(); i++) {
@@ -244,6 +302,13 @@ void UiHomeScreen::openDir(UiApp &app, const std::string &dir, const std::string
 
 void UiHomeScreen::onResume(UiApp &app)
 {
+  if (m_tab == TAB_GAMES && m_filter != app.listFilter()) {
+    // Back from the search keyboard: start at the first match.
+    buildRows(app);
+    m_list[TAB_GAMES] = UiListState();
+    m_list[TAB_GAMES].clamp((int)m_rows.size());
+    return;
+  }
   refresh(app);
 }
 
@@ -256,7 +321,11 @@ void UiHomeScreen::buildRows(UiApp &app)
 {
   m_rows.clear();
   if (m_tab == TAB_GAMES) {
+    m_filter = app.listFilter();
+    std::string needle = lowerAscii(m_filter);
     for (size_t i = 0; i < m_entries.size(); i++) {
+      if (!needle.empty() && lowerAscii(m_entries[i].name).find(needle) == std::string::npos)
+        continue;
       Row r;
       r.title = m_entries[i].name;
       r.path = m_entries[i].path;
@@ -348,16 +417,41 @@ void UiHomeScreen::update(UiApp &app, const UiInputState &in)
   if (in.repeat & PAD_BIT(PAD_DOWN)) ls.move(1, count, true);
   if (in.repeat & PAD_BIT(PAD_LEFT)) ls.move(-visible, count, false);
   if (in.repeat & PAD_BIT(PAD_RIGHT)) ls.move(visible, count, false);
-  if (in.repeat & PAD_BIT(PAD_LT)) ls.move(-count, count, false);
-  if (in.repeat & PAD_BIT(PAD_RT)) ls.move(count, count, false);
+  if (m_tab == TAB_GAMES && !m_dir.empty()) {
+    // Games: LT / RT jump to the previous / next first letter.
+    if (in.repeat & PAD_BIT(PAD_LT)) jumpLetter(-1);
+    if (in.repeat & PAD_BIT(PAD_RT)) jumpLetter(1);
+  } else {
+    if (in.repeat & PAD_BIT(PAD_LT)) ls.move(-count, count, false);
+    if (in.repeat & PAD_BIT(PAD_RT)) ls.move(count, count, false);
+  }
   ls.ensureVisible(visible);
+
+  if (m_tab == TAB_GAMES && !m_dir.empty()) {
+    if (in.pressed & PAD_BIT(PAD_BACK)) {
+      app.openSearch();
+      return;
+    }
+    if (in.pressed & PAD_BIT(PAD_START)) {
+      cycleSort(app);
+      return;
+    }
+  }
 
   if (in.pressed & PAD_BIT(PAD_A)) {
     activate(app);
     return;
   }
   if (in.pressed & PAD_BIT(PAD_B)) {
-    if (m_tab == TAB_GAMES && !m_dir.empty()) {
+    if (m_tab == TAB_GAMES && !app.listFilter().empty()) {
+      // First B clears the search.
+      std::string keep = ls.sel >= 0 && ls.sel < count ? m_rows[ls.sel].path : "";
+      app.setListFilter("");
+      buildRows(app);
+      for (size_t i = 0; i < m_rows.size(); i++)
+        if (m_rows[i].path == keep) { m_list[TAB_GAMES].sel = (int)i; break; }
+      m_list[TAB_GAMES].ensureVisible(visible);
+    } else if (m_tab == TAB_GAMES && !m_dir.empty()) {
       std::string child = m_dir;
       openDir(app, uiParentDir(m_dir), child);
     } else if (m_tab != TAB_GAMES) {
@@ -383,6 +477,54 @@ void UiHomeScreen::update(UiApp &app, const UiInputState &in)
   }
 }
 
+void UiHomeScreen::jumpLetter(int dir)
+{
+  UiListState &ls = m_list[TAB_GAMES];
+  int count = (int)m_rows.size();
+  if (count == 0)
+    return;
+  int cur = ls.sel < 0 ? 0 : (ls.sel >= count ? count - 1 : ls.sel);
+  // Folders count as one group, then a group per first letter.
+  #define ROW_KEY(i) (m_rows[i].isDir ? '\x01' : rowInitial(m_rows[i].title))
+  char key = ROW_KEY(cur);
+  int i = cur;
+  if (dir > 0) {
+    while (i < count && ROW_KEY(i) == key) i++;
+    if (i >= count) return;
+  } else {
+    // Start of this group; if already there, start of the previous one.
+    while (i > 0 && ROW_KEY(i - 1) == key) i--;
+    if (i == cur) {
+      if (i == 0) return;
+      i--;
+      key = ROW_KEY(i);
+      while (i > 0 && ROW_KEY(i - 1) == key) i--;
+    }
+  }
+  #undef ROW_KEY
+  ls.sel = i;
+}
+
+void UiHomeScreen::cycleSort(UiApp &app)
+{
+  std::string keep;
+  UiListState &ls = m_list[TAB_GAMES];
+  if (ls.sel >= 0 && ls.sel < (int)m_rows.size())
+    keep = m_rows[ls.sel].path;
+  app.cfg().listSort = (app.cfg().listSort + 1) % SORT_COUNT;
+  app.saveAll();
+  RowSorter sorter;
+  sorter.mode = app.cfg().listSort;
+  sorter.recents = &app.recents().items();
+  std::stable_sort(m_entries.begin(), m_entries.end(), sorter);
+  buildRows(app);
+  for (size_t i = 0; i < m_rows.size(); i++)
+    if (m_rows[i].path == keep) { ls.sel = (int)i; break; }
+  static const char *es[SORT_COUNT] = { "Orden: A-Z", "Orden: Z-A", "Orden: jugados recientemente" };
+  static const char *en[SORT_COUNT] = { "Order: A-Z", "Order: Z-A", "Order: recently played" };
+  app.toast(app.tr(es[app.cfg().listSort], en[app.cfg().listSort]));
+}
+
 void UiHomeScreen::drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
 {
   UiListState &ls = m_list[m_tab];
@@ -392,7 +534,10 @@ void UiHomeScreen::drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
 
   if (m_rows.empty()) {
     const char *msg;
-    if (m_tab == TAB_GAMES)
+    if (m_tab == TAB_GAMES && !m_filter.empty())
+      msg = app.tr("Ning\xfan juego coincide con la b\xfasqueda (B: quitarla)",
+                   "No game matches the search (B: clear it)");
+    else if (m_tab == TAB_GAMES)
       msg = m_dirError ? app.tr("No se pudo abrir esta carpeta", "This folder could not be opened")
                        : app.tr("No hay juegos en esta carpeta", "No games in this folder");
     else if (m_tab == TAB_RECENT)
@@ -480,8 +625,17 @@ void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
     return;
   }
 
-  const UiThumb *t = app.thumb(app.gameThumbPath(r.path));
-  if (t) {
+  const UiApp::Cover *cv = app.cover(r.path);
+  const UiThumb *t = cv ? 0 : app.thumb(app.gameThumbPath(r.path));
+  if (cv) {
+    // Box art: whole image, proportions kept, centered in the preview box.
+    c.fillRoundRect(x + pad, ty, tw, th, 10, 0x40000000);
+    int dw = tw, dh = cv->h * tw / cv->w;
+    if (dh > th) { dh = th; dw = cv->w * th / cv->h; }
+    if (dw < 1) dw = 1;
+    if (dh < 1) dh = 1;
+    c.blitScaled(&cv->px[0], cv->w, cv->h, cv->w, x + pad + (tw - dw) / 2, ty + (th - dh) / 2, dw, dh);
+  } else if (t) {
     c.fillRoundRect(x + pad - 2, ty - 2, tw + 4, th + 4, 10, 0x40000000);
     c.blitScaled(&t->px[0], t->w, t->h, t->w, x + pad, ty, tw, th);
   } else {
@@ -536,7 +690,24 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
   // Breadcrumb / tab description
   std::string sub;
   if (m_tab == TAB_GAMES)
+  {
     sub = m_dir.empty() ? std::string(app.tr("Elige una unidad", "Choose a drive")) : m_dir;
+    if (!m_dir.empty()) {
+      static const char *es[SORT_COUNT] = { "A-Z", "Z-A", "Recientes" };
+      static const char *en[SORT_COUNT] = { "A-Z", "Z-A", "Recent" };
+      int so = app.cfg().listSort;
+      if (so < 0 || so >= SORT_COUNT) so = 0;
+      std::string pre = "[";
+      pre += app.tr(es[so], en[so]);
+      if (!m_filter.empty()) {
+        pre += "  \xb7  ";
+        pre += app.tr("Buscando: ", "Search: ");
+        pre += m_filter;
+      }
+      pre += "]  ";
+      sub = pre + sub;
+    }
+  }
   else if (m_tab == TAB_RECENT)
     sub = app.tr("\xdaltimos juegos abiertos", "Recently played games");
   else if (m_tab == TAB_FAVORITES)
@@ -562,15 +733,23 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
     hints.push_back(app.tr("A:Jugar", "A:Play"));
   else if (!m_rows.empty())
     hints.push_back(app.tr("A:Abrir", "A:Open"));
-  if (m_tab == TAB_GAMES && !m_dir.empty())
+  if (m_tab == TAB_GAMES && !m_filter.empty())
+    hints.push_back(app.tr("B:Quitar b\xfasqueda", "B:Clear search"));
+  else if (m_tab == TAB_GAMES && !m_dir.empty())
     hints.push_back(app.tr("B:Subir", "B:Up"));
   if (onRom) {
     hints.push_back(app.favorites().contains(m_rows[ls.sel].path)
                     ? app.tr("X:Quitar favorito", "X:Unfavorite")
                     : app.tr("X:Favorito", "X:Favorite"));
-    hints.push_back(app.tr("Y:Opciones del juego", "Y:Game options"));
+    hints.push_back(m_tab == TAB_GAMES ? app.tr("Y:Opciones", "Y:Options")
+                                       : app.tr("Y:Opciones del juego", "Y:Game options"));
     if (m_tab == TAB_RECENT)
       hints.push_back(app.tr("BACK:Quitar", "BACK:Remove"));
+  }
+  if (m_tab == TAB_GAMES && !m_dir.empty()) {
+    hints.push_back(app.tr("BACK:Buscar", "BACK:Search"));
+    hints.push_back(app.tr("START:Orden", "START:Sort"));
+    hints.push_back(app.tr("LT/RT:Letra", "LT/RT:Letter"));
   }
   hints.push_back(app.tr("LB/RB:Pesta\xf1""as", "LB/RB:Tabs"));
   app.drawHints(c, &hints[0], (int)hints.size());
@@ -854,30 +1033,53 @@ const char *kKeys[4][6] = {
   { "C", "D", "E", "F", ":", "-" },
   { 0, 0, 0, 0, 0, 0 }   // bottom row: space / delete / OK (drawn specially)
 };
+const char *const kFullKeys[4] = { "ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ-'.&", "1234567890" };
 }
 
-UiKeyboardScreen::UiKeyboardScreen(const std::string &title, const std::string &text, int purpose)
-  : m_title(title), m_text(text), m_purpose(purpose), m_row(0), m_col(0)
+UiKeyboardScreen::UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full)
+  : m_title(title), m_text(text), m_purpose(purpose), m_row(0), m_col(0), m_full(full)
 {
+}
+
+const char *UiKeyboardScreen::keyLabel(int r, int c) const
+{
+  if (!m_full)
+    return kKeys[r][c];
+  static char buf[2];
+  buf[0] = kFullKeys[r][c];
+  buf[1] = 0;
+  return buf;
 }
 
 void UiKeyboardScreen::update(UiApp &app, const UiInputState &in)
 {
-  int cols = m_row == 3 ? 3 : 6;
-  if (in.repeat & PAD_BIT(PAD_UP)) m_row = (m_row + 3) % 4;
-  if (in.repeat & PAD_BIT(PAD_DOWN)) m_row = (m_row + 1) % 4;
+  int rows = keyRows() + 1;   // + the space / delete / OK row
+  int last = keyRows();
+  int cols = m_row == last ? 3 : keyCols();
+  if (in.repeat & PAD_BIT(PAD_UP)) {
+    int r = (m_row + rows - 1) % rows;
+    if (m_row == last) m_col = m_col * keyCols() / 3 + 1;      // keep roughly the same spot
+    else if (r == last) m_col = m_col * 3 / keyCols();
+    m_row = r;
+  }
+  if (in.repeat & PAD_BIT(PAD_DOWN)) {
+    int r = (m_row + 1) % rows;
+    if (m_row == last) m_col = m_col * keyCols() / 3 + 1;
+    else if (r == last) m_col = m_col * 3 / keyCols();
+    m_row = r;
+  }
+  cols = m_row == last ? 3 : keyCols();
+  if (m_col >= cols) m_col = cols - 1;
   if (in.repeat & PAD_BIT(PAD_LEFT)) m_col = (m_col + cols - 1) % cols;
   if (in.repeat & PAD_BIT(PAD_RIGHT)) m_col = (m_col + 1) % cols;
-  cols = m_row == 3 ? 3 : 6;
-  if (m_col >= cols) m_col = cols - 1;
 
   bool del = (in.repeat & PAD_BIT(PAD_X)) != 0;
   bool space = (in.pressed & PAD_BIT(PAD_Y)) != 0;
   bool ok = (in.pressed & PAD_BIT(PAD_START)) != 0;
   if (in.pressed & PAD_BIT(PAD_A)) {
-    if (m_row < 3) {
+    if (m_row < last) {
       if (m_text.size() < 40)
-        m_text += kKeys[m_row][m_col];
+        m_text += keyLabel(m_row, m_col);
     } else if (m_col == 0) space = true;
     else if (m_col == 1) del = true;
     else ok = true;
@@ -912,17 +1114,18 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
   if ((app.frameCount() / 30) % 2 == 0)
     c.fillRect(x + 50 + tw, y + 78, 2, 28, UI_COL_ACCENT);
 
-  int kw = 84, kh = 56, gap = 8;
-  int gx = x + (w - (kw * 6 + gap * 5)) / 2, gy = y + 140;
-  for (int r = 0; r < 4; r++) {
-    int cols = r == 3 ? 3 : 6;
-    int bw = r == 3 ? (kw * 6 + gap * 5 - gap * 2) / 3 : kw;
+  int nc = keyCols(), last = keyRows();
+  int kw = m_full ? 52 : 84, kh = m_full ? 50 : 56, gap = m_full ? 6 : 8;
+  int gx = x + (w - (kw * nc + gap * (nc - 1))) / 2, gy = y + 140;
+  for (int r = 0; r <= last; r++) {
+    int cols = r == last ? 3 : nc;
+    int bw = r == last ? (kw * nc + gap * (nc - 1) - gap * 2) / 3 : kw;
     for (int col = 0; col < cols; col++) {
       int bx = gx + col * (bw + gap), by = gy + r * (kh + gap);
       bool sel = r == m_row && col == m_col;
       c.fillRoundRect(bx, by, bw, kh, 10, sel ? UI_COL_ACCENT : 0x30FFFFFF);
       const char *label;
-      if (r < 3) label = kKeys[r][col];
+      if (r < last) label = keyLabel(r, col);
       else if (col == 0) label = app.tr("Espacio", "Space");
       else if (col == 1) label = app.tr("Borrar", "Delete");
       else label = "OK";

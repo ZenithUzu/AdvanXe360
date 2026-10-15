@@ -26,6 +26,8 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Interfaz propia, simple y rápida, dibujada por el emulador (ya no usa las escenas XUI originales).
 - Pestañas **Juegos · Recientes · Favoritos · Ajustes** (LB / RB).
 - Explorador de **unidades y carpetas** (disco duro, USB, unidades de memoria, carpeta del emulador) con vista previa del último momento jugado y aviso si la ROM tiene parche.
+- **Buscar y ordenar** en la pestaña Juegos: **BACK** abre un teclado para buscar por nombre (B quita la búsqueda), **START** cambia el orden (A-Z, Z-A o jugados recientemente) y **LT / RT** saltan a la letra anterior / siguiente.
+- **Portadas:** si hay una imagen con el nombre del juego, se muestra en la vista previa. Ver [Portadas](#portadas).
 - **Español e inglés**, con una línea de ayuda en cada opción.
 - **Cómo se cambia una opción** (*Ajustes → Interfaz e idioma → Al cambiar una opción*): **panel lateral** (A abre los valores a la derecha), **lista emergente** (en el centro) o **clásico** (izquierda / derecha). En los dos primeros el cambio se ve al momento (filtros, fondos, colores) y **B** cierra el panel; izquierda / derecha siguen funcionando en los tres.
 - **Temas de colores** (Predeterminado, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance y Rojo) e **imagen de fondo** propia para el menú (*Ajustes → Interfaz e idioma*).
@@ -39,7 +41,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - **Parches BPS / UPS / IPS automáticos** hasta 32 MB: la ROM limpia no se modifica.
 - **Guardado de batería** (`.sav`) en GBA y GB: lo que guardas dentro del juego se escribe al salir, al abrir el menú y periódicamente.
 - El **tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM) y el **reloj RTC** se detectan **leyendo la ROM**, no por el ID del cartucho. Así guardan bien los hacks de Pokémon aunque conserven el ID original.
-- **Opciones por juego** (botón Y sobre un juego, o *Opciones del juego* en el menú dentro del juego), guardadas por nombre de archivo: tipo de guardado y reloj (GBA), parche y la **imagen de ese juego**: *Como en Ajustes* o *Personalizada* (filtro, tamaño, efecto, colores de Game Boy y, en juegos de Super Game Boy, modo **Normal** o **Super Game Boy**). Lo de Ajustes sigue valiendo para todos los demás juegos.
+- **Opciones por juego** (botón Y sobre un juego, o *Opciones del juego* en el menú dentro del juego), guardadas por nombre de archivo: tipo de guardado y reloj (GBA), parche, la **imagen de ese juego**: *Como en Ajustes* o *Personalizada* (filtro, tamaño, efecto, colores de Game Boy y, en juegos de Super Game Boy, modo **Normal** o **Super Game Boy**) y los **botones de ese juego** (*Como en Ajustes* o *Personalizados*, con su propia pantalla de *Configurar botones*). Lo de Ajustes sigue valiendo para todos los demás juegos.
 - ROMs comprimidas en `.zip` y `.7z`.
 
 **Game Boy y Game Boy Color** (núcleo [Gambatte](#game-boy-y-game-boy-color))
@@ -55,10 +57,10 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Cada juego guarda **su propia lista**, separada por consola (`cheats\gba\` y `cheats\gb\`), aunque el juego no esté abierto; un código de GB nunca se aplica a un juego de GBA ni al revés. Las listas de versiones anteriores se convierten solas la primera vez.
 
 **Ajustes**
-- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa, **entero** (píxel exacto: GBA x4, GB x5) o **16:9** (llena toda la TV, imagen estirada); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (41 opciones: gris, verde clásico, Game Boy original, Pocket, Light, las **32 paletas oficiales de Super Game Boy** de la 1-A a la 4-H, sepia, azul, rojo y **automática**, como en el Game Boy Color); **fondo negro o con imagen propia** (centrada, rellenar o estirar); mostrar FPS y salto de cuadros.
+- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa, **entero** (píxel exacto: GBA x4, GB x5) o **16:9** (llena toda la TV, imagen estirada); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (41 opciones: gris, verde clásico, Game Boy original, Pocket, Light, las **32 paletas oficiales de Super Game Boy** de la 1-A a la 4-H, sepia, azul, rojo y **automática**, como en el Game Boy Color); **fondo negro o con imagen propia** (centrada, rellenar o estirar); **corrección de color de GBA** (*Suave* o *Como la pantalla real*: quita los colores chillones que los juegos usaban para compensar la pantalla oscura del GBA; fórmula del shader *gba-color* de Pokefan531); **mezcla de cuadros** (*Mezclar 2 cuadros* quita el parpadeo de los sprites que se encienden y apagan cada cuadro, como en Golden Sun o F-Zero; *Estela de LCD* imita el rastro de la pantalla original); mostrar FPS y salto de cuadros.
 - **Audio:** sonido y silenciar durante el avance rápido.
 - **Emulación:** velocidad y modo del avance rápido, BIOS original opcional y formato de los códigos de 16 dígitos.
-- **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir y continuar donde lo dejaste.
+- **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir, continuar donde lo dejaste y **copias de seguridad del `.sav`**: al abrir un juego se guarda una copia de su partida en `saves\backups\` (las 3 últimas: `-1` es la más nueva). Si un hack o un truco daña la partida, copia la de respaldo encima del `.sav`.
 - **Controles:** todos los botones reasignables (también turbo A/B, avance rápido, menú, guardado y carga rápida). Puedes elegir de la lista o simplemente presionar el botón nuevo.
 
 ## Capturas
@@ -189,6 +191,12 @@ También se puede elegir **por juego**: botón Y → *Imagen de este juego: Pers
 - Los estados guardados incluyen el marco y los colores.
 - Adaptado de [SameBoy](https://github.com/LIJI32/SameBoy) (`Core/sgb.c`, de Lior Halphon, licencia MIT).
 
+## Portadas
+
+Pon la portada de un juego en la carpeta `covers\` junto a `default.xex`, con **el mismo nombre que la ROM** y extensión `.png` o `.jpg`. Por ejemplo, para `Pokemon Esmeralda.gba` usa `covers\Pokemon Esmeralda.png`. También vale una imagen junto a la ROM con su mismo nombre (`Pokemon Esmeralda.png`).
+
+La portada se muestra en la vista previa a la derecha de la lista, con sus proporciones. Si un juego no tiene portada, se ve la miniatura de la última partida como antes. Unos 400×400 píxeles bastan; imágenes más grandes también funcionan, pero tardan un poco más en cargar.
+
 ## Menú: temas e imagen de fondo
 
 En **Ajustes → Interfaz e idioma**:
@@ -198,7 +206,7 @@ En **Ajustes → Interfaz e idioma**:
 
 ## Carpetas que crea el emulador
 
-Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\` y `bios\` (pon ahí `gba_bios.bin`, `gb_bios.bin` o `gbc_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
+Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\` (portadas), `saves\backups\` (copias de las partidas) y `bios\` (pon ahí `gba_bios.bin`, `gb_bios.bin` o `gbc_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
 
 El archivo **`vba360.log`** (junto a `default.xex`) registra lo que pasa en cada sesión: el juego que se abre, el núcleo usado, los guardados y los errores. Si algo falla, mándalo junto con tu reporte.
 
