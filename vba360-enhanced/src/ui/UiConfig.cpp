@@ -17,6 +17,11 @@ const char *kActionKeys[ACT_COUNT] = {
   "map_fast_forward", "map_menu", "map_quick_save", "map_quick_load"
 };
 
+const char *kSensorKeys[SENS_COUNT] = {
+  "sensor_tilt_right", "sensor_tilt_left", "sensor_tilt_up", "sensor_tilt_down",
+  "sensor_sun_up", "sensor_sun_down"
+};
+
 std::string trim(const std::string &s)
 {
   size_t a = 0, b = s.size();
@@ -81,9 +86,6 @@ struct ConfigReader
     else if (k == "use_bios") c.useBios = clampInt(v, 0, 1, c.useBios);
     else if (k == "gsa_v3") c.gsaV3 = clampInt(v, 0, 1, c.gsaV3);
     else if (k == "sun_level") c.sunLevel = clampInt(v, 0, 10, c.sunLevel);
-    else if (k == "tilt_x_axis") c.tiltXAxis = clampInt(v, 0, AXIS_COUNT - 1, c.tiltXAxis);
-    else if (k == "tilt_y_axis") c.tiltYAxis = clampInt(v, 0, AXIS_COUNT - 1, c.tiltYAxis);
-    else if (k == "sun_axis") c.sunAxis = clampInt(v, 0, AXIS_COUNT - 1, c.sunAxis);
     else if (k == "sensor_sensitivity") c.sensorSens = clampInt(v, 0, SENSOR_SENS_COUNT - 1, c.sensorSens);
     else if (k == "sensor_deadzone") c.sensorDeadzone = clampInt(v, 0, SENSOR_DEADZONE_COUNT - 1, c.sensorDeadzone);
     else if (k == "clock_mode") c.clockMode = clampInt(v, 0, 1, c.clockMode);
@@ -97,6 +99,9 @@ struct ConfigReader
       for (int i = 0; i < ACT_COUNT; i++)
         if (k == kActionKeys[i])
           c.map[i] = clampInt(v, 0, PAD_NONE, c.map[i]);
+      for (int i = 0; i < SENS_COUNT; i++)
+        if (k == kSensorKeys[i])
+          c.sensorMap[i] = clampInt(v, 0, SDIR_COUNT - 1, c.sensorMap[i]);
     }
   }
 };
@@ -121,7 +126,6 @@ UiConfig::UiConfig()
     screenEffect(EFFECT_NONE), gbPalette(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1),
     ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0), sunLevel(7),
-    tiltXAxis(AXIS_RS_X), tiltYAxis(AXIS_RS_Y), sunAxis(AXIS_RS_Y),
     sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
     autoSaveState(0), autoLoadState(0), stateSlot(1)
@@ -148,6 +152,13 @@ void UiConfig::resetControls()
   map[ACT_MENU] = PAD_RS;
   map[ACT_QUICK_SAVE] = PAD_NONE;
   map[ACT_QUICK_LOAD] = PAD_NONE;
+  // Sensors: the right stick, the way you would tilt the console.
+  sensorMap[SENS_TILT_RIGHT] = SDIR_RS_RIGHT;
+  sensorMap[SENS_TILT_LEFT] = SDIR_RS_LEFT;
+  sensorMap[SENS_TILT_UP] = SDIR_RS_UP;
+  sensorMap[SENS_TILT_DOWN] = SDIR_RS_DOWN;
+  sensorMap[SENS_SUN_UP] = SDIR_RS_UP;
+  sensorMap[SENS_SUN_DOWN] = SDIR_RS_DOWN;
 }
 
 bool UiConfig::load(const std::string &path)
@@ -173,8 +184,9 @@ bool UiConfig::save(const std::string &path) const
           screenEffect, gbPalette, showFps, frameSkip);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\n", sound, muteFastForward);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);
-  fprintf(f, "tilt_x_axis=%d\ntilt_y_axis=%d\nsun_axis=%d\nsensor_sensitivity=%d\nsensor_deadzone=%d\n",
-          tiltXAxis, tiltYAxis, sunAxis, sensorSens, sensorDeadzone);
+  fprintf(f, "sensor_sensitivity=%d\nsensor_deadzone=%d\n", sensorSens, sensorDeadzone);
+  for (int i = 0; i < SENS_COUNT; i++)
+    fprintf(f, "%s=%d\n", kSensorKeys[i], sensorMap[i]);
   fprintf(f, "clock_mode=%d\nclock_offset=%d\n", clockMode, clockOffset);
   fprintf(f, "save_dir=%d\nstate_dir=%d\nauto_save_state=%d\nauto_load_state=%d\nstate_slot=%d\n",
           saveDirMode, stateDirMode, autoSaveState, autoLoadState, stateSlot);
@@ -433,15 +445,22 @@ const unsigned int uiGbPalettes[GB_PALETTE_COUNT][4] = {
 const int uiSensorSensPercent[SENSOR_SENS_COUNT] = { 50, 75, 100, 150, 200 };
 const int uiSensorDeadzone[SENSOR_DEADZONE_COUNT] = { 3000, 6000, 9000, 12000 };
 
-int uiAxisValue(int axis, int x, int y)
+int uiStickAmount(int dir, int lx, int ly, int rx, int ry)
 {
-  switch (axis) {
-  case AXIS_RS_X: return x;
-  case AXIS_RS_X_INV: return -x;
-  case AXIS_RS_Y: return y;
-  case AXIS_RS_Y_INV: return -y;
+  int v;
+  switch (dir) {
+  case SDIR_RS_RIGHT: v = rx; break;
+  case SDIR_RS_LEFT: v = -rx; break;
+  case SDIR_RS_UP: v = ry; break;
+  case SDIR_RS_DOWN: v = -ry; break;
+  case SDIR_LS_RIGHT: v = lx; break;
+  case SDIR_LS_LEFT: v = -lx; break;
+  case SDIR_LS_UP: v = ly; break;
+  case SDIR_LS_DOWN: v = -ly; break;
   default: return 0;
   }
+  if (v < 0) return 0;
+  return v > 32767 ? 32767 : v;
 }
 
 bool uiIsImageFile(const std::string &name)

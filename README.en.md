@@ -127,15 +127,22 @@ Some GBA cartridges carried extra hardware. The emulator recognizes them by thei
 | *Drill Dozer* | Rumble | Rumble goes to the controller |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Tilt sensor | Tilt = **right stick** |
 
-In **Settings → Controls**, below the buttons, there is a **Sensors (right stick)** section:
+In **Settings → Controls**, below the buttons, there is a **Motion sensors** section. Each movement is mapped to a stick direction, just like the buttons:
 
-- **Left / right:** tilt (Yoshi, Koro Koro) and rotate (WarioWare: Twisted!).
-- **Up / down:** tilt forward or back.
-- **Sunlight:** which way of the stick raises the sun in Boktai.
-- To map one, select it, press **A** and push the right stick the way you want (the opposite way = inverted). You can also pick from the list with left/right, or leave it unassigned with **X**.
-- **Sensitivity** (50% to 200%) and **dead zone**.
+| Movement | Default |
+|---|---|
+| Tilt right | Right stick → right |
+| Tilt left | Right stick → left |
+| Tilt up | Right stick → up |
+| Tilt down | Right stick → down |
+| More sunlight (Boktai) | Right stick → up |
+| Less sunlight (Boktai) | Right stick → down |
 
-Sensors **only work in the games that use them**, so the right stick never interferes with anything else.
+- WarioWare: Twisted!'s **rotation** uses the same directions as tilt left / right.
+- To change one: select it, press **A** and push **either stick** the way you want. You can also pick from the list with left/right, or leave it unassigned with **X**. **START** resets everything.
+- **Tilt sensitivity** (50% to 200%).
+
+Sensors **only work in the games that have them**, so they never interfere with anything else. If you map a sensor to the left stick, in that game the left stick stops moving the D-pad so they don't clash.
 
 The solar sensor, gyroscope and rumble were adapted from current VisualBoyAdvance-M ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+). The sun scale was extended beyond VBA-M's (whose maximum only showed 6 of Boktai's 8 bars).
 

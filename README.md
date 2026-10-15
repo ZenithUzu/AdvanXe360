@@ -127,15 +127,22 @@ Algunos cartuchos de GBA traían hardware extra. El emulador lo reconoce solo, p
 | *Drill Dozer* | Vibración | La vibración pasa al control |
 | *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Sensor de inclinación | Inclinar = **stick derecho** |
 
-En **Ajustes → Controles**, más abajo de los botones, está la sección **Sensores (stick derecho)**:
+En **Ajustes → Controles**, más abajo de los botones, está la sección **Sensores de movimiento**. Cada movimiento se mapea a una dirección de stick, igual que los botones:
 
-- **Izquierda / derecha:** inclinar (Yoshi, Koro Koro) y girar (WarioWare: Twisted!).
-- **Arriba / abajo:** inclinar hacia adelante o atrás.
-- **Luz solar:** hacia qué lado del stick sube el sol en Boktai.
-- Para mapear, elige la opción, presiona **A** y mueve el stick derecho hacia donde quieras (al revés = invertido). También puedes elegir de la lista con izquierda/derecha, o dejarlo sin asignar con **X**.
-- **Sensibilidad** (50 % a 200 %) y **zona muerta**.
+| Movimiento | Por defecto |
+|---|---|
+| Inclinar a la derecha | Stick derecho → derecha |
+| Inclinar a la izquierda | Stick derecho → izquierda |
+| Inclinar hacia arriba | Stick derecho → arriba |
+| Inclinar hacia abajo | Stick derecho → abajo |
+| Más luz solar (Boktai) | Stick derecho → arriba |
+| Menos luz solar (Boktai) | Stick derecho → abajo |
 
-Los sensores **sólo se activan en los juegos que los usan**, así que el stick derecho no interfiere con nada más.
+- El **giro** de WarioWare: Twisted! usa las mismas direcciones que inclinar a la izquierda / derecha.
+- Para cambiar uno: selecciónalo, presiona **A** y mueve **cualquier stick** hacia donde quieras. También puedes elegir de la lista con izquierda/derecha, o dejarlo sin asignar con **X**. **START** restablece todo.
+- **Sensibilidad de inclinación** (50 % a 200 %).
+
+Los sensores **sólo se activan en los juegos que los tienen**, así que no interfieren con nada más. Si mapeas un sensor al stick izquierdo, en ese juego el stick izquierdo deja de mover la cruceta para que no choquen.
 
 El sensor solar, el giroscopio y la vibración se adaptaron de la VisualBoyAdvance-M actual ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+). La escala de sol se amplió respecto a la de VBA-M (que en el nivel máximo solo mostraba 6 de 8 barras en Boktai).
 

@@ -83,6 +83,7 @@ bool g_waitRelease = false;   // ignore the pad until everything is released
 bool g_ffHeld = false;
 int g_ffCounter = 0;
 short g_rightX = 0, g_rightY = 0;
+short g_leftX = 0, g_leftY = 0;
 Filter g_videoFilter = kStretch2x;
 int g_videoStretch = -1;
 UiCanvas *g_menuCanvas = 0;
@@ -335,10 +336,12 @@ public:
     return false;
   }
 
-  virtual void rightStick(int &x, int &y)
+  virtual void sticks(int &lx, int &ly, int &rx, int &ry)
   {
-    x = g_rightX;
-    y = g_rightY;
+    lx = g_leftX;
+    ly = g_leftY;
+    rx = g_rightX;
+    ry = g_rightY;
   }
 
   virtual int cartHardware()
@@ -712,38 +715,60 @@ u8 xboxSunDarkness()
   return kDarkness[level];
 }
 
+// How far the stick direction mapped to a sensor movement is pushed
+// (0..32767, after the dead zone).
+static int sensorAmount(int action)
+{
+  int v = uiStickAmount(g_cfg.sensorMap[action], g_leftX, g_leftY, g_rightX, g_rightY);
+  return v < uiSensorDeadzone[g_cfg.sensorDeadzone] ? 0 : v;
+}
+
+// In a sensor game, a left-stick direction mapped to one of its sensors
+// must not also move the D-pad.
+static bool sensorsUseLeftStick()
+{
+  if (!g_isGba || !g_cartHw)
+    return false;
+  for (int i = 0; i < SENS_COUNT; i++) {
+    bool used = (i <= SENS_TILT_DOWN) ? (g_cartHw & (UI_HW_TILT | UI_HW_GYRO)) != 0
+                                      : (g_cartHw & UI_HW_SOLAR) != 0;
+    if (used && uiStickDirIsLeftStick(g_cfg.sensorMap[i]))
+      return true;
+  }
+  return false;
+}
+
 // Tilt / rotation targets from the right stick, as set in Settings ->
 // Sensors (axis, direction, sensitivity, dead zone). Tilt is centred on
 // 2047 like the cartridge's sensor; rotation is about -360..360.
 void xboxMotionTargets(int &tiltX, int &tiltY, int &gyro)
 {
-  const int dz = uiSensorDeadzone[g_cfg.sensorDeadzone];
   const int pct = uiSensorSensPercent[g_cfg.sensorSens];
-  // Only for the games that have these sensors, so the right stick never
-  // interferes with anything else.
+  // Only for the games that have these sensors, so the sticks never
+  // interfere with anything else.
   const bool tilt = g_isGba && (g_cartHw & UI_HW_TILT);
   const bool rot = g_isGba && (g_cartHw & UI_HW_GYRO);
-  int vx = tilt ? uiAxisValue(g_cfg.tiltXAxis, g_rightX, g_rightY) : 0;
-  int vy = tilt ? uiAxisValue(g_cfg.tiltYAxis, g_rightX, g_rightY) : 0;
-  // Rotation follows the left/right mapping.
-  int vz = rot ? uiAxisValue(g_cfg.tiltXAxis, g_rightX, g_rightY) : 0;
-  if (vx > -dz && vx < dz) vx = 0;
-  if (vy > -dz && vy < dz) vy = 0;
-  if (vz > -dz && vz < dz) vz = 0;
-  tiltX = 2047 - vx * 3 * pct / 32767;
-  tiltY = 2047 - vy * 3 * pct / 32767;
-  gyro = vz * 9 * pct / (5 * 32767);
+  int lr = 0, ud = 0;
+  if (tilt || rot)
+    lr = sensorAmount(SENS_TILT_RIGHT) - sensorAmount(SENS_TILT_LEFT);
+  if (tilt)
+    ud = sensorAmount(SENS_TILT_UP) - sensorAmount(SENS_TILT_DOWN);
+  tiltX = 2047 - (tilt ? lr : 0) * 3 * pct / 32767;
+  tiltY = 2047 - ud * 3 * pct / 32767;
+  // Rotation (WarioWare: Twisted!) follows tilt left / right.
+  gyro = (rot ? lr : 0) * 9 * pct / (5 * 32767);
 }
 
-// Boktai: the sunlight goes up / down with the stick axis chosen in
-// Settings -> Sensors (one step at once, then every quarter second).
+// Boktai: "More sunlight" / "Less sunlight" from Settings > Controls (one
+// step at once, then every quarter second while held), shown on screen.
 static void updateSunFromStick()
 {
   static int repeat = 0;
-  if (!g_isGba || !(g_cartHw & UI_HW_SOLAR) || g_cfg.sunAxis == AXIS_NONE)
+  if (!g_isGba || !(g_cartHw & UI_HW_SOLAR))
     return;
-  int v = uiAxisValue(g_cfg.sunAxis, g_rightX, g_rightY);
-  int dir = v > 16000 ? 1 : (v < -16000 ? -1 : 0);
+  int dir = 0;
+  if (sensorAmount(SENS_SUN_UP) > 16000) dir = 1;
+  else if (sensorAmount(SENS_SUN_DOWN) > 16000) dir = -1;
   if (dir == 0) {
     repeat = 0;
     return;
@@ -917,7 +942,7 @@ u32 xboxReadJoypad()
 {
   if (g_waitRelease)
     return 0;
-  unsigned int pads = xboxReadPads(true);
+  unsigned int pads = xboxReadPads(!sensorsUseLeftStick());
   static const int bits[ACT_GBA_RIGHT + 1] = {
     1, 2, 512, 256, 8, 4,     // A, B, L, R, Start, Select
     64, 128, 32, 16           // Up, Down, Left, Right
@@ -1122,6 +1147,10 @@ unsigned int xboxReadPads(bool includeSticks)
     if (i == 0 || g_rightX == 0) {
       g_rightX = g.sThumbRX;
       g_rightY = g.sThumbRY;
+    }
+    if (i == 0 || g_leftX == 0) {
+      g_leftX = g.sThumbLX;
+      g_leftY = g.sThumbLY;
     }
   }
   return mask;

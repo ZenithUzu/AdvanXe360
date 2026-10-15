@@ -18,7 +18,7 @@ enum
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   A_SOUND = 1, A_MUTE_FF,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
-  SN_TILT_X = 50, SN_TILT_Y, SN_SUN, SN_SENS, SN_DEADZONE, SN_RESET,   // in Controls
+  SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR,
@@ -83,6 +83,20 @@ int borderChoice(const UiConfig &cfg, const std::vector<std::string> &images)
     if (lowerStr(uiStripExtension(images[i])) == "border")
       return (int)i + 1;
   return images.empty() ? 0 : 1;
+}
+
+// "Right stick ->" style label for a sensor mapping.
+std::string uiStickDirName(UiApp &app, int dir)
+{
+  static const char *es[SDIR_COUNT] = { "Sin asignar",
+    "Stick der. \xbb derecha", "Stick der. \xab izquierda", "Stick der. arriba", "Stick der. abajo",
+    "Stick izq. \xbb derecha", "Stick izq. \xab izquierda", "Stick izq. arriba", "Stick izq. abajo" };
+  static const char *en[SDIR_COUNT] = { "Unassigned",
+    "Right stick \xbb right", "Right stick \xab left", "Right stick up", "Right stick down",
+    "Left stick \xbb right", "Left stick \xab left", "Left stick up", "Left stick down" };
+  if (dir < 0 || dir >= SDIR_COUNT)
+    dir = SDIR_NONE;
+  return app.tr(es[dir], en[dir]);
 }
 
 } // namespace
@@ -257,33 +271,33 @@ void UiApp::startStickCapture(int id)
 {
   m_stickCapture = id;
   m_stickCaptureFrames = 0;
-  toast(tr("Mueve el stick derecho hacia donde quieras... (5 s)", "Move the right stick the way you want... (5 s)"), 300);
+  toast(tr("Mueve un stick hacia donde quieras... (5 s)", "Push a stick the way you want... (5 s)"), 300);
 }
 
-// Maps the sensor being captured to the axis and direction the right stick
-// was pushed: right / up = normal, left / down = inverted.
+// Maps the sensor movement being captured to the stick direction pushed
+// furthest (either stick).
 void UiApp::updateStickCapture()
 {
   if (!m_stickCapture)
     return;
-  int x = 0, y = 0;
-  m_host.rightStick(x, y);
-  int ax = x < 0 ? -x : x, ay = y < 0 ? -y : y;
-  int axis = AXIS_NONE;
-  if (ax > 20000 && ax >= ay)
-    axis = x > 0 ? AXIS_RS_X : AXIS_RS_X_INV;
-  else if (ay > 20000)
-    axis = y > 0 ? AXIS_RS_Y : AXIS_RS_Y_INV;
-  if (axis == AXIS_NONE) {
+  int lx = 0, ly = 0, rx = 0, ry = 0;
+  m_host.sticks(lx, ly, rx, ry);
+  int best = SDIR_NONE, bestAmount = 20000;
+  for (int d = SDIR_RS_RIGHT; d < SDIR_COUNT; d++) {
+    int v = uiStickAmount(d, lx, ly, rx, ry);
+    if (v > bestAmount) {
+      bestAmount = v;
+      best = d;
+    }
+  }
+  if (best == SDIR_NONE) {
     if (++m_stickCaptureFrames > 300) {
       m_stickCapture = 0;
-      toast(tr("No se movi\xf3 el stick; sin cambios", "The stick didn't move; nothing changed"));
+      toast(tr("No se movi\xf3 ning\xfan stick; sin cambios", "No stick moved; nothing changed"));
     }
     return;
   }
-  if (m_stickCapture == SN_TILT_X) m_cfg.tiltXAxis = axis;
-  else if (m_stickCapture == SN_TILT_Y) m_cfg.tiltYAxis = axis;
-  else if (m_stickCapture == SN_SUN) m_cfg.sunAxis = axis;
+  m_cfg.sensorMap[m_stickCapture - SN_MAP_BASE] = best;
   m_stickCapture = 0;
   saveAll();
   rebuildMenus();
@@ -731,32 +745,32 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
   }
   m.add(C_RESET, ITEM_ACTION, tr("Restablecer controles", "Reset controls"));
 
-  // Cartridge sensors on the right stick
-  m.addHeader(tr("SENSORES (STICK DERECHO)", "SENSORS (RIGHT STICK)"));
-  const char *axes[AXIS_COUNT] = {
-    tr("Sin asignar", "Unassigned"),
-    tr("Horizontal", "Horizontal"), tr("Horizontal (invertido)", "Horizontal (inverted)"),
-    tr("Vertical", "Vertical"), tr("Vertical (invertido)", "Vertical (inverted)") };
-  const char *capture = tr(" A: mueve el stick derecho hacia donde quieras.", " A: move the right stick the way you want.");
-  m.add(SN_TILT_X, ITEM_OPTION, tr("Izquierda / derecha", "Left / right"), axes[m_cfg.tiltXAxis],
-        std::string(tr("Inclinar (Yoshi, Koro Koro) y girar (WarioWare: Twisted!).",
-                       "Tilt (Yoshi, Koro Koro) and rotate (WarioWare: Twisted!).")) + capture);
-  m.add(SN_TILT_Y, ITEM_OPTION, tr("Arriba / abajo", "Up / down"), axes[m_cfg.tiltYAxis],
-        std::string(tr("Inclinar hacia adelante o atr\xe1s (Yoshi, Koro Koro).",
-                       "Tilt forward or back (Yoshi, Koro Koro).")) + capture);
-  m.add(SN_SUN, ITEM_OPTION, tr("Luz solar", "Sunlight"), axes[m_cfg.sunAxis],
-        std::string(tr("Boktai: hacia ese lado sube el sol.", "Boktai: that way raises the sun.")) + capture);
-  m.addInfo(tr("Los sensores s\xf3lo se activan en los juegos que los usan.",
-               "Sensors only work in the games that use them."));
+  // Cartridge sensors (only active in the games that have them)
+  m.addHeader(tr("SENSORES DE MOVIMIENTO", "MOTION SENSORS"));
+  const char *names[SENS_COUNT][2] = {
+    { "Inclinar a la derecha", "Tilt right" },
+    { "Inclinar a la izquierda", "Tilt left" },
+    { "Inclinar hacia arriba", "Tilt up" },
+    { "Inclinar hacia abajo", "Tilt down" },
+    { "M\xe1s luz solar", "More sunlight" },
+    { "Menos luz solar", "Less sunlight" } };
+  const char *helps[SENS_COUNT][2] = {
+    { "Yoshi y Koro Koro. Tambi\xe9n gira en WarioWare: Twisted!", "Yoshi and Koro Koro. Also turns in WarioWare: Twisted!" },
+    { "Yoshi y Koro Koro. Tambi\xe9n gira en WarioWare: Twisted!", "Yoshi and Koro Koro. Also turns in WarioWare: Twisted!" },
+    { "Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle." },
+    { "Yoshi Topsy-Turvy, Koro Koro Puzzle.", "Yoshi Topsy-Turvy, Koro Koro Puzzle." },
+    { "Boktai: sube el sol (se muestra en pantalla).", "Boktai: raises the sun (shown on screen)." },
+    { "Boktai: baja el sol (se muestra en pantalla).", "Boktai: lowers the sun (shown on screen)." } };
+  int lang = m_cfg.language ? 1 : 0;
+  for (int i = 0; i < SENS_COUNT; i++)
+    m.add(SN_MAP_BASE + i, ITEM_OPTION, names[i][lang], uiStickDirName(*this, m_cfg.sensorMap[i]),
+          std::string(helps[i][lang]) + tr(" A: mueve el stick.", " A: push the stick."));
   char pct[16];
   sprintf(pct, "%d%%", uiSensorSensPercent[m_cfg.sensorSens]);
-  m.add(SN_SENS, ITEM_OPTION, tr("Sensibilidad", "Sensitivity"), pct,
+  m.add(SN_SENS, ITEM_OPTION, tr("Sensibilidad de inclinaci\xf3n", "Tilt sensitivity"), pct,
         tr("Cu\xe1nto inclina o gira con el stick al tope.", "How far it tilts or turns with the stick all the way."));
-  sprintf(pct, "%d%%", (uiSensorDeadzone[m_cfg.sensorDeadzone] * 100 + 16383) / 32767);
-  m.add(SN_DEADZONE, ITEM_OPTION, tr("Zona muerta", "Dead zone"), pct,
-        tr("Movimiento del stick que se ignora (evita que se mueva solo).",
-           "Stick movement that is ignored (stops drifting)."));
-  m.add(SN_RESET, ITEM_ACTION, tr("Restablecer sensores", "Reset sensors"));
+  m.addInfo(tr("S\xf3lo funcionan en los juegos que tienen esos sensores.",
+               "They only work in the games that have those sensors."));
 }
 
 void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
@@ -900,20 +914,10 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     return;
 
   case MENU_CONTROLS:
-    if (id == SN_TILT_X || id == SN_TILT_Y || id == SN_SUN) {
+    if (id >= SN_MAP_BASE && id < SN_MAP_BASE + SENS_COUNT) {
       startStickCapture(id);
-    } else if (id == SN_SENS || id == SN_DEADZONE) {
+    } else if (id == SN_SENS) {
       onMenuChange(m, id, 1);
-    } else if (id == SN_RESET) {
-      UiConfig def;
-      m_cfg.tiltXAxis = def.tiltXAxis;
-      m_cfg.tiltYAxis = def.tiltYAxis;
-      m_cfg.sunAxis = def.sunAxis;
-      m_cfg.sensorSens = def.sensorSens;
-      m_cfg.sensorDeadzone = def.sensorDeadzone;
-      saveAll();
-      rebuildMenus();
-      toast(tr("Sensores restablecidos", "Sensors reset"));
     } else if (id == C_RESET) {
       openConfirm(tr("\xbfRestablecer todos los controles?", "Reset all controls?"), CONFIRM_RESET_CONTROLS, "");
     } else if (id >= C_ACTION_BASE) {
@@ -1017,12 +1021,12 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_HIDE) m_cfg.hideNonGames ^= 1;
     break;
   case MENU_CONTROLS:
-    if (id == SN_TILT_X) m_cfg.tiltXAxis = wrapIndex(m_cfg.tiltXAxis, delta, AXIS_COUNT);
-    else if (id == SN_TILT_Y) m_cfg.tiltYAxis = wrapIndex(m_cfg.tiltYAxis, delta, AXIS_COUNT);
-    else if (id == SN_SUN) m_cfg.sunAxis = wrapIndex(m_cfg.sunAxis, delta, AXIS_COUNT);
-    else if (id == SN_SENS) m_cfg.sensorSens = wrapIndex(m_cfg.sensorSens, delta, SENSOR_SENS_COUNT);
-    else if (id == SN_DEADZONE) m_cfg.sensorDeadzone = wrapIndex(m_cfg.sensorDeadzone, delta, SENSOR_DEADZONE_COUNT);
-    else if (id >= C_ACTION_BASE) {
+    if (id >= SN_MAP_BASE && id < SN_MAP_BASE + SENS_COUNT) {
+      int &d = m_cfg.sensorMap[id - SN_MAP_BASE];
+      d = wrapIndex(d, delta, SDIR_COUNT);
+    } else if (id == SN_SENS) {
+      m_cfg.sensorSens = wrapIndex(m_cfg.sensorSens, delta, SENSOR_SENS_COUNT);
+    } else if (id >= C_ACTION_BASE) {
       int a = id - C_ACTION_BASE;
       // cycle through every button plus "unassigned"
       m_cfg.map[a] = wrapIndex(m_cfg.map[a], delta, PAD_BUTTON_COUNT + 1);
@@ -1059,10 +1063,8 @@ void UiApp::onMenuSecondary(UiMenuScreen &m, int id, int button)
       m_cfg.map[id - C_ACTION_BASE] = PAD_NONE;
       rebuildMenus();
       m_host.applySettings();
-    } else if (button == PAD_X && (id == SN_TILT_X || id == SN_TILT_Y || id == SN_SUN)) {
-      if (id == SN_TILT_X) m_cfg.tiltXAxis = AXIS_NONE;
-      else if (id == SN_TILT_Y) m_cfg.tiltYAxis = AXIS_NONE;
-      else m_cfg.sunAxis = AXIS_NONE;
+    } else if (button == PAD_X && id >= SN_MAP_BASE && id < SN_MAP_BASE + SENS_COUNT) {
+      m_cfg.sensorMap[id - SN_MAP_BASE] = SDIR_NONE;
       rebuildMenus();
       m_host.applySettings();
     } else if (button == PAD_START) {

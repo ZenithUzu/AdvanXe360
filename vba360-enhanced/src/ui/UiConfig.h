@@ -37,9 +37,17 @@ enum UiBorderFit { FIT_CENTER = 0, FIT_FILL, FIT_STRETCH, FIT_COUNT };
 // Screen effect drawn over the game picture.
 enum UiScreenEffect { EFFECT_NONE = 0, EFFECT_SCANLINES, EFFECT_GRID, EFFECT_COUNT };
 // Where a cartridge sensor reads from: right stick axis, optionally inverted.
-enum UiAxis { AXIS_NONE = 0, AXIS_RS_X, AXIS_RS_X_INV, AXIS_RS_Y, AXIS_RS_Y_INV, AXIS_COUNT };
-// Signed axis value (-32767..32767) for raw right stick x/y (y up = +).
-int uiAxisValue(int axis, int x, int y);
+// A stick direction a cartridge sensor movement is mapped to.
+enum UiStickDir { SDIR_NONE = 0, SDIR_RS_RIGHT, SDIR_RS_LEFT, SDIR_RS_UP, SDIR_RS_DOWN,
+                  SDIR_LS_RIGHT, SDIR_LS_LEFT, SDIR_LS_UP, SDIR_LS_DOWN, SDIR_COUNT };
+// Sensor movements that can be mapped (Settings > Controls). Left/right
+// tilt also turns WarioWare: Twisted!'s rotation sensor.
+enum UiSensorAction { SENS_TILT_RIGHT = 0, SENS_TILT_LEFT, SENS_TILT_UP, SENS_TILT_DOWN,
+                      SENS_SUN_UP, SENS_SUN_DOWN, SENS_COUNT };
+// How far (0..32767) a stick is pushed in a direction; sticks are raw
+// XInput values (y up = +).
+int uiStickAmount(int dir, int lx, int ly, int rx, int ry);
+inline bool uiStickDirIsLeftStick(int dir) { return dir >= SDIR_LS_RIGHT && dir <= SDIR_LS_DOWN; }
 enum { SENSOR_SENS_COUNT = 5, SENSOR_DEADZONE_COUNT = 4 };
 extern const int uiSensorSensPercent[SENSOR_SENS_COUNT];     // 50 .. 200
 extern const int uiSensorDeadzone[SENSOR_DEADZONE_COUNT];    // raw stick units
@@ -84,9 +92,7 @@ struct UiConfig
   int sunLevel;          // Boktai solar sensor: 0 = dark ... 10 = full sun
 
   // Sensors (right stick)
-  int tiltXAxis;         // UiAxis for left/right: tilt (Yoshi, Koro Koro) and rotation (WarioWare)
-  int tiltYAxis;         // UiAxis for up/down: tilt forward/back
-  int sunAxis;           // UiAxis that raises/lowers the sunlight (Boktai)
+  int sensorMap[SENS_COUNT];   // UiStickDir for every sensor movement
   int sensorSens;        // index into uiSensorSensPercent
   int sensorDeadzone;    // index into uiSensorDeadzone
 
@@ -105,7 +111,7 @@ struct UiConfig
   int map[ACT_COUNT];
 
   UiConfig();
-  void resetControls();
+  void resetControls();   // buttons and sensors
   bool load(const std::string &path);
   bool save(const std::string &path) const;
 };
