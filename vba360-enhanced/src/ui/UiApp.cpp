@@ -760,21 +760,69 @@ void UiApp::buildMenu(UiMenuScreen &m)
   case MENU_ABOUT:
     m.title = tr("Acerca de", "About");
     m.subtitle = "VBA360 enhanced-ai";
-    m.addInfo(tr("Emulador de Game Boy Advance, Game Boy y Game Boy Color.",
-                 "Game Boy Advance, Game Boy and Game Boy Color emulator."));
-    m.addInfo(tr("GB y GBC con el n\xfa""cleo Gambatte, con marcos de Super Game Boy.",
-                 "GB and GBC on the Gambatte core, with Super Game Boy borders."));
-    m.addInfo(tr("No emula Classic NES Series ni accesorios como el e-Reader.",
-                 "No Classic NES Series or add-ons such as the e-Reader."));
+    m.addInfo(tr("Emulador de Game Boy Advance, Game Boy y Game Boy Color para Xbox 360.",
+                 "Game Boy Advance, Game Boy and Game Boy Color emulator for the Xbox 360."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA. Licencia GPL.",
                  "Hobby project, made with the help of AI. GPL license."));
     m.addInfo(tr("Men\xfa en juego: clic del stick derecho (configurable en Controles).",
                  "In-game menu: right stick click (configurable in Controls)."));
+    {
+      // Selectable rows, so the list can scroll through them: what (es, en),
+      // short answer (es, en), details (es, en).
+      static const char *const yes[][6] = {
+        { "Game Boy Advance", "Game Boy Advance", "VBA-M + VBA-Next", "VBA-M + VBA-Next",
+          "Guardado EEPROM, SRAM y Flash, reloj (Pok\xe9mon), parches .ips/.ups/.bps.",
+          "EEPROM, SRAM and Flash saves, clock (Pokemon), .ips/.ups/.bps patches." },
+        { "Classic NES Series / Famicom Mini", "Classic NES Series / Famicom Mini", "S\xed, ya arrancan", "Yes, they start now",
+          "Los juegos de NES para GBA (Super Mario Bros., Zelda, Metroid...).",
+          "The NES games for GBA (Super Mario Bros., Zelda, Metroid...)." },
+        { "Sensores de GBA", "GBA sensors", "Con el stick derecho", "On the right stick",
+          "Inclinaci\xf3n (Yoshi, Koro Koro), giroscopio (WarioWare: Twisted!) y sol (Boktai).",
+          "Tilt (Yoshi, Koro Koro), gyroscope (WarioWare: Twisted!) and sun (Boktai)." },
+        { "Vibraci\xf3n", "Rumble", "En el control", "On the controller",
+          "Drill Dozer, WarioWare: Twisted! y los cartuchos de GB/GBC con vibraci\xf3n.",
+          "Drill Dozer, WarioWare: Twisted! and GB/GBC carts with rumble." },
+        { "Game Boy y Game Boy Color", "Game Boy and Game Boy Color", "Gambatte", "Gambatte",
+          "Tambi\xe9n los juegos s\xf3lo de Color, con reloj (Pok\xe9mon Oro/Plata/Cristal).",
+          "Color-only games too, with clock (Pokemon Gold/Silver/Crystal)." },
+        { "Super Game Boy", "Super Game Boy", "Marcos y colores", "Borders and colors",
+          "El marco y las paletas que tra\xed""a cada juego.", "The border and palettes each game came with." },
+        { "Kirby Tilt 'n' Tumble (GBC)", "Kirby Tilt 'n' Tumble (GBC)", "S\xed, con el stick", "Yes, on the stick",
+          "Cartucho MBC7: sensor de inclinaci\xf3n y memoria EEPROM.",
+          "MBC7 cartridge: tilt sensor and EEPROM memory." },
+        { "Extras", "Extras", "", "",
+          "Estados, trucos, efectos CRT y LCD, mezcla de cuadros, correcci\xf3n de color y temas.",
+          "States, cheats, CRT and LCD effects, frame blending, color correction and themes." },
+      };
+      static const char *const no[][6] = {
+        { "Cable link y adaptador inal\xe1mbrico", "Link cable and wireless adapter", "No", "No",
+          "Multijugador e intercambios, en GBA y en GB/GBC.", "Multiplayer and trading, on GBA and on GB/GBC." },
+        { "e-Reader", "e-Reader", "No", "No", "Ni el lector ni sus tarjetas.", "Neither the reader nor its cards." },
+        { "Game Boy Camera y Game Boy Printer", "Game Boy Camera and Game Boy Printer", "No", "No",
+          "Los juegos de la c\xe1mara no arrancan; la impresora no se emula.",
+          "Camera games don't start; the printer isn't emulated." },
+        { "Infrarrojo del Game Boy Color", "Game Boy Color infrared", "No", "No",
+          "Los intercambios por infrarrojo (Pok\xe9mon Cristal, Mystery Gift...).",
+          "Infrared trading (Pokemon Crystal, Mystery Gift...)." },
+        { "Bandai TAMA5 (Tamagotchi)", "Bandai TAMA5 (Tamagotchi)", "No", "No",
+          "Cartucho especial de Game Boy.", "Special Game Boy cartridge." },
+        { "Super Game Boy completo", "Full Super Game Boy", "Parcial", "Partial",
+          "Sin marco gen\xe9rico, animaci\xf3n ni sonidos de arranque, ni sonido extra.",
+          "No generic border, boot animation or sounds, or extra sound." },
+      };
+      int lang = m_cfg.language ? 1 : 0;
+      m.addHeader(tr("Qu\xe9 emula", "What it emulates"));
+      for (size_t i = 0; i < sizeof(yes) / sizeof(yes[0]); i++)
+        m.add(100 + (int)i, ITEM_ACTION, yes[i][lang], yes[i][2 + lang], yes[i][4 + lang]);
+      m.addHeader(tr("Qu\xe9 no emula (todav\xed""a)", "What it doesn't emulate (yet)"));
+      for (size_t i = 0; i < sizeof(no) / sizeof(no[0]); i++)
+        m.add(200 + (int)i, ITEM_ACTION, no[i][lang], no[i][2 + lang], no[i][4 + lang]);
+    }
     m.addHeader(tr("Cr\xe9""ditos", "Credits"));
     {
       // role (es, en), who, details (es, en)
       static const char *const credits[][5] = {
-        { "Este fork", "This fork", "Axel (axelconde7w7-gif)",
+        { "Este fork", "This fork", "ZenithUzu (ZenithARC)",
           "Idea, pruebas en consola, compilaci\xf3n y capturas.", "Idea, console testing, builds and screenshots." },
         { "Programaci\xf3n con IA", "AI programming", "Claude (Anthropic)",
           "Cambios de c\xf3""digo y documentaci\xf3n de este fork.", "Code changes and documentation of this fork." },
@@ -791,9 +839,14 @@ void UiApp::buildMenu(UiMenuScreen &m)
         { "Super Game Boy y MBC7", "Super Game Boy and MBC7", "SameBoy (Lior Halphon)",
           "Marcos, colores y el cartucho de Kirby Tilt 'n' Tumble (licencia MIT).",
           "Borders, colors and the Kirby Tilt 'n' Tumble cartridge (MIT license)." },
-        { "Mejoras del n\xfa""cleo de GBA", "GBA core improvements", "VBA-Next (libretro)",
-          "Dibujo por bloques, fondos rotados y arreglos de memoria (GPL v2).",
-          "Tiled drawing, rotation backgrounds and memory fixes (GPL v2)." },
+        { "Mejoras del n\xfa""cleo de GBA", "GBA core improvements", "VBA-Next (libretro, Squarepusher)",
+          "Dibujo por bloques, fondos rotados y arreglos que hacen arrancar Classic NES Series (GPL v2).",
+          "Tiled drawing, rotation backgrounds and the fixes that make Classic NES Series start (GPL v2)." },
+        { "Correcci\xf3n de color de GBA", "GBA color correction", "Pokefan531",
+          "F\xf3rmulas del shader gba-color (libretro).", "Math from the gba-color shader (libretro)." },
+        { "Pruebas del n\xfa""cleo", "Core tests", "jsmolka, Blargg, Matt Currie",
+          "gba-tests, cpu_instrs y dmg/cgb-acid2 para comprobar los cambios.",
+          "gba-tests, cpu_instrs and dmg/cgb-acid2 used to check the changes." },
         { "Sensores del cartucho", "Cartridge sensors", "Equipo de VBA-M",
           "Sensor solar, giroscopio y vibraci\xf3n, de la VBA-M actual.",
           "Solar sensor, gyroscope and rumble, from current VBA-M." },

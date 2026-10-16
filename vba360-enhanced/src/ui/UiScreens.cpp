@@ -1063,22 +1063,23 @@ void UiMenuScreen::draw(UiApp &app, UiCanvas &c)
       int vw = c.textWidth(UI_FONT_BODY, it.value.c_str());
       int right = x + w - 24;
       UiColor vc = sel ? 0xFFFFFFFF : UI_COL_TEXT_DIM;
-      if (sel) drawArrow(c, right - 8, ry + rh / 2, 7, true, UI_COL_ACCENT);
+      UiColor ac = UI_THEME_STYLE == THEME_AERO ? 0xFFFFFFFF : UI_COL_ACCENT;   // on the glossy pill
+      if (sel) drawArrow(c, right - 8, ry + rh / 2, 7, true, ac);
       c.drawText(UI_FONT_BODY, right - 18 - vw, ry + 10, it.value.c_str(), vc);
-      if (sel) drawArrow(c, right - 36 - vw, ry + rh / 2, 7, false, UI_COL_ACCENT);
+      if (sel) drawArrow(c, right - 36 - vw, ry + rh / 2, 7, false, ac);
       valueW = vw + 60;
     } else if (it.kind == ITEM_SUBMENU) {
       drawArrow(c, x + w - 30, ry + rh / 2, 7, true, sel ? UI_COL_TEXT : UI_COL_TEXT_DIM);
       if (!it.value.empty()) {
         int vw = c.textWidth(UI_FONT_SMALL, it.value.c_str());
-        c.drawText(UI_FONT_SMALL, x + w - 48 - vw, ry + 14, it.value.c_str(), UI_COL_TEXT_DIM);
+        c.drawText(UI_FONT_SMALL, x + w - 48 - vw, ry + 14, it.value.c_str(), sel ? UI_COL_TEXT : UI_COL_TEXT_DIM);
         valueW = vw + 60;
       } else {
         valueW = 40;
       }
     } else if (!it.value.empty()) {
       int vw = c.textWidth(UI_FONT_SMALL, it.value.c_str());
-      c.drawText(UI_FONT_SMALL, x + w - 24 - vw, ry + 14, it.value.c_str(), UI_COL_TEXT_DIM);
+      c.drawText(UI_FONT_SMALL, x + w - 24 - vw, ry + 14, it.value.c_str(), sel ? UI_COL_TEXT : UI_COL_TEXT_DIM);
       valueW = vw + 36;
     }
     c.drawTextFit(UI_FONT_BODY, x + 20, ry + 10, w - 40 - valueW, it.label.c_str(), tc);

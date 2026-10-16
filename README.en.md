@@ -7,7 +7,7 @@
 > 🆕 **New:** **Game Boy and Game Boy Color** games now run on the **Gambatte** core (Color-only games too, such as Pokémon Crystal), and Super Game Boy games can show **their border** and colors. Each game can have **its own picture settings** (Y button).
 Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
-**[⬇️ Download the latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
+**[⬇️ Download the latest release](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest)**
 
 > 🤖 **Notice:** the changes in this fork were made with the help of artificial intelligence (Claude, by Anthropic). I maintain it as a **hobby**, non-commercial and with no warranty of any kind.
 
@@ -15,7 +15,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 
 ## Install
 
-1. Download the `.zip` from the [latest release](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest).
+1. Download the `.zip` from the [latest release](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest).
 2. Copy the `VBA360` folder to your console (for example `Hdd1:\Emulators\VBA360\`) over FTP or USB.
 3. Launch it from Aurora (`default.xex`). The other folders are created automatically.
 4. Put your ROMs anywhere (hard drive or USB) and browse to them from the emulator.
@@ -53,7 +53,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 **Faster, more compatible GBA core** (improvements taken from [VBA-Next](https://github.com/libretro/vba-next))
 - Backgrounds are drawn 8 pixels at a time instead of one by one, and rotation backgrounds that are not turning use a fast path. The picture is **identical** to before (compared frame by frame); background drawing takes about 60% fewer operations.
 - The project builds with the Xbox 360 compiler speed options VBA-Next used.
-- Fixes: the save memory also answers at its mirror address (0x0F000000) and with the byte repeated on 16/32-bit reads, as on the console; unaligned VRAM reads; multiply timing; Thumb rotate by 32.
+- Fixes: the save memory also answers at its mirror address (0x0F000000) and with the byte repeated on 16/32-bit reads, as on the console; unaligned VRAM reads; multiply timing; Thumb rotate by 32. With these fixes the **Classic NES Series / Famicom Mini** games now start.
 
 **Cheats**
 - They are in **Game options** (Y button on a game, or *Options for this game* in the in-game menu) → **Cheats and codes**. The emulator knows whether the game is GBA or GB/GBC and offers the matching types:
@@ -179,7 +179,7 @@ Game Boy and Game Boy Color games run on **Gambatte**, a very accurate core by S
 - **Saves:** the `.sav` is the cartridge memory as is, so saves from other emulators work. On carts with a clock (Pokémon Gold/Silver/Crystal) the clock is stored at the end of the same file. **Save states** made with earlier versions of the emulator don't load for Game Boy games.
 - **Cheats:** GameShark (`01XXXXXX`) and Game Genie (`XXX-XXX-XXX`).
 - **BIOS (optional):** with *Real BIOS* on, `bios\gb_bios.bin` (256 bytes) and `bios\gbc_bios.bin` (2304 bytes) show the boot logo. Without them games start directly.
-- A few carts with special hardware that Gambatte doesn't emulate, such as *Kirby Tilt 'n' Tumble* (tilt sensor) or the *Game Boy Camera*, don't work yet.
+- *Kirby Tilt 'n' Tumble* (MBC7 cart with a tilt sensor) now works: tilt it with the right stick. The *Game Boy Camera* and Bandai's *TAMA5* cart (Tamagotchi) still don't work.
 
 ## Super Game Boy
 
@@ -221,9 +221,11 @@ The **`vba360.log`** file (next to `default.xex`) records what happens in each s
 
 - **Super Game Boy:** the console's generic border, the boot animation and jingle, and the extra sound a few games used are not included.
 - **Game Boy Color (new):** Gambatte support is recent; if a game fails, please open an *issue*.
-- **Some GBA games that need add-ons don't work:**
-  - **Classic NES Series / Famicom Mini** (the NES games for GBA, such as *Super Mario Bros.*): they use special protections and don't start.
-  - Accessories such as the **e-Reader** or the link cable are not emulated either.
+- **Classic NES Series / Famicom Mini** (the NES games for GBA, such as *Super Mario Bros.* or *Zelda*): **they now start**, thanks to the memory fixes taken from VBA-Next.
+- **Not emulated (yet):**
+  - **Link cable** and **wireless adapter** (multiplayer and trading), on GBA and on GB/GBC.
+  - **e-Reader** and its cards, **Game Boy Camera**, **Game Boy Printer** and the Game Boy Color's **infrared**.
+  - Bandai's **TAMA5** Game Boy cartridge (Tamagotchi).
 
 ## Known issues
 
@@ -240,13 +242,15 @@ Tested on console (BadUpdate + Aurora). Work in progress: if you find bugs, plea
 - **Original emulator authors:** Forgotten (VisualBoyAdvance) and the **VBA-M team**, plus the **VBA-GX** team, whose code the port uses.
 - **Original Xbox 360 port:** the authors of **VBA360** and the **libSDLx360** library, with support from **Team Avalaunch** and **Team XeLove**.
 - **vba360-enhanced fork:** [**frankischilling**](https://github.com/frankischilling), who fixed the port's build and whose work this project is based on.
-- **This fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, console testing, builds and screenshots.
+- **This fork (vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu). Idea, console testing, builds and screenshots.
 - **AI programming:** **Claude** (by [Anthropic](https://www.anthropic.com)). Wrote the code changes and documentation of this fork.
 - **Interface font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL OFL license).
 - **Screen effects:** adapted from [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* by Greg Hogan (GPL v2+) for CRT and *lcd3x* by Gigaherz (public domain) for LCD.
 - **Game Boy and Game Boy Color core:** [Gambatte](https://github.com/libretro/gambatte-libretro), by **Sindre Aamås** and the gambatte-libretro contributors (libretro), GPL v2. Details of the version used in [`src/gambatte/README-VBA360.txt`](vba360-enhanced/src/gambatte/README-VBA360.txt).
 - **Super Game Boy and MBC7 cartridges:** borders, colors, accelerometer and EEPROM adapted from [SameBoy](https://github.com/LIJI32/SameBoy), by **Lior Halphon** (MIT license).
-- **GBA core improvements:** tiled drawing, fast path for rotation backgrounds, compiler options and memory fixes taken from [VBA-Next](https://github.com/libretro/vba-next) (libretro, GPL v2).
+- **GBA core improvements:** tiled drawing, fast path for rotation backgrounds, compiler options and the memory fixes that make Classic NES Series start, taken from [VBA-Next](https://github.com/libretro/vba-next) (libretro, maintained by **Squarepusher / twinaphex**, GPL v2).
+- **GBA color correction:** math from **Pokefan531**'s *gba-color* shader (libretro).
+- **Core tests:** [gba-tests](https://github.com/jsmolka/gba-tests) by **jsmolka**, **Blargg**'s *cpu_instrs* and [dmg-acid2 / cgb-acid2](https://github.com/mattcurrie/dmg-acid2) by **Matt Currie**, used to check that the changes don't break anything.
 - **Game Boy palettes:** from the same Gambatte core: original Game Boy, Pocket, Light, the 32 Super Game Boy presets and the Game Boy Color's automatic palettes.
 - **Cartridge sensors** (sun, gyroscope, rumble): adapted from [current VisualBoyAdvance-M](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
 - **Game Boy sound and archive reading:** Gb_Apu, Blip_Buffer and File_Extractor by Shay Green (blargg).

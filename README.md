@@ -7,7 +7,7 @@ Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homeb
 > 🆕 **Novedades:** los juegos de **Game Boy y Game Boy Color** corren ahora en el núcleo **Gambatte** (también los que son solo de Color, como Pokémon Cristal), y los juegos de Super Game Boy pueden mostrar **su marco** y sus colores. Cada juego puede tener **su propia configuración de imagen** (botón Y).
 Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
 
-**[⬇️ Descargar la última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest)**
+**[⬇️ Descargar la última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest)**
 
 > 🤖 **Aviso:** los cambios de este fork fueron hechos con ayuda de inteligencia artificial (Claude, de Anthropic). Lo mantengo por **pasatiempo**, sin fines de lucro y sin ninguna garantía.
 
@@ -15,7 +15,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 
 ## Instalación
 
-1. Descarga el `.zip` de la [última versión](https://github.com/axelconde7w7-gif/vba360-enhanced-ai/releases/latest).
+1. Descarga el `.zip` de la [última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest).
 2. Copia la carpeta `VBA360` a tu consola (por ejemplo `Hdd1:\Emulators\VBA360\`) por FTP o USB.
 3. Ábrela desde Aurora (`default.xex`). Las demás carpetas se crean solas.
 4. Pon tus ROMs donde quieras (disco duro o USB) y búscalas desde el explorador del emulador.
@@ -53,7 +53,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 **Núcleo de GBA más rápido y compatible** (mejoras tomadas de [VBA-Next](https://github.com/libretro/vba-next))
 - Los fondos se dibujan de 8 en 8 píxeles en vez de uno por uno, y los fondos con rotación que no están girando usan un camino rápido. La imagen es **idéntica** a la de antes (comparada cuadro por cuadro); el dibujo de fondos hace unas 60 % menos operaciones.
 - El proyecto compila con las opciones de velocidad del compilador de Xbox 360 que usaba VBA-Next.
-- Arreglos: la memoria de guardado también responde en su dirección espejo (0x0F000000) y con el valor repetido en lecturas de 16/32 bits, como en la consola; lecturas desalineadas de VRAM; tiempo de las multiplicaciones; rotación de 32 bits en Thumb.
+- Arreglos: la memoria de guardado también responde en su dirección espejo (0x0F000000) y con el valor repetido en lecturas de 16/32 bits, como en la consola; lecturas desalineadas de VRAM; tiempo de las multiplicaciones; rotación de 32 bits en Thumb. Con estos arreglos ya arrancan los juegos de **Classic NES Series / Famicom Mini**.
 
 **Trucos**
 - Están en **Opciones del juego** (botón Y sobre un juego, o *Opciones de este juego* en el menú dentro del juego) → **Trucos y códigos**. El emulador sabe si el juego es de GBA o de GB/GBC y ofrece los tipos que corresponden:
@@ -179,7 +179,7 @@ Los juegos de Game Boy y Game Boy Color corren en **Gambatte**, un núcleo muy p
 - **Guardado:** el `.sav` es la memoria del cartucho tal cual, así que sirven las partidas de otros emuladores. En los cartuchos con reloj (Pokémon Oro/Plata/Cristal) el reloj se guarda al final del mismo archivo. Los **estados** guardados con versiones anteriores del emulador no sirven para los juegos de Game Boy.
 - **Trucos:** GameShark (`01XXXXXX`) y Game Genie (`XXX-XXX-XXX`).
 - **BIOS (opcional):** con *BIOS original* activado, `bios\gb_bios.bin` (256 bytes) y `bios\gbc_bios.bin` (2304 bytes) muestran el logo de arranque. Sin ellas los juegos arrancan directo.
-- Unos pocos cartuchos con hardware especial que Gambatte no emula, como *Kirby Tilt 'n' Tumble* (sensor de inclinación) o la *Game Boy Camera*, todavía no funcionan.
+- *Kirby Tilt 'n' Tumble* (cartucho MBC7 con sensor de inclinación) ya funciona: se inclina con el stick derecho. Siguen sin funcionar la *Game Boy Camera* y el cartucho *TAMA5* de Bandai (Tamagotchi).
 
 ## Super Game Boy
 
@@ -221,9 +221,11 @@ El archivo **`vba360.log`** (junto a `default.xex`) registra lo que pasa en cada
 
 - **Super Game Boy:** no se incluye el marco genérico de la consola, ni la animación y el sonido de arranque, ni el sonido extra que usaban unos pocos juegos.
 - **Game Boy Color (nuevo):** el soporte con Gambatte es reciente; si un juego falla, abre un *issue*.
-- **Parte de los juegos de GBA que requieren aditamentos no funcionan:**
-  - **Classic NES Series / Famicom Mini** (los juegos de NES para GBA, como *Super Mario Bros.*): usan protecciones especiales y no arrancan.
-  - Accesorios como el **e-Reader** o el cable link tampoco se emulan.
+- **Classic NES Series / Famicom Mini** (los juegos de NES para GBA, como *Super Mario Bros.* o *Zelda*): **ya arrancan** gracias a los arreglos de memoria tomados de VBA-Next.
+- **No se emula (todavía):**
+  - **Cable link** y **adaptador inalámbrico** (multijugador e intercambios), ni en GBA ni en GB/GBC.
+  - **e-Reader** y sus tarjetas, **Game Boy Camera**, **Game Boy Printer** e **infrarrojo** del Game Boy Color.
+  - El cartucho **TAMA5** de Bandai (Tamagotchi) de Game Boy.
 
 ## Errores conocidos
 
@@ -240,13 +242,15 @@ Probado en consola (BadUpdate + Aurora). Proyecto en desarrollo: si encuentras e
 - **Autores originales del emulador:** Forgotten (VisualBoyAdvance) y el **equipo de VBA-M**, además del equipo de **VBA-GX**, cuyo código usa el port.
 - **Port original a Xbox 360:** los autores de **VBA360** y la librería **libSDLx360**, con apoyo de **Team Avalaunch** y **Team XeLove**.
 - **Fork vba360-enhanced:** [**frankischilling**](https://github.com/frankischilling), que arregló la compilación del port y es la base de este proyecto.
-- **Este fork (vba360-enhanced-ai):** [**Axel** (axelconde7w7-gif)](https://github.com/axelconde7w7-gif). Idea, pruebas en consola, compilación y capturas.
+- **Este fork (vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu). Idea, pruebas en consola, compilación y capturas.
 - **Programación con IA:** **Claude** (de [Anthropic](https://www.anthropic.com)). Escribió los cambios de código y la documentación de este fork.
 - **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
 - **Efectos de pantalla:** adaptados de [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* de Greg Hogan (GPL v2+) para CRT y *lcd3x* de Gigaherz (dominio público) para LCD.
 - **Núcleo de Game Boy y Game Boy Color:** [Gambatte](https://github.com/libretro/gambatte-libretro), de **Sindre Aamås** y los colaboradores de gambatte-libretro (libretro), GPL v2. Detalles de la versión usada en [`src/gambatte/README-VBA360.txt`](vba360-enhanced/src/gambatte/README-VBA360.txt).
 - **Super Game Boy y cartuchos MBC7:** marcos, colores, acelerómetro y EEPROM adaptados de [SameBoy](https://github.com/LIJI32/SameBoy), de **Lior Halphon** (licencia MIT).
-- **Mejoras del núcleo de GBA:** dibujo por bloques, camino rápido de fondos rotados, opciones del compilador y arreglos de memoria tomados de [VBA-Next](https://github.com/libretro/vba-next) (libretro, GPL v2).
+- **Mejoras del núcleo de GBA:** dibujo por bloques, camino rápido de fondos rotados, opciones del compilador y los arreglos de memoria que hacen arrancar Classic NES Series, tomados de [VBA-Next](https://github.com/libretro/vba-next) (libretro, mantenido por **Squarepusher / twinaphex**, GPL v2).
+- **Corrección de color de GBA:** fórmulas del shader *gba-color* de **Pokefan531** (libretro).
+- **Pruebas del núcleo:** [gba-tests](https://github.com/jsmolka/gba-tests) de **jsmolka**, *cpu_instrs* de **Blargg** y [dmg-acid2 / cgb-acid2](https://github.com/mattcurrie/dmg-acid2) de **Matt Currie**, usadas para comprobar que los cambios no rompen nada.
 - **Paletas de Game Boy:** tomadas del mismo core Gambatte: Game Boy original, Pocket, Light, las 32 de Super Game Boy y las automáticas del Game Boy Color.
 - **Sensores del cartucho** (sol, giroscopio, vibración): adaptados de la [VisualBoyAdvance-M actual](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
 - **Sonido de Game Boy y lectura de archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de Shay Green (blargg).
