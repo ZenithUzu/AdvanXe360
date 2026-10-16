@@ -1083,7 +1083,9 @@ void sdlInitVideo() {
   // Picture position on the TV (size setting) and screen effect.
   xboxSetupPicture(srcWidth, srcHeight);
 
+  fprintf(stdout, "Video mode %dx%d (picture %dx%d)\n", screenWidth, screenHeight, srcWidth, srcHeight);
   surface = SDL_SetVideoMode(screenWidth, screenHeight, 0, flags);
+  SDL_ShowCursor(SDL_DISABLE);
 
   if(surface == NULL) {
     systemMessage(0, "Failed to set video mode");
@@ -1609,6 +1611,9 @@ int gba_main(char *path, char *fname)
       sdl_patch_num++;
     } */
 
+    // Step markers in vba360.log: if something fails while a game starts,
+    // the last one shows where.
+    fprintf(stdout, "Sound init\n");
     soundInit();
 
     bool failed = false;
@@ -1747,10 +1752,14 @@ int gba_main(char *path, char *fname)
   int flags = SDL_INIT_VIDEO|SDL_INIT_AUDIO|
     SDL_INIT_TIMER|SDL_INIT_NOPARACHUTE;
 
+  fprintf(stdout, "SDL init\n");
   if(SDL_Init(flags)) {
     systemMessage(0, "Failed to init SDL: %s", SDL_GetError());
     exit(-1);
   }
+  // No mouse on the Xbox: SDL's software cursor showed up in the top-left
+  // corner while a game started.
+  SDL_ShowCursor(SDL_DISABLE);
 
   if(SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
     systemMessage(0, "Failed to init joystick support: %s", SDL_GetError());

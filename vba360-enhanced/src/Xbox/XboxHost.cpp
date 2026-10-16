@@ -336,6 +336,8 @@ void saveFrameThumb(const std::string &path)
 
 // --- The UiHost implementation ------------------------------------------------
 
+static int specialCartHw(const char *code3);   // below
+
 class XboxHost : public UiHost
 {
 public:
@@ -464,8 +466,17 @@ public:
   virtual int romInfo(const std::string &rom)
   {
     std::string ext = uiExtension(rom);
-    if (ext == ".gba" || ext == ".agb" || ext == ".bin" || ext == ".elf" || ext == ".mb")
-      return 0;
+    if (ext == ".gba" || ext == ".agb" || ext == ".bin" || ext == ".elf" || ext == ".mb") {
+      // Sensor cartridges, from the game code in the header.
+      unsigned char code[3];
+      FILE *f = fopen(rom.c_str(), "rb");
+      if (!f)
+        return 0;
+      bool ok = fseek(f, 0xAC, SEEK_SET) == 0 && fread(code, 1, 3, f) == 3;
+      fclose(f);
+      char c3[4] = { (char)code[0], (char)code[1], (char)code[2], 0 };
+      return ok && (specialCartHw(c3) & (UI_HW_SOLAR | UI_HW_GYRO | UI_HW_TILT)) ? UI_ROM_SENSOR : 0;
+    }
     if (ext != ".gb" && ext != ".gbc" && ext != ".cgb" && ext != ".dmg" && ext != ".sgb")
       return romIsGb(rom) ? UI_ROM_GB | UI_ROM_SGB : 0;   // zip / 7z: only known when running
     unsigned char h[0x150];
@@ -486,6 +497,8 @@ public:
     // Color-only games can't run on the Super Game Boy.
     if (info & UI_ROM_CGB_ONLY)
       info &= ~UI_ROM_SGB;
+    if (h[0x147] == 0x22)
+      info |= UI_ROM_SENSOR;   // MBC7: Kirby Tilt 'n' Tumble
     return info;
   }
 
@@ -839,6 +852,14 @@ const SpecialCart kSpecialCarts[] = {
   { "KYG",  4, -1, UI_HW_TILT },                 // Yoshi Topsy-Turvy (tilt)
   { "KHP",  4, -1, UI_HW_TILT },                 // Koro Koro Puzzle Happy Panechu! (tilt)
 };
+
+static int specialCartHw(const char *code3)
+{
+  for (size_t i = 0; i < sizeof(kSpecialCarts) / sizeof(kSpecialCarts[0]); i++)
+    if (strncmp(code3, kSpecialCarts[i].code3, 3) == 0)
+      return kSpecialCarts[i].hw;
+  return 0;
+}
 
 static void applySpecialCart()
 {
@@ -1393,6 +1414,8 @@ void xboxApplySettings()
   Filter wanted = coreFilterFor(xboxVideoFilter());
   if (wanted != g_videoFilter || videoStretch() != g_videoStretch) {
     // Texture size / scaling changed: rebuild the video surface.
+    fprintf(stdout, "Video settings changed: rebuilding the picture\n");
+    g_prevValid = false;
     g_videoFilter = wanted;
     g_videoStretch = videoStretch();
     sdlInitVideo();

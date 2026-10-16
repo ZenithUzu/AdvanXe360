@@ -17,7 +17,8 @@ struct UiDirEntry
 };
 
 // What a ROM file is (UiHost::romInfo).
-enum { UI_ROM_GB = 1, UI_ROM_SGB = 2, UI_ROM_CGB = 4, UI_ROM_CGB_ONLY = 8 };
+enum { UI_ROM_GB = 1, UI_ROM_SGB = 2, UI_ROM_CGB = 4, UI_ROM_CGB_ONLY = 8,
+       UI_ROM_SENSOR = 16 };   // tilt / sun / rotation sensor (GBA special carts, GB MBC7)
 
 // Extra hardware a cartridge has (UiHost::cartHardware).
 enum { UI_HW_SOLAR = 1, UI_HW_GYRO = 2, UI_HW_RUMBLE = 4, UI_HW_TILT = 8 };

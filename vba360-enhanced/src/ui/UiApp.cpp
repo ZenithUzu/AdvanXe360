@@ -856,9 +856,25 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
                   "A: press the new button  \xb7  \xab\xbb: pick from the list");
   m.hints.push_back(tr("X:Sin asignar", "X:Unassign"));
   m.hints.push_back(tr("START:Restablecer", "START:Defaults"));
-  m.addHeader(tr("GAME BOY ADVANCE", "GAME BOY ADVANCE"));
-  for (int a = ACT_GBA_A; a <= ACT_GBA_RIGHT; a++)
-    m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a), uiButtonName(*this, ctlMap()[a]));
+  // Which console: the game these controls are for, or the one running.
+  std::string rom = m_ctlForGame ? m.arg : (m_inGame ? m_host.currentRom() : std::string());
+  int info = rom.empty() ? 0 : romInfo(rom);
+  bool gb = (info & UI_ROM_GB) != 0;
+  if (rom.empty())
+    m.addHeader(tr("BOTONES DEL JUEGO (GBA, GB Y GBC)", "GAME BUTTONS (GBA, GB AND GBC)"));
+  else if (gb)
+    m.addHeader((info & UI_ROM_CGB) ? tr("GAME BOY COLOR", "GAME BOY COLOR") : tr("GAME BOY", "GAME BOY"));
+  else
+    m.addHeader(tr("GAME BOY ADVANCE", "GAME BOY ADVANCE"));
+  for (int a = ACT_GBA_A; a <= ACT_GBA_RIGHT; a++) {
+    bool shoulder = a == ACT_GBA_L || a == ACT_GBA_R;
+    if (gb && shoulder)
+      continue;   // the Game Boy has no L / R
+    UiMenuItem &it = m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a), uiButtonName(*this, ctlMap()[a]));
+    if (shoulder && rom.empty())
+      it.help = tr("S\xf3lo en juegos de GBA (el Game Boy no tiene L ni R).",
+                   "GBA games only (the Game Boy has no L or R).");
+  }
   m.addHeader(tr("FUNCIONES", "SHORTCUTS"));
   for (int a = ACT_TURBO_A; a < ACT_COUNT; a++) {
     UiMenuItem &it = m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a),
@@ -871,10 +887,14 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
   }
   m.add(C_RESET, ITEM_ACTION, tr("Restablecer controles", "Reset controls"));
 
-  if (m_ctlForGame)
-    return;   // the sensors stay in Settings > Controls
-  // Cartridge sensors (only active in the games that have them)
+  // Cartridge sensors (only active in the games that have them). For one
+  // game, only shown when it has a sensor; they are shared by all games.
+  if (m_ctlForGame && !(info & UI_ROM_SENSOR))
+    return;
   m.addHeader(tr("SENSORES DE MOVIMIENTO", "MOTION SENSORS"));
+  if (m_ctlForGame)
+    m.addInfo(tr("Los sensores son los mismos para todos los juegos.",
+                 "Sensors are the same for every game."));
   const char *names[SENS_COUNT][2] = {
     { "Inclinar a la derecha", "Tilt right" },
     { "Inclinar a la izquierda", "Tilt left" },
@@ -890,9 +910,12 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
     { "Boktai: sube el sol (se muestra en pantalla).", "Boktai: raises the sun (shown on screen)." },
     { "Boktai: baja el sol (se muestra en pantalla).", "Boktai: lowers the sun (shown on screen)." } };
   int lang = m_cfg.language ? 1 : 0;
-  for (int i = 0; i < SENS_COUNT; i++)
+  for (int i = 0; i < SENS_COUNT; i++) {
+    if (m_ctlForGame && gb && i >= SENS_SUN_UP)
+      continue;   // Kirby Tilt 'n' Tumble: tilt only
     m.add(SN_MAP_BASE + i, ITEM_OPTION, names[i][lang], uiStickDirName(*this, m_cfg.sensorMap[i]),
           std::string(helps[i][lang]) + tr(" A: mueve el stick.", " A: push the stick."));
+  }
   char pct[16];
   sprintf(pct, "%d%%", uiSensorSensPercent[m_cfg.sensorSens]);
   m.add(SN_SENS, ITEM_OPTION, tr("Sensibilidad de inclinaci\xf3n", "Tilt sensitivity"), pct,
@@ -1447,7 +1470,10 @@ void UiApp::onMenuClosed(UiMenuScreen &m)
     request(UI_REQ_RESUME);
     return;
   }
-  if (m.menuId == MENU_GAME_OPTIONS || (m.menuId == MENU_CONTROLS && m_ctlForGame))
+  if (m.menuId == MENU_CONTROLS && m_ctlForGame) {
+    m_gameCfg.save(gameConfigPath(m_gameCfgRom));
+    saveAll();   // the sensors shown there are the global ones
+  } else if (m.menuId == MENU_GAME_OPTIONS)
     m_gameCfg.save(gameConfigPath(m_gameCfgRom));
   else if (m.menuId != MENU_CHEATS && m.menuId != MENU_ABOUT)
     saveAll();
