@@ -52,6 +52,13 @@ static void XboxDX_CloseAudio(_THIS);
 
 IXAudio2* g_sound;
 
+/* VBA360: one XAudio2 engine and mastering voice for the whole program.
+   The emulator opens and closes the audio for every game; creating a new
+   engine each time (and never releasing it) piled up engines, voices and
+   threads until the console froze after a few games. */
+static IXAudio2* s_engine = NULL;
+static IXAudio2MasteringVoice* s_master = NULL;
+
 static int Audio_Available(void)
 {
 	// Audio is always available on Xbox
@@ -116,15 +123,20 @@ static SDL_AudioDevice *Audio_CreateDevice(int devindex)
 
 	this->free = Audio_DeleteDevice;
 
-	/* Open the audio device */
-	result = XAudio2Create(&sound, 0, XAUDIO2_DEFAULT_PROCESSOR );
-	if ( result != S_OK ) {
-		return(0);
+	/* Open the audio device (once) */
+	if ( s_engine == NULL ) {
+		result = XAudio2Create(&s_engine, 0, XAUDIO2_DEFAULT_PROCESSOR );
+		if ( result != S_OK ) {
+			s_engine = NULL;
+			free(this->hidden);
+			free(this);
+			return(0);
+		}
+		/* Create a master voice */
+		result = IXAudio2_CreateMasteringVoice(s_engine, &s_master, XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE, 0, 0, NULL );
 	}
-
-	/* Create a master voice */
-
-	result = IXAudio2_CreateMasteringVoice(sound, &masterVoice, XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE, 0, 0, NULL );
+	sound = s_engine;
+	masterVoice = s_master;
 
 	g_sound = sound;
 
@@ -209,7 +221,11 @@ static void XboxDX_PlayAudio(_THIS)
 {
 	XAUDIO2_VOICE_STATE state;
 	XAUDIO2_BUFFER xa2buffer={0};
-		
+	DWORD start = GetTickCount();
+
+	if (!mixbuf)
+		return;
+
 	while (1) {
 				
 		/* The Xbox 360 SDK (21256 and later) takes a Flags argument;
@@ -217,12 +233,16 @@ static void XboxDX_PlayAudio(_THIS)
 		IXAudio2SourceVoice_GetState(mixbuf, &state, 0);
 		xa2buffer.Flags = XAUDIO2_END_OF_STREAM;
          if (state.BuffersQueued < NUM_BUFFERS - 1) {
-            if (state.BuffersQueued == 0) {
-                            // buffers ran dry
-            }
             // there is at least one free buffer
             break;
         }
+		/* VBA360: never wait forever for the voice (it used to spin here
+		   for good if the voice stopped playing): drop this chunk. */
+		if (GetTickCount() - start > 500)
+			return;
+		/* Let the XAudio2 engine (on the same core) play the queue
+		   instead of spinning against it. */
+		Sleep(1);
     }
 	
 	if (locked_buf)
@@ -251,26 +271,28 @@ static Uint8 *XboxDX_GetAudioBuf(_THIS)
 
 static void XboxDX_WaitDone(_THIS)
 {
-	Uint8 *stream;
- 
-	/* Wait for the playing chunk to finish */
-	stream = this->GetAudioBuf(this);
-	if ( stream != NULL ) {
-	memset(stream, silence, mixlen);
-	this->PlayAudio(this);
-	}
-	this->WaitAudio(this);
-
-	if (!mixbuf)
-		return;
-
-	/* Stop the looping sound buffer */
- 
+	/* VBA360: nothing to drain; the voice is stopped in CloseAudio. */
 }
 
 static void XboxDX_CloseAudio(_THIS)
 {
-	 
+	/* VBA360: stop and free this game's voice and buffers (they used to
+	   stay alive, and keep playing, after every game). The engine and the
+	   mastering voice stay for the next game. */
+	if (mixbuf) {
+		IXAudio2SourceVoice_Stop(mixbuf, 0, XAUDIO2_COMMIT_NOW);
+		IXAudio2SourceVoice_FlushSourceBuffers(mixbuf);
+		IXAudio2SourceVoice_DestroyVoice(mixbuf);
+		mixbuf = NULL;
+	}
+	if (locked_buf) {
+		free(locked_buf);
+		locked_buf = NULL;
+	}
+	if (pAudioBuffers) {
+		free(pAudioBuffers);
+		pAudioBuffers = NULL;
+	}
 }
 
 #ifdef USE_PRIMARY_BUFFER
@@ -474,6 +496,7 @@ static int XboxDX_OpenAudio(_THIS, SDL_AudioSpec *spec)
 		NUM_BUFFERS = 4;
 
 	pAudioBuffers = (BYTE *)malloc(spec->size*NUM_BUFFERS);
+	currentBuffer = 0;
 
 
 	IXAudio2_CreateSourceVoice(sound, &mixbuf, &waveformat, XAUDIO2_VOICE_USEFILTER , 
