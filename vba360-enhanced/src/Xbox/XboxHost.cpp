@@ -76,6 +76,10 @@ bool xboxGameLoadFailed = false;
 bool xboxRomPatched = false;
 char xboxLoadMessage[256] = "";
 
+// Extra hardware of a GBA cartridge from its game code (defined below,
+// outside this namespace).
+static int specialCartHw(const char *code3);
+
 namespace {
 
 std::string g_rom;            // full path of the running game
@@ -335,8 +339,6 @@ void saveFrameThumb(const std::string &path)
 }
 
 // --- The UiHost implementation ------------------------------------------------
-
-static int specialCartHw(const char *code3);   // below
 
 class XboxHost : public UiHost
 {
