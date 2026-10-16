@@ -29,8 +29,11 @@ Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba
 - **Super Game Boy:** the border and colors each game came with.
 - **Hacks:** automatic **BPS / UPS / IPS** patches and save type read from the ROM (Pokémon hacks save properly).
 - **Cartridge sensors** on the right stick: sun (Boktai), tilt (Yoshi, Koro Koro, Kirby Tilt 'n' Tumble), gyroscope and rumble (WarioWare: Twisted!, Drill Dozer).
-- **States** in 9 slots with thumbnails, **fast forward**, **cheats** (GameShark, Action Replay, CodeBreaker, Game Genie) and an adjustable **clock**.
-- **Picture:** filters, sizes, **CRT / LCD** effects, GBA **color correction**, **frame blending**, 41 Game Boy palettes and a background with your own image.
+- **States** in 9 slots with thumbnails, save on exit and **continue where you left off**.
+- **Fast forward** from 2x to 8x or max (hold or toggle), **cheats** (GameShark, Action Replay, CodeBreaker, Game Genie) and an adjustable **clock**.
+- **Audio:** volume from 25% to 200% and adjustable sound latency.
+- **Safe saves:** an automatic `.sav` backup every time a game is opened, plus options to delete broken states or reset all settings.
+- **Picture:** filters (sharp, smooth, Scale2x, LQ2x), sizes (original, full screen, integer and 16:9), **CRT / LCD** effects, GBA **color correction**, **frame blending**, 41 Game Boy palettes and a background with your own image.
 - **Per-game options:** picture, buttons, cheats, save type and patch, stored by file name.
 - **Its own menu** in English and Spanish, with 7 themes (including **Frutiger Aero**), background image, covers, search and favorites.
 
@@ -154,11 +157,23 @@ These show the **themes**: Default, Red, Game Boy Advance and **Frutiger Aero** 
 | Y / X | Turbo A / Turbo B |
 | RT | Fast forward |
 | Right stick click | Menu: states, cheats, options, screenshot, restart and quit |
+| (unassigned) | Quick save and quick load: assign them in *Controls* |
 | Right stick | Sensors (only in the games that have them) |
 
 **Options**
 
-- **Settings:** Video, Audio, Emulation, Saving, Controls, Game clock and Interface & language. Every option has a help line.
+- **Settings** (every option has a help line):
+
+| Screen | What's in it |
+|---|---|
+| Video | Filter, size, CRT / LCD effect, Game Boy colors, Super Game Boy, background and its fit, color correction, frame blending, FPS and frame skip |
+| Audio | Sound, mute while fast-forwarding, volume and sound latency |
+| Emulation | Fast-forward speed and mode, original BIOS and 16-digit code format |
+| Saving | Save and state folders, save state on exit, continue where you left off, `.sav` backups and delete all states |
+| Controls | Every button (turbo, fast forward, menu and quick save / load too) and the sensors |
+| Game clock | Console time or a custom date and time |
+| Interface & language | Language, show only games, how an option is changed, theme, background image and reset everything |
+
 - **Game options** (Y on a game, or in the in-game menu): save type and clock (GBA), patch, cheats, **picture** (*As in Settings* or *Custom*) and **buttons** (*As in Settings* or *Custom*).
 - **Cheats:** typed with the on-screen keyboard or imported from `.cht` / `.txt` (RetroArch's too). Each game keeps its own list, separate for GBA (`cheats\gba\`) and GB/GBC (`cheats\gb\`).
 
