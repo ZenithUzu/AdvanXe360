@@ -326,6 +326,9 @@
     <ClCompile Include="src\sdl\text.cpp">
       <Filter>Source Files\sdl</Filter>
     </ClCompile>
+    <ClCompile Include="src\Xbox\XboxCovers.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
     <ClCompile Include="src\Xbox\XboxHost.cpp">
       <Filter>Source Files\Xbox</Filter>
     </ClCompile>
@@ -477,6 +480,9 @@
   <ItemGroup>
     <ClInclude Include="libSDLx360\SDL\include\SDL.h">
       <Filter>Source Files\sdl</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\XboxCovers.h">
+      <Filter>Source Files\Xbox</Filter>
     </ClInclude>
     <ClInclude Include="src\Xbox\XboxHost.h">
       <Filter>Source Files\Xbox</Filter>

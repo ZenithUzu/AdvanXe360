@@ -31,6 +31,26 @@ struct UiCheatInfo
   bool enabled;
 };
 
+// Box art download (Game options -> Cover).
+enum { UI_COVER_GBA = 0, UI_COVER_GB = 1, UI_COVER_GBC = 2, UI_COVER_SYSTEMS = 3 };
+
+struct UiCoverItem
+{
+  std::string romName;    // ROM file name without extension (what is matched)
+  std::string coverPath;  // where the PNG is written (covers\<name>.png)
+  int systems[UI_COVER_SYSTEMS];   // UI_COVER_* to look in, in order; -1 ends
+};
+
+struct UiCoverStatus
+{
+  bool running;           // the job is still working
+  int total, done;        // games in the job / already looked up
+  int found, missing;     // covers saved / games with no matching cover
+  std::string current;    // game being looked up
+  std::string error;      // why the job stopped ("" if it didn't)
+  UiCoverStatus() : running(false), total(0), done(0), found(0), missing(0) {}
+};
+
 class UiHost
 {
 public:
@@ -90,6 +110,13 @@ public:
   // the size used.
   virtual bool loadImageFit(const std::string &path, int maxW, int maxH,
                             std::vector<UiColor> &out, int &w, int &h) { return false; }
+
+  // --- Box art download (runs in the background) ----------------------------
+  // server: base URL, e.g. "http://thumbnails.libretro.com". False if a
+  // download is already running or this host can't download.
+  virtual bool startCoverDownload(const std::vector<UiCoverItem> &items, const std::string &server) { return false; }
+  virtual void coverDownloadStatus(UiCoverStatus &out) { out = UiCoverStatus(); }
+  virtual void cancelCoverDownload() {}
 
   // --- System --------------------------------------------------------------
   virtual void quitToDashboard() = 0;

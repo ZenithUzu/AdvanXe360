@@ -30,7 +30,7 @@ enum
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
   G_GBA_COLOR, G_BLEND, G_FPS, G_FRAMESKIP,
   CH_ADD = 1, CH_TYPE, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000,
-  G_CHEATS = 40, G_CONTROLS_MODE, G_CONTROLS
+  G_CHEATS = 40, G_CONTROLS_MODE, G_CONTROLS, G_COVER_ONE, G_COVER_FOLDER
 };
 
 // Confirm / keyboard purposes
@@ -1078,6 +1078,15 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
   if (m_gameCfg.customControls)
     m.add(G_CONTROLS, ITEM_SUBMENU, tr("Configurar botones", "Set up buttons"));
 
+  // Box art from the libretro thumbnail server.
+  m.addHeader(tr("Portada", "Box art"));
+  m.add(G_COVER_ONE, ITEM_ACTION, tr("Descargar portada", "Download box art"), "",
+        tr("La busca en internet (thumbnails.libretro.com) y la guarda en covers\.",
+           "Looks it up online (thumbnails.libretro.com) and saves it in covers\."));
+  m.add(G_COVER_FOLDER, ITEM_ACTION, tr("Descargar portadas de esta carpeta", "Download box art for this folder"), "",
+        tr("Para todos los juegos de la carpeta que a\xfan no tienen portada.",
+           "For every game in the folder that has no box art yet."));
+
   if (m_inGame)
     m.addInfo(tr("La imagen cambia al momento; el resto al reiniciar el juego.",
                  "The picture changes right away; the rest when the game restarts."));
@@ -1261,6 +1270,9 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     } else if (id == G_PLAY) {
       m_gameCfg.save(gameConfigPath(m_gameCfgRom));
       launch(m_gameCfgRom);
+    } else if (id == G_COVER_ONE || id == G_COVER_FOLDER) {
+      m_gameCfg.save(gameConfigPath(m_gameCfgRom));
+      startCoverDownload(m_gameCfgRom, id == G_COVER_FOLDER);
     } else if (id == G_SAVE_PATCHED) {
       std::string where;
       if (m_host.savePatchedRom(where))
@@ -1589,6 +1601,59 @@ void UiApp::openKeyboard(const std::string &title, const std::string &initial, i
 void UiApp::openSearch()
 {
   openKeyboard(tr("Buscar en esta carpeta", "Search this folder"), m_listFilter, KEYBOARD_SEARCH);
+}
+
+void UiApp::startCoverDownload(const std::string &rom, bool wholeFolder)
+{
+  std::vector<std::string> roms;
+  if (wholeFolder) {
+    std::vector<UiDirEntry> entries;
+    m_host.listDir(uiParentDir(rom), entries);
+    for (size_t i = 0; i < entries.size(); i++)
+      if (!entries[i].isDir && uiIsRomFile(entries[i].name))
+        roms.push_back(entries[i].path);
+  } else {
+    roms.push_back(rom);
+  }
+  std::string covers = uiJoinPath(m_host.emulatorDir(), "covers");
+  std::vector<UiCoverItem> items;
+  for (size_t i = 0; i < roms.size(); i++) {
+    std::string name = uiStripExtension(uiFileName(roms[i]));
+    std::string base = uiStripExtension(roms[i]);
+    if (wholeFolder &&
+        (m_host.fileExists(uiJoinPath(covers, name + ".png")) || m_host.fileExists(uiJoinPath(covers, name + ".jpg")) ||
+         m_host.fileExists(base + ".png") || m_host.fileExists(base + ".jpg")))
+      continue;   // already has one
+    UiCoverItem it;
+    it.romName = name;
+    it.coverPath = uiJoinPath(covers, name + ".png");
+    int info = romInfo(roms[i]);
+    std::string ext = uiExtension(roms[i]);
+    if ((info & UI_ROM_GB) && (info & UI_ROM_CGB)) {
+      it.systems[0] = UI_COVER_GBC; it.systems[1] = UI_COVER_GB; it.systems[2] = -1;
+    } else if (info & UI_ROM_GB) {
+      it.systems[0] = UI_COVER_GB; it.systems[1] = UI_COVER_GBC; it.systems[2] = -1;
+    } else if (ext == ".zip" || ext == ".7z") {
+      it.systems[0] = UI_COVER_GBA; it.systems[1] = UI_COVER_GBC; it.systems[2] = UI_COVER_GB;
+    } else {
+      it.systems[0] = UI_COVER_GBA; it.systems[1] = -1; it.systems[2] = -1;
+    }
+    items.push_back(it);
+  }
+  if (items.empty()) {
+    toast(tr("Todos los juegos de la carpeta ya tienen portada", "Every game in the folder already has box art"));
+    return;
+  }
+  if (!m_host.startCoverDownload(items, m_cfg.coverServer)) {
+    toast(tr("Ya hay una descarga en curso", "A download is already running"));
+    return;
+  }
+  push(new UiCoverScreen(!wholeFolder));
+}
+
+void UiApp::onCoversClosed()
+{
+  m_covers.clear();   // show the new covers (and forget "no cover" answers)
 }
 
 const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)

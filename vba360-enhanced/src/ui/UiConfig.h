@@ -78,6 +78,7 @@ struct UiConfig
   int optionStyle;       // UiOptionStyle: how an option's values are picked
   int listSort;          // UiListSort: game list order
   std::string menuBackground;   // image in backgrounds\ ("" = the theme's colors)
+  std::string coverServer;      // box art server (plain HTTP), Game options -> Cover
 
   // Video
   int filter;            // UiFilter

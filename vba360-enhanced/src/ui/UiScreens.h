@@ -194,6 +194,22 @@ private:
   std::string m_arg;
 };
 
+// --- Box art download progress (Game options -> Cover) ------------------------
+// Follows the host's background download; B cancels it, A closes it at the end.
+class UiCoverScreen : public UiScreen
+{
+public:
+  explicit UiCoverScreen(bool single) : m_single(single), m_closing(false) {}
+  virtual void update(UiApp &app, const UiInputState &in);
+  virtual void draw(UiApp &app, UiCanvas &c);
+  virtual bool isOverlay() const { return true; }
+
+private:
+  bool m_single;          // one game (different wording at the end)
+  bool m_closing;         // B pressed: waiting for the download to stop
+  UiCoverStatus m_status;
+};
+
 // --- Option picker: the values of one option in a side panel or a pop-up
 // list. Moving the selection changes the option right away (so filters and
 // backgrounds can be previewed); A or B closes it.

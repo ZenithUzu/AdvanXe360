@@ -199,7 +199,8 @@ Put images (PNG, JPG, BMP, TGA or DDS; 1280×720 is best) in `borders\` and pick
 ## Menu: themes, background and covers
 
 - **Menu theme and background:** in *Settings → Interface & language*. Menu images go in `backgrounds\`.
-- **Covers:** put `covers\<ROM name>.png` (or `.jpg`), for example `covers\Pokemon Emerald.png`. About 400×400 px is enough.
+- **Automatic box art:** with the console online, go to *Game options* (Y on a game) → **Box art** → *Download box art* (that game) or *Download box art for this folder* (every game without one). They come from [thumbnails.libretro.com](https://thumbnails.libretro.com) (the same as RetroArch) for GBA, GB and GBC. They're found best when the ROM has its **official name** (No-Intro), e.g. `Pokemon - Emerald Version (USA, Europe).gba`; short names like `Pokemon Emerald` usually work too, but hacks or translated names don't. If that server ever stops working, another one can be set in `vba360.ini` with `cover_server=`.
+- **Covers by hand:** put `covers\<ROM name>.png` (or `.jpg`), for example `covers\Pokemon Emerald.png`. About 400×400 px is enough. Downloads never replace a game's existing cover, except *Download box art* for that game.
 
 ## Super Game Boy
 

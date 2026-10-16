@@ -1341,6 +1341,101 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
   app.drawHints(c, hints, 6);
 }
 
+// --- UiCoverScreen -----------------------------------------------------------
+
+void UiCoverScreen::update(UiApp &app, const UiInputState &in)
+{
+  app.host().coverDownloadStatus(m_status);
+  app.keepDrawing();   // the numbers change without any button pressed
+  if (m_status.running) {
+    if ((in.pressed & PAD_BIT(PAD_B)) && !m_closing) {
+      m_closing = true;
+      app.host().cancelCoverDownload();
+    }
+    return;
+  }
+  if (m_closing || (in.pressed & (PAD_BIT(PAD_A) | PAD_BIT(PAD_B) | PAD_BIT(PAD_START)))) {
+    app.pop();
+    app.onCoversClosed();
+  }
+}
+
+void UiCoverScreen::draw(UiApp &app, UiCanvas &c)
+{
+  c.fillRect(0, 0, UI_W, UI_H, 0xA0000000);
+  int w = 760, h = 300;
+  int x = (UI_W - w) / 2, y = (UI_H - h) / 2 - 30;
+  uiDrawPanel(c, x, y, w, h, 20, 0xFA);
+  const UiCoverStatus &s = m_status;
+  c.drawTextFit(UI_FONT_BODY, x + 32, y + 24, w - 64,
+                s.running ? app.tr("Descargando portadas...", "Downloading box art...")
+                          : app.tr("Descarga de portadas", "Box art download"), UI_COL_TEXT);
+
+  // Progress bar
+  int bx = x + 32, by = y + 78, bw = w - 64, bh = 18;
+  c.fillRoundRect(bx, by, bw, bh, 9, 0x40000000);
+  int fill = s.total > 0 ? bw * s.done / s.total : 0;
+  if (fill > 0)
+    uiDrawSelection(c, bx, by, fill < bh ? bh : fill, bh, 9, true);
+
+  char line[160];
+  sprintf(line, app.tr("%d de %d juegos", "%d of %d games"), s.done, s.total);
+  c.drawText(UI_FONT_SMALL, bx, by + 30, line, UI_COL_TEXT_DIM);
+  sprintf(line, app.tr("Guardadas: %d   Sin portada: %d", "Saved: %d   No cover: %d"), s.found, s.missing);
+  c.drawTextFit(UI_FONT_SMALL, bx, by + 30, bw, line, UI_COL_TEXT_DIM, UI_ALIGN_RIGHT);
+
+  // What is happening / how it ended
+  std::string msg, msg2;
+  UiColor col = UI_COL_TEXT;
+  if (s.running) {
+    msg = m_closing ? app.tr("Cancelando...", "Cancelling...") : s.current;
+    msg2 = app.tr("Puedes cancelar con B; las portadas ya guardadas se quedan.",
+                  "B cancels; the covers already saved stay.");
+  } else if (s.error == "nolink") {
+    msg = app.tr("La consola no est\xe1 conectada a la red.", "The console isn't connected to a network.");
+    col = 0xFFFF9A8A;
+  } else if (s.error == "noip") {
+    msg = app.tr("No se obtuvo direcci\xf3n de red; revisa la conexi\xf3n.", "No network address; check the connection.");
+    col = 0xFFFF9A8A;
+  } else if (s.error == "dns") {
+    msg = app.tr("No se encontr\xf3 el servidor (\xbfhay internet?).", "The server wasn't found (is there internet?).");
+    col = 0xFFFF9A8A;
+  } else if (s.error == "connect" || s.error == "empty" || s.error == "send") {
+    msg = app.tr("No se pudo conectar con el servidor de portadas.", "Couldn't connect to the box art server.");
+    col = 0xFFFF9A8A;
+  } else if (s.error == "https") {
+    msg = app.tr("El servidor s\xf3lo acepta HTTPS, que la consola no puede usar.",
+                 "The server only accepts HTTPS, which the console can't use.");
+    msg2 = app.tr("Se puede usar otro servidor con cover_server= en vba360.ini.",
+                  "Another server can be set with cover_server= in vba360.ini.");
+    col = 0xFFFF9A8A;
+  } else if (s.error == "cancel") {
+    msg = app.tr("Cancelado.", "Cancelled.");
+  } else if (!s.error.empty()) {
+    msg = std::string(app.tr("Error del servidor: ", "Server error: ")) + s.error;
+    col = 0xFFFF9A8A;
+  } else if (m_single) {
+    msg = s.found ? app.tr("Portada guardada.", "Box art saved.")
+                  : app.tr("No se encontr\xf3 portada para este juego.", "No box art found for this game.");
+    if (!s.found)
+      msg2 = app.tr("Funciona mejor si la ROM tiene su nombre oficial, p. ej. \"Pokemon - Emerald Version (USA, Europe)\".",
+                    "It works best with the ROM's official name, e.g. \"Pokemon - Emerald Version (USA, Europe)\".");
+  } else {
+    sprintf(line, app.tr("Listo: %d portadas nuevas.", "Done: %d new covers."), s.found);
+    msg = line;
+    if (s.missing)
+      msg2 = app.tr("Los juegos sin portada necesitan el nombre oficial de la ROM (No-Intro).",
+                    "Games without one need the ROM's official (No-Intro) name.");
+  }
+  c.drawTextFit(UI_FONT_BODY, x + 32, y + 160, w - 64, msg.c_str(), col);
+  if (!msg2.empty())
+    c.drawTextFit(UI_FONT_SMALL, x + 32, y + 206, w - 64, msg2.c_str(), UI_COL_TEXT_DIM);
+
+  const char *runHints[] = { app.tr("B:Cancelar", "B:Cancel") };
+  const char *endHints[] = { app.tr("A:Cerrar", "A:Close") };
+  app.drawHints(c, s.running ? runHints : endHints, 1);
+}
+
 // --- UiCaptureScreen ---------------------------------------------------------
 
 UiCaptureScreen::UiCaptureScreen(int action) : m_action(action), m_released(false), m_frames(0) {}

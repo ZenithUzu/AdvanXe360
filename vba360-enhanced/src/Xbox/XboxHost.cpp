@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "XboxHost.h"
+#include "XboxCovers.h"
 
 #include "../ui/UiApp.h"
 #include "../ui/UiCanvas.h"
@@ -567,6 +568,13 @@ public:
   {
     return xboxLoadImageFit(path.c_str(), maxW, maxH, out, w, h);
   }
+
+  virtual bool startCoverDownload(const std::vector<UiCoverItem> &items, const std::string &server)
+  {
+    return coversStart(items, server);
+  }
+  virtual void coverDownloadStatus(UiCoverStatus &out) { coversStatus(out); }
+  virtual void cancelCoverDownload() { coversCancel(); }
 
   virtual bool savePatchedRom(std::string &savedTo)
   {

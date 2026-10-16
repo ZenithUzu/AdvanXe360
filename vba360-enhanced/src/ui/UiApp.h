@@ -64,6 +64,11 @@ public:
   // buttons, no message, nothing blinking): the host then shows the last
   // picture again instead of drawing it all over.
   bool needsRedraw() const { return m_dirtyFrames > 0; }
+  // A screen whose content changes on its own (download progress).
+  void keepDrawing() { if ((m_frame % 6) == 0 && m_dirtyFrames < 2) m_dirtyFrames = 2; }
+  // Box art download (Game options -> Cover): one game or its whole folder.
+  void startCoverDownload(const std::string &rom, bool wholeFolder);
+  void onCoversClosed();
 
   UiRequest takeRequest(std::string &romPath);
 
