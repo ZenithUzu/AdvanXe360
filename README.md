@@ -26,11 +26,11 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - Interfaz propia, simple y rápida, dibujada por el emulador (ya no usa las escenas XUI originales).
 - Pestañas **Juegos · Recientes · Favoritos · Ajustes** (LB / RB).
 - Explorador de **unidades y carpetas** (disco duro, USB, unidades de memoria, carpeta del emulador) con vista previa del último momento jugado y aviso si la ROM tiene parche.
-- **Buscar y ordenar** en la pestaña Juegos: **BACK** abre un teclado para buscar por nombre (B quita la búsqueda), **START** cambia el orden (A-Z, Z-A o jugados recientemente) y **LT / RT** saltan a la letra anterior / siguiente.
+- **Buscar y ordenar** en la pestaña Juegos: **BACK** abre un teclado para buscar por nombre: la lista se filtra mientras escribes y muestra cuántos resultados hay, **START** (o la tecla *Buscar*) deja la búsqueda, **B** la cancela y **BACK** borra todo lo escrito (en la lista, B quita la búsqueda), **START** cambia el orden (A-Z, Z-A o jugados recientemente) y **LT / RT** saltan a la letra anterior / siguiente.
 - **Portadas:** si hay una imagen con el nombre del juego, se muestra en la vista previa. Ver [Portadas](#portadas).
 - **Español e inglés**, con una línea de ayuda en cada opción.
-- **Cómo se cambia una opción** (*Ajustes → Interfaz e idioma → Al cambiar una opción*): **panel lateral** (A abre los valores a la derecha), **lista emergente** (en el centro) o **clásico** (izquierda / derecha). En los dos primeros el cambio se ve al momento (filtros, fondos, colores) y **B** cierra el panel; izquierda / derecha siguen funcionando en los tres.
-- **Temas de colores** (Predeterminado, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance y Rojo) e **imagen de fondo** propia para el menú (*Ajustes → Interfaz e idioma*).
+- **Cómo se cambia una opción** (*Ajustes → Interfaz e idioma → Al cambiar una opción*): **panel lateral** (A abre los valores a la derecha), **lista emergente** (en el centro) o **clásico** (izquierda / derecha). En los dos primeros el cambio se ve al momento (filtros, fondos, colores) **A** (o START) lo deja y **B** lo cancela (vuelve al valor que tenía). Ahora también las opciones de dos valores (Sí / No, Apagado / Encendido...), la sensibilidad de inclinación y el modo del reloj se abren en el panel; izquierda / derecha siguen funcionando en los tres.
+- **Temas de colores** (Predeterminado, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance, Rojo y **Frutiger Aero**, con botones brillantes tipo cristal, paneles translúcidos y un fondo de cielo con burbujas) e **imagen de fondo** propia para el menú (*Ajustes → Interfaz e idioma*).
 
 **Menú dentro del juego** (clic del stick derecho; se puede cambiar en Controles)
 - Guardar y cargar **estados en 9 ranuras**, cada una con miniatura.
@@ -41,7 +41,7 @@ Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los 
 - **Parches BPS / UPS / IPS automáticos** hasta 32 MB: la ROM limpia no se modifica.
 - **Guardado de batería** (`.sav`) en GBA y GB: lo que guardas dentro del juego se escribe al salir, al abrir el menú y periódicamente.
 - El **tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM) y el **reloj RTC** se detectan **leyendo la ROM**, no por el ID del cartucho. Así guardan bien los hacks de Pokémon aunque conserven el ID original.
-- **Opciones por juego** (botón Y sobre un juego, o *Opciones del juego* en el menú dentro del juego), guardadas por nombre de archivo: tipo de guardado y reloj (GBA), parche, la **imagen de ese juego**: *Como en Ajustes* o *Personalizada* (filtro, tamaño, efecto, colores de Game Boy y, en juegos de Super Game Boy, modo **Normal** o **Super Game Boy**) y los **botones de ese juego** (*Como en Ajustes* o *Personalizados*, con su propia pantalla de *Configurar botones*). Lo de Ajustes sigue valiendo para todos los demás juegos.
+- **Opciones por juego** (botón Y sobre un juego, o *Opciones del juego* en el menú dentro del juego), guardadas por nombre de archivo: tipo de guardado y reloj (GBA), parche, la **imagen de ese juego**: *Como en Ajustes* o *Personalizada* (filtro, tamaño, efecto, colores de Game Boy, **corrección de color** (sólo GBA), **mezcla de cuadros**, **mostrar FPS**, **salto de cuadros** y, en juegos de Super Game Boy, modo **Normal** o **Super Game Boy**) y los **botones de ese juego** (*Como en Ajustes* o *Personalizados*, con su propia pantalla de *Configurar botones*). Lo de Ajustes sigue valiendo para todos los demás juegos.
 - ROMs comprimidas en `.zip` y `.7z`.
 
 **Game Boy y Game Boy Color** (núcleo [Gambatte](#game-boy-y-game-boy-color))
@@ -208,7 +208,7 @@ La portada se muestra en la vista previa a la derecha de la lista, con sus propo
 
 En **Ajustes → Interfaz e idioma**:
 
-- **Tema de colores:** Predeterminado (morado), Xbox 360 (verde), Game Boy (verde oliva), Game Boy Color (frambuesa), Game Boy Advance (índigo) y Rojo. El texto sigue siendo claro sobre oscuro en todos.
+- **Tema de colores:** Predeterminado (morado), Xbox 360 (verde), Game Boy (verde oliva), Game Boy Color (frambuesa), Game Boy Advance (índigo), Rojo y **Frutiger Aero** (azul cielo y agua, verde de fondo, burbujas; las selecciones son píldoras brillantes con reflejo y los paneles parecen cristal esmerilado, al estilo de Windows Vista / 7 y el Xbox 360 de la época). El texto sigue siendo claro sobre oscuro en todos.
 - **Imagen de fondo:** pon imágenes (PNG, JPG, BMP, TGA o DDS; ideal 1280×720) en la carpeta `backgrounds\` junto a `default.xex` y elígela. Se oscurece con los colores del tema para que el texto se lea bien.
 
 ## Carpetas que crea el emulador

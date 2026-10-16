@@ -26,11 +26,11 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - New interface, simple and fast, drawn by the emulator itself (the original XUI scenes are no longer used).
 - **Games · Recent · Favorites · Settings** tabs (LB / RB).
 - **Drive and folder** browser (hard drive, USB, memory units, emulator folder) with a preview of the last moment played and a marker when the ROM has a patch.
-- **Search and sort** in the Games tab: **BACK** opens a keyboard to search by name (B clears the search), **START** changes the order (A-Z, Z-A or recently played) and **LT / RT** jump to the previous / next letter.
+- **Search and sort** in the Games tab: **BACK** opens a keyboard to search by name: the list filters as you type and shows how many results there are, **START** (or the *Search* key) keeps the search, **B** cancels it and **BACK** erases what you typed (in the list, B clears the search), **START** changes the order (A-Z, Z-A or recently played) and **LT / RT** jump to the previous / next letter.
 - **Box art:** when there is an image with the game's name, it is shown in the preview. See [Box art](#box-art).
 - **Spanish and English**, with a help line on every option.
-- **How an option is changed** (*Settings → Interface & language → Changing an option*): **side panel** (A opens the values on the right), **pop-up list** (in the middle) or **classic** (left / right). In the first two the change shows right away (filters, backgrounds, colors) and **B** closes the panel; left / right still work in all three.
-- **Color themes** (Default, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance and Red) and your own **background image** for the menu (*Settings → Interface & language*).
+- **How an option is changed** (*Settings → Interface & language → Changing an option*): **side panel** (A opens the values on the right), **pop-up list** (in the middle) or **classic** (left / right). In the first two the change shows right away (filters, backgrounds, colors) **A** (or START) keeps it and **B** cancels it (back to the value it had). Two-value options (Yes / No, Off / On...), tilt sensitivity and the clock mode now open in the panel too; left / right still work in all three.
+- **Color themes** (Default, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance, Red and **Frutiger Aero**, with glossy glass-like buttons, translucent panels and a sky background with bubbles) and your own **background image** for the menu (*Settings → Interface & language*).
 
 **In-game menu** (right stick click; can be changed in Controls)
 - Save and load **states in 9 slots**, each with a thumbnail.
@@ -41,7 +41,7 @@ You are **free to use it or not**, and to copy, modify and share it under the GP
 - **Automatic BPS / UPS / IPS patching** up to 32 MB: the clean ROM is never modified.
 - **Battery saves** (`.sav`) for GBA and GB: what you save inside the game is written when you quit, when you open the menu and periodically.
 - The **save type** (Flash 64/128 KB, SRAM, EEPROM) and the **RTC clock** are detected **by reading the ROM**, not by the cartridge ID. Pokémon hacks save correctly even when they keep the original ID.
-- **Per-game options** (Y button on a game, or *Game options* in the in-game menu), stored by file name: save type and clock (GBA), patch, **that game's picture**: *As in Settings* or *Custom* (filter, size, effect, Game Boy colors and, in Super Game Boy games, **Normal** or **Super Game Boy** mode) and **that game's buttons** (*As in Settings* or *Custom*, with its own *Set up buttons* screen). Settings still apply to every other game.
+- **Per-game options** (Y button on a game, or *Game options* in the in-game menu), stored by file name: save type and clock (GBA), patch, **that game's picture**: *As in Settings* or *Custom* (filter, size, effect, Game Boy colors, **color correction** (GBA only), **frame blending**, **show FPS**, **frame skip** and, in Super Game Boy games, **Normal** or **Super Game Boy** mode) and **that game's buttons** (*As in Settings* or *Custom*, with its own *Set up buttons* screen). Settings still apply to every other game.
 - Compressed ROMs in `.zip` and `.7z`.
 
 **Game Boy and Game Boy Color** ([Gambatte](#game-boy-and-game-boy-color) core)
@@ -208,7 +208,7 @@ The cover is shown in the preview to the right of the list, keeping its proporti
 
 In **Settings → Interface & language**:
 
-- **Color theme:** Default (purple), Xbox 360 (green), Game Boy (olive green), Game Boy Color (berry), Game Boy Advance (indigo) and Red. Text stays light on dark in all of them.
+- **Color theme:** Default (purple), Xbox 360 (green), Game Boy (olive green), Game Boy Color (berry), Game Boy Advance (indigo), Red and **Frutiger Aero** (sky and water blue, a green glow, bubbles; selections are glossy pills with a shine and panels look like frosted glass, in the style of Windows Vista / 7 and the Xbox 360 of that era). Text stays light on dark in all of them.
 - **Background image:** put images (PNG, JPG, BMP, TGA or DDS; 1280×720 is best) in the `backgrounds\` folder next to `default.xex` and pick one. It is darkened with the theme's colors so the text stays readable.
 
 ## Folders the emulator creates

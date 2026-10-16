@@ -110,6 +110,9 @@ public:
   // Game list search (Games tab): the text typed, "" = no filter.
   const std::string &listFilter() const { return m_listFilter; }
   void setListFilter(const std::string &f) { m_listFilter = f; }
+  // How many entries the current search shows (set by the game list).
+  int listMatches() const { return m_listMatches; }
+  void setListMatches(int n) { m_listMatches = n; }
   void openSearch();
 
   // Cover image for a ROM (covers\<name>.png/.jpg or <rom>.png/.jpg next to
@@ -169,6 +172,7 @@ private:
   bool m_quietChange;
   bool m_ctlForGame;
   std::string m_listFilter;
+  int m_listMatches;
   std::map<std::string, Cover> m_covers;
 
   // Cheats menu: the game, the code type picked, the code waiting for its name.

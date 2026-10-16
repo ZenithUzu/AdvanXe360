@@ -143,6 +143,7 @@ struct UiGameConfig
   int custom;
   int filter, stretch, screenEffect, gbPalette;
   int sgbMode;    // Super Game Boy games: 0 = normal Game Boy, 1 = Super Game Boy
+  int gbaColor, frameBlend, showFps, frameSkip;   // as in UiConfig
   // Buttons: 0 = as in Settings > Controls, 1 = map below for this game only.
   int customControls;
   int map[ACT_COUNT];

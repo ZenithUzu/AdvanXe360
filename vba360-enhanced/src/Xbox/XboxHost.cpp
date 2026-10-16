@@ -91,6 +91,10 @@ static bool gameVideoCustom() { return !g_rom.empty() && g_gameCfg.custom != 0; 
 static int videoStretch() { return gameVideoCustom() ? g_gameCfg.stretch : g_cfg.stretch; }
 static int videoEffect() { return gameVideoCustom() ? g_gameCfg.screenEffect : g_cfg.screenEffect; }
 static int videoGbPalette() { return gameVideoCustom() ? g_gameCfg.gbPalette : g_cfg.gbPalette; }
+static int videoGbaColor() { return gameVideoCustom() ? g_gameCfg.gbaColor : g_cfg.gbaColor; }
+static int videoFrameBlend() { return gameVideoCustom() ? g_gameCfg.frameBlend : g_cfg.frameBlend; }
+static int videoShowFps() { return gameVideoCustom() ? g_gameCfg.showFps : g_cfg.showFps; }
+static int videoFrameSkip() { return gameVideoCustom() ? g_gameCfg.frameSkip : g_cfg.frameSkip; }
 
 // GBA color table in use (-1 = rebuild) and the last frame for blending.
 static int g_colorMapMode = -1;
@@ -760,7 +764,7 @@ void resetFrameTiming()
 {
   wasPaused = true;
   autoFrameSkipLastTime = throttleLastTime = systemGetClock();
-  if (g_cfg.frameSkip == 0)
+  if (videoFrameSkip() == 0)
     systemFrameSkip = 0;
 }
 
@@ -1326,7 +1330,7 @@ static void applyGbPalette()
 // already uses for every pixel: no cost while playing.
 static void applyColorMap()
 {
-  int mode = (emulating && cartridgeType == 0) ? g_cfg.gbaColor : 0;
+  int mode = (emulating && cartridgeType == 0) ? videoGbaColor() : 0;
   if (mode == g_colorMapMode)
     return;
   g_colorMapMode = mode;
@@ -1370,7 +1374,7 @@ static void applyColorMap()
 // longer trail).
 void xboxBlendFrame()
 {
-  int mode = g_cfg.frameBlend;
+  int mode = videoFrameBlend();
   if (!mode || !pix || srcWidth <= 0 || srcHeight <= 0 || systemColorDepth != 32) {
     g_prevValid = false;
     return;
@@ -1456,12 +1460,12 @@ void xboxApplySettings()
   applyGbPalette();
   rtcSetTimeOffset(g_cfg.clockMode ? g_cfg.clockOffset : 0);
   XBOX_ScreenEffect = videoEffect();
-  showSpeed = g_cfg.showFps ? 2 : 0;
-  if (g_cfg.frameSkip == 0) {
+  showSpeed = videoShowFps() ? 2 : 0;
+  if (videoFrameSkip() == 0) {
     autoFrameSkip = 1;
   } else {
     autoFrameSkip = 0;
-    frameSkip = gbFrameSkip = systemFrameSkip = g_cfg.frameSkip - 1;
+    frameSkip = gbFrameSkip = systemFrameSkip = videoFrameSkip() - 1;
   }
 
   if (!emulating)
@@ -1490,6 +1494,11 @@ Filter xboxSelectedFilter()
 int xboxVideoFilter()
 {
   return gameVideoCustom() ? g_gameCfg.filter : g_cfg.filter;
+}
+
+int xboxShowFps()
+{
+  return videoShowFps();
 }
 
 // --- Controllers ---------------------------------------------------------------------

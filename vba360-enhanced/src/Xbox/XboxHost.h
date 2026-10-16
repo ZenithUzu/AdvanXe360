@@ -78,6 +78,8 @@ void xboxSetMenuCanvas(UiCanvas *canvas);
 Filter xboxSelectedFilter();
 // Image filter in effect (FILTER_*): Settings, or the game's own options.
 int xboxVideoFilter();
+// Show FPS (per-game value when the game has a custom picture).
+int xboxShowFps();
 
 // --- UI rendering ------------------------------------------------------------------
 bool xboxUiRendererInit();

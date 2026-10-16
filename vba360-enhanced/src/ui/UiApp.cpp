@@ -28,6 +28,7 @@ enum
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
+  G_GBA_COLOR, G_BLEND, G_FPS, G_FRAMESKIP,
   CH_ADD = 1, CH_TYPE, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000,
   G_CHEATS = 40, G_CONTROLS_MODE, G_CONTROLS
 };
@@ -135,7 +136,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1)
+    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_listMatches(0)
 {
 }
 
@@ -440,6 +441,7 @@ void UiApp::drawBackground(UiCanvas &c)
   } else {
     c.fillGradient(0, 0, UI_W, UI_H, UI_COL_BG_TOP, UI_COL_BG_BOTTOM);
   }
+  uiDrawBackgroundDecor(c);
   if (c.width() == UI_W && c.height() == UI_H) {
     m_bgCache.assign(c.pixels(), c.pixels() + UI_W * UI_H);
     m_bgCacheTheme = m_cfg.menuTheme;
@@ -980,8 +982,8 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
   m.addHeader(tr("Imagen de este juego", "This game's picture"));
   const char *custom[2] = { tr("Como en Ajustes", "As in Settings"), tr("Personalizada", "Custom") };
   (m.add(G_CUSTOM, ITEM_OPTION, tr("Configuraci\xf3n", "Settings"), custom[m_gameCfg.custom],
-        tr("Personalizada: filtro, tama\xf1o, efecto y modo s\xf3lo para este juego.",
-           "Custom: filter, size, effect and mode for this game only."))).choice = m_gameCfg.custom;
+        tr("Personalizada: imagen, colores, mezcla, FPS y modo s\xf3lo para este juego.",
+           "Custom: picture, colors, blending, FPS and mode for this game only."))).choice = m_gameCfg.custom;
   if (m_gameCfg.custom) {
     if (rom & UI_ROM_SGB) {
       const char *modes[2] = { tr("Normal", "Normal"), "Super Game Boy" };
@@ -996,6 +998,22 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
     if (gb && !(rom & UI_ROM_CGB_ONLY) && !sgbOn)
       (m.add(G_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
             uiGbPaletteNames[m_gameCfg.gbPalette][m_cfg.language ? 1 : 0])).choice = m_gameCfg.gbPalette;
+    if (!gb) {
+      const char *cc[3] = { tr("Apagada", "Off"), tr("Suave", "Soft"), tr("Como la pantalla real", "Like the real screen") };
+      (m.add(G_GBA_COLOR, ITEM_OPTION, tr("Correcci\xf3n de color (GBA)", "Color correction (GBA)"), cc[m_gameCfg.gbaColor],
+             tr("Colores menos chillones, como en la pantalla del GBA.",
+                "Less garish colors, like on the GBA screen."))).choice = m_gameCfg.gbaColor;
+    }
+    const char *bl[3] = { tr("Apagada", "Off"), tr("Mezclar 2 cuadros", "Mix 2 frames"), tr("Estela de LCD", "LCD ghosting") };
+    (m.add(G_BLEND, ITEM_OPTION, tr("Mezcla de cuadros", "Frame blending"), bl[m_gameCfg.frameBlend],
+           tr("Quita el parpadeo de sprites, como el LCD de la consola.",
+              "Removes sprite flicker, like the console's LCD."))).choice = m_gameCfg.frameBlend;
+    const char *yn[2] = { tr("No", "No"), tr("S\xed", "Yes") };
+    (m.add(G_FPS, ITEM_OPTION, tr("Mostrar FPS", "Show FPS"), yn[m_gameCfg.showFps])).choice = m_gameCfg.showFps;
+    const char *skip[5] = { tr("Autom\xe1tico", "Automatic"), "0", "1", "2", "3" };
+    (m.add(G_FRAMESKIP, ITEM_OPTION, tr("Salto de cuadros", "Frame skip"), skip[m_gameCfg.frameSkip],
+           tr("Autom\xe1tico salta cuadros s\xf3lo si el juego va lento.",
+              "Automatic only skips frames when the game runs slow."))).choice = m_gameCfg.frameSkip;
   }
 
   // Buttons: the ones in Settings, or this game's own.
@@ -1338,6 +1356,10 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == G_STRETCH) m_gameCfg.stretch = wrapIndex(m_gameCfg.stretch, delta, SIZE_COUNT);
     else if (id == G_EFFECT) m_gameCfg.screenEffect = wrapIndex(m_gameCfg.screenEffect, delta, EFFECT_COUNT);
     else if (id == G_GB_COLORS) m_gameCfg.gbPalette = wrapIndex(m_gameCfg.gbPalette, delta, GB_PALETTE_COUNT);
+    else if (id == G_GBA_COLOR) m_gameCfg.gbaColor = wrapIndex(m_gameCfg.gbaColor, delta, 3);
+    else if (id == G_BLEND) m_gameCfg.frameBlend = wrapIndex(m_gameCfg.frameBlend, delta, 3);
+    else if (id == G_FPS) m_gameCfg.showFps ^= 1;
+    else if (id == G_FRAMESKIP) m_gameCfg.frameSkip = wrapIndex(m_gameCfg.frameSkip, delta, 5);
     // Saved right away so the running game (if it is this one) can use it.
     if (!m_quietChange)
       m_gameCfg.save(gameConfigPath(m_gameCfgRom));
@@ -1402,9 +1424,15 @@ int *UiApp::ctlMap()
 
 void UiApp::openPicker(UiMenuScreen &m, int id)
 {
+  // In Controls, A captures the new button / stick direction (only the
+  // tilt sensitivity is a plain list of values).
+  if (m.menuId == MENU_CONTROLS && id != SN_SENS) {
+    onMenuActivate(m, id);
+    return;
+  }
   // Cheats switch on / off directly (and listing their values would write
-  // the cheat file twice).
-  if (m_cfg.optionStyle == OPT_STYLE_CLASSIC || m.menuId == MENU_CLOCK || m.menuId == MENU_CONTROLS ||
+  // the cheat file twice); the date and time fields are not a fixed list.
+  if (m_cfg.optionStyle == OPT_STYLE_CLASSIC || (m.menuId == MENU_CLOCK && id != K_MODE) ||
       (m.menuId == MENU_CHEATS && id >= CH_CHEAT_BASE)) {
     onMenuChange(m, id, 1);
     return;
@@ -1440,8 +1468,8 @@ void UiApp::openPicker(UiMenuScreen &m, int id)
   m.selectId(id);
   if (values.size() < 2)
     return;
-  if (values.size() == 2) {
-    // Yes / No style: A just switches it.
+  if (steps >= 0) {
+    // Too many values to list (or they don't come back around): A steps it.
     onMenuChange(m, id, 1);
     return;
   }
@@ -1502,7 +1530,7 @@ void UiApp::onMenuClosed(UiMenuScreen &m)
 
 void UiApp::openKeyboard(const std::string &title, const std::string &initial, int purpose)
 {
-  push(new UiKeyboardScreen(title, initial, purpose, purpose != KEYBOARD_CHEAT));
+  push(new UiKeyboardScreen(title, initial, purpose, purpose != KEYBOARD_CHEAT, purpose == KEYBOARD_SEARCH));
 }
 
 void UiApp::openSearch()

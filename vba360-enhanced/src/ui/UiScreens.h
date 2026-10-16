@@ -142,7 +142,10 @@ class UiKeyboardScreen : public UiScreen
 public:
   // full: letters and digits (names, searches); otherwise the code keys
   // (0-9, A-F, ':' and '-').
-  UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full = false);
+  // search: the game list filters as you type (the list stays visible above
+  // the keyboard), START / the Search key keep it and B puts the old one back.
+  UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full = false,
+                   bool search = false);
   virtual void update(UiApp &app, const UiInputState &in);
   virtual void draw(UiApp &app, UiCanvas &c);
   virtual bool isOverlay() const { return true; }
@@ -153,7 +156,10 @@ private:
   int m_purpose;
   int m_row, m_col;
   bool m_full;
+  bool m_search;
+  std::string m_orig;     // search: the filter before the keyboard opened
   int keyRows() const { return m_full ? 4 : 3; }
+  void drawSearch(UiApp &app, UiCanvas &c);
   int keyCols() const { return m_full ? 10 : 6; }
   const char *keyLabel(int r, int c) const;
 };
@@ -206,6 +212,7 @@ private:
   std::string m_title;
   std::vector<std::string> m_values;
   int m_style;
+  int m_orig;            // value selected when the list opened (B goes back to it)
   UiListState m_list;
 };
 
@@ -226,10 +233,24 @@ struct UiTheme
 {
   const char *name[2];   // Spanish, English
   UiColor accent, bgTop, bgBottom, panel;
+  int style;             // UiThemeStyle: how selections, panels and the background are drawn
 };
-enum { UI_THEME_COUNT = 6 };
+enum { UI_THEME_COUNT = 7 };
 extern const UiTheme uiThemes[UI_THEME_COUNT];
 void uiApplyTheme(int index);
+
+// Flat: plain tinted shapes. Aero (Frutiger Aero): glossy, glassy pills and
+// panels over a sky background with bubbles.
+enum UiThemeStyle { THEME_FLAT = 0, THEME_AERO = 1 };
+extern int UI_THEME_STYLE;   // set by uiApplyTheme()
+// Selected row of a list (with the accent bar in flat themes).
+void uiDrawRowSelection(UiCanvas &c, int x, int y, int w, int h);
+// Selected button / tab (strong) or a highlighted area.
+void uiDrawSelection(UiCanvas &c, int x, int y, int w, int h, int radius, bool strong);
+// Panel / dialog box in the theme's panel color.
+void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha);
+// Theme decorations over the background gradient (bubbles, glow...).
+void uiDrawBackgroundDecor(UiCanvas &c);
 
 // Layout (1280x720, inside the TV safe area).
 enum

@@ -22,7 +22,10 @@ const UiTheme uiThemes[UI_THEME_COUNT] = {
   { { "Game Boy Color", "Game Boy Color" },   0xFFE0457B, 0xFF170C1A, 0xFF2A1430, 0xFF221428 },
   { { "Game Boy Advance", "Game Boy Advance" }, 0xFF6F64F0, 0xFF0F0D24, 0xFF1D1940, 0xFF181534 },
   { { "Rojo", "Red" },                        0xFFE5534B, 0xFF170A0C, 0xFF2A1215, 0xFF221114 },
+  // Sky, water and glass of the late-2000s look (Windows Vista/7, Wii, Xbox 360 "blades" era).
+  { { "Frutiger Aero", "Frutiger Aero" },     0xFF27A7E8, 0xFF1F7FC6, 0xFF07304F, 0xFF0B3C62, THEME_AERO },
 };
+int UI_THEME_STYLE = THEME_FLAT;
 
 void uiApplyTheme(int index)
 {
@@ -34,6 +37,90 @@ void uiApplyTheme(int index)
   UI_COL_BG_TOP = t.bgTop;
   UI_COL_BG_BOTTOM = t.bgBottom;
   UI_COL_PANEL = t.panel;
+  UI_THEME_STYLE = t.style;
+}
+
+// Glossy pill: base color, a soft white shine on the upper half and a
+// bright edge on top, like the buttons of that era.
+static void drawGloss(UiCanvas &c, int x, int y, int w, int h, int r, UiColor base)
+{
+  if (w <= 4 || h <= 4)
+    return;
+  if (r > h / 2) r = h / 2;
+  c.fillRoundRect(x - 1, y - 1, w + 2, h + 2, r + 1, 0x38FFFFFF);   // thin light rim
+  c.fillRoundRect(x, y, w, h, r, base);
+  c.fillRect(x + r / 2, y + h - h / 3, w - r, h / 3 - 1, 0x18001830);   // deeper at the bottom
+  int sh = h / 2 - 1;
+  int sr = r - 2 < sh / 2 ? r - 2 : sh / 2;
+  if (sr < 0) sr = 0;
+  c.fillRoundRect(x + 3, y + 2, w - 6, sh, sr, 0x40FFFFFF);          // shine
+  c.fillRect(x + r, y + 1, w - 2 * r, 1, 0x90FFFFFF);                 // edge light
+}
+
+void uiDrawRowSelection(UiCanvas &c, int x, int y, int w, int h)
+{
+  if (UI_THEME_STYLE == THEME_AERO) {
+    drawGloss(c, x, y, w, h, 12, uiWithAlpha(UI_COL_ACCENT, 0xA8));
+    return;
+  }
+  c.fillRoundRect(x, y, w, h, 10, UI_COL_ROW_SEL);
+  c.fillRoundRect(x, y + 8, 4, h - 16, 2, UI_COL_ACCENT);
+}
+
+void uiDrawSelection(UiCanvas &c, int x, int y, int w, int h, int radius, bool strong)
+{
+  if (UI_THEME_STYLE == THEME_AERO) {
+    drawGloss(c, x, y, w, h, radius, uiWithAlpha(UI_COL_ACCENT, strong ? 0xE8 : 0x90));
+    return;
+  }
+  c.fillRoundRect(x, y, w, h, radius, strong ? UI_COL_ACCENT : UI_COL_ROW_SEL);
+}
+
+void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
+{
+  if (UI_THEME_STYLE != THEME_AERO) {
+    c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, alpha));
+    return;
+  }
+  // Frosted glass: a bit more see-through, a light top and a bright edge.
+  int a = alpha >= 0xE0 ? alpha : alpha * 7 / 8;   // dialogs stay solid enough to read
+  c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, a));
+  int hh = h / 3 < 120 ? h / 3 : 120;
+  c.fillGradient(x + radius / 2, y + 1, w - radius, hh, 0x1CFFFFFF, 0x00FFFFFF);
+  c.fillRect(x + radius, y, w - 2 * radius, 1, 0x70FFFFFF);
+  c.fillRect(x + radius, y + h - 1, w - 2 * radius, 1, 0x20FFFFFF);
+}
+
+void uiDrawBackgroundDecor(UiCanvas &c)
+{
+  if (UI_THEME_STYLE != THEME_AERO)
+    return;
+  const int W = c.width(), H = c.height();
+  // Sun glow in the top-left corner.
+  for (int i = 0; i < 7; i++)
+    c.fillCircle(W / 8, -H / 10, 520 - i * 60, 0x08FFFFFF);
+  // Light streaks across the sky.
+  for (int i = 0; i < 3; i++)
+    c.fillRect(0, H / 5 + i * 34, W, 10 - i * 3, 0x08FFFFFF);
+  // Green glowing hills along the bottom, and water light over them.
+  for (int i = 0; i < 4; i++) {
+    c.fillCircle(W / 4, H + 380 - i * 14, 560 - i * 30, 0x1448D06A);
+    c.fillCircle(W * 4 / 5, H + 470 - i * 14, 640 - i * 30, 0x1236B85E);
+  }
+  c.fillRect(0, H - 120, W, 2, 0x18CFFFF0);
+  // Bubbles (fixed positions, so the cached background never changes).
+  static const short bub[][3] = {
+    { 1180, 160, 46 }, { 1090, 250, 22 }, { 1220, 330, 14 }, { 960, 140, 12 },
+    { 120, 600, 38 }, { 220, 520, 16 }, { 60, 470, 10 }, { 700, 640, 26 },
+    { 820, 560, 12 }, { 1010, 600, 34 }, { 1150, 520, 18 }, { 480, 90, 16 },
+    { 600, 170, 9 }, { 360, 640, 12 }, { 1240, 650, 24 }, { 900, 300, 8 } };
+  for (size_t i = 0; i < sizeof(bub) / sizeof(bub[0]); i++) {
+    int x = bub[i][0] * W / 1280, y = bub[i][1] * H / 720, r = bub[i][2];
+    c.fillCircle(x, y, r + 1, 0x1EFFFFFF);       // rim
+    c.fillCircle(x, y, r - 1, 0x10A8E8FF);       // body
+    c.fillCircle(x + r / 4, y + r / 4, r / 2, 0x0C9FF0FF);
+    c.fillCircle(x - r / 3, y - r / 3, r / 4 + 1, 0x60FFFFFF);   // shine
+  }
 }
 
 namespace {
@@ -381,6 +468,9 @@ void UiHomeScreen::buildRows(UiApp &app)
       m_rows.push_back(r);
     }
   }
+  if (m_tab == TAB_GAMES) {
+    app.setListMatches((int)m_rows.size());   // games and folders that match
+  }
   m_list[m_tab].clamp((int)m_rows.size());
 }
 
@@ -567,10 +657,8 @@ void UiHomeScreen::drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
     const Row &r = m_rows[idx];
     int ry = y + i * rh;
     bool sel = idx == ls.sel;
-    if (sel) {
-      c.fillRoundRect(x, ry + 2, w - 16, rh - 4, 10, UI_COL_ROW_SEL);
-      c.fillRoundRect(x, ry + 10, 4, rh - 20, 2, UI_COL_ACCENT);
-    }
+    if (sel)
+      uiDrawRowSelection(c, x, ry + 2, w - 16, rh - 4);
     int tx = x + 20;
     if (m_tab == TAB_GAMES) {
       if (r.isDir) {
@@ -605,7 +693,7 @@ void UiHomeScreen::drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
 
 void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
 {
-  c.fillRoundRect(x, y, w, h, 16, uiWithAlpha(UI_COL_PANEL, 0x60));
+  uiDrawPanel(c, x, y, w, h, 16, 0x60);
   UiListState &ls = m_list[m_tab];
   bool valid = ls.sel >= 0 && ls.sel < (int)m_rows.size();
   int pad = 20;
@@ -680,6 +768,12 @@ void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
 
 void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
 {
+  if (m_tab == TAB_GAMES && m_filter != app.listFilter()) {
+    // The search keyboard is filtering as the user types: start at the first match.
+    buildRows(app);
+    m_list[TAB_GAMES] = UiListState();
+    m_list[TAB_GAMES].clamp((int)m_rows.size());
+  }
   app.drawBackground(c);
 
   // Tabs in the header
@@ -693,7 +787,7 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
     const char *label = app.tr(es[i], en[i]);
     int w = c.textWidth(UI_FONT_BODY, label) + 36;
     if (i == m_tab)
-      c.fillRoundRect(tx, 32, w, 42, 21, UI_COL_ACCENT);
+      uiDrawSelection(c, tx, 32, w, 42, 21, true);
     c.drawText(UI_FONT_BODY, tx + 18, 38, label, i == m_tab ? 0xFFFFFFFF : UI_COL_TEXT_DIM);
     tx += w + 8;
   }
@@ -886,8 +980,9 @@ void UiMenuScreen::update(UiApp &app, const UiInputState &in)
   if (in.pressed & PAD_BIT(PAD_A)) {
     if (!it.enabled)
       return;
-    // In Controls, A captures the new button / stick direction instead.
-    if (it.kind == ITEM_OPTION && menuId != MENU_CONTROLS)
+    // Options open their list of values (in Controls, A captures the new
+    // button / stick direction instead; openPicker knows which).
+    if (it.kind == ITEM_OPTION)
       app.openPicker(*this, id);
     else
       app.onMenuActivate(*this, id);
@@ -911,7 +1006,7 @@ void UiMenuScreen::draw(UiApp &app, UiCanvas &c)
     h = 560;
     x = (UI_W - w) / 2;
     y = 56;
-    c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xF0));
+    uiDrawPanel(c, x, y, w, h, 20, 0xF0);
     c.drawTextFit(UI_FONT_TITLE, x + 32, y + 20, w - 64, title.c_str(), UI_COL_TEXT);
     if (!subtitle.empty())
       c.drawTextFit(UI_FONT_SMALL, x + 32, y + 64, w - 64, subtitle.c_str(), UI_COL_TEXT_DIM);
@@ -960,8 +1055,7 @@ void UiMenuScreen::draw(UiApp &app, UiCanvas &c)
       continue;
     }
     if (sel) {
-      c.fillRoundRect(x, ry + 2, w, rh - 4, 10, UI_COL_ROW_SEL);
-      c.fillRoundRect(x, ry + 10, 4, rh - 20, 2, UI_COL_ACCENT);
+      uiDrawRowSelection(c, x, ry + 2, w, rh - 4);
     }
     UiColor tc = !it.enabled ? 0xFF5E6678 : (sel ? UI_COL_TEXT : 0xFFD0D5E2);
     int valueW = 0;
@@ -1048,9 +1142,19 @@ const char *kKeys[4][6] = {
 const char *const kFullKeys[4] = { "ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ-'.&", "1234567890" };
 }
 
-UiKeyboardScreen::UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full)
-  : m_title(title), m_text(text), m_purpose(purpose), m_row(0), m_col(0), m_full(full)
+UiKeyboardScreen::UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full,
+                                   bool search)
+  : m_title(title), m_text(text), m_purpose(purpose), m_row(0), m_col(0), m_full(full),
+    m_search(search), m_orig(text)
 {
+}
+
+static std::string trimRight(const std::string &s)
+{
+  std::string t = s;
+  while (!t.empty() && t[t.size() - 1] == ' ')
+    t.erase(t.size() - 1);
+  return t;
 }
 
 const char *UiKeyboardScreen::keyLabel(int r, int c) const
@@ -1088,6 +1192,9 @@ void UiKeyboardScreen::update(UiApp &app, const UiInputState &in)
   bool del = (in.repeat & PAD_BIT(PAD_X)) != 0;
   bool space = (in.pressed & PAD_BIT(PAD_Y)) != 0;
   bool ok = (in.pressed & PAD_BIT(PAD_START)) != 0;
+  std::string before = m_text;
+  if (in.pressed & PAD_BIT(PAD_BACK))
+    m_text.clear();   // erase everything
   if (in.pressed & PAD_BIT(PAD_A)) {
     if (m_row < last) {
       if (m_text.size() < 40)
@@ -1098,6 +1205,8 @@ void UiKeyboardScreen::update(UiApp &app, const UiInputState &in)
   }
   if (space && m_text.size() < 40) m_text += ' ';
   if (del && !m_text.empty()) m_text.erase(m_text.size() - 1);
+  if (m_search && m_text != before)
+    app.setListFilter(trimRight(m_text));   // the list behind filters as you type
   if (ok) {
     std::string text = m_text;
     int purpose = m_purpose;
@@ -1107,17 +1216,93 @@ void UiKeyboardScreen::update(UiApp &app, const UiInputState &in)
   }
   if (in.pressed & PAD_BIT(PAD_B)) {
     int purpose = m_purpose;
+    if (m_search)
+      app.setListFilter(m_orig);   // cancel: the search it had before
     app.pop();
     app.onKeyboardDone(purpose, "", false);
   }
 }
 
+// Search: a wide, short keyboard at the bottom so the filtered list stays
+// visible above it.
+void UiKeyboardScreen::drawSearch(UiApp &app, UiCanvas &c)
+{
+  int w = UI_W - UI_MARGIN_X * 2, h = 322;
+  int x = UI_MARGIN_X, y = UI_FOOTER_Y - 12 - h;
+  c.fillRect(0, y - 16, UI_W, UI_H - y + 16, 0x60000000);
+  uiDrawPanel(c, x, y, w, h, 20, 0xF4);
+  c.fillRoundRect(x, y, w, 4, 2, UI_COL_ACCENT);
+
+  // Magnifier + text field + number of matches
+  int fx = x + 24, fy = y + 18, fw = w - 48 - 220, fh = 50;
+  c.fillRoundRect(fx, fy, fw, fh, 25, 0x50000000);
+  c.fillCircle(fx + 28, fy + 22, 11, UI_COL_ACCENT);
+  c.fillCircle(fx + 28, fy + 22, 7, 0xFF000000 | (UI_COL_PANEL & 0xFFFFFF));
+  c.fillRect(fx + 35, fy + 30, 4, 12, UI_COL_ACCENT);
+  c.fillRect(fx + 37, fy + 34, 6, 4, UI_COL_ACCENT);
+  int tx = fx + 56;
+  if (m_text.empty()) {
+    c.drawTextFit(UI_FONT_BODY, tx, fy + 11, fw - 80,
+                  app.tr("Escribe parte del nombre del juego", "Type part of the game's name"), UI_COL_TEXT_DIM);
+    if ((app.frameCount() / 30) % 2 == 0)
+      c.fillRect(tx, fy + 11, 2, 28, UI_COL_ACCENT);
+  } else {
+    int tw = c.drawTextFit(UI_FONT_BODY, tx, fy + 11, fw - 80, m_text.c_str(), UI_COL_TEXT);
+    if ((app.frameCount() / 30) % 2 == 0)
+      c.fillRect(tx + 2 + tw, fy + 11, 2, 28, UI_COL_ACCENT);
+  }
+  char buf[64];
+  int n = app.listMatches();
+  if (trimRight(m_text).empty())
+    sprintf(buf, "%s", app.tr("Todos los juegos", "All games"));
+  else if (n == 1)
+    sprintf(buf, "%s", app.tr("1 resultado", "1 result"));
+  else
+    sprintf(buf, app.tr("%d resultados", "%d results"), n);
+  c.drawTextFit(UI_FONT_BODY, fx + fw + 16, fy + 11, 220 - 16, buf,
+                n == 0 && !trimRight(m_text).empty() ? 0xFFFF9A8A : UI_COL_ACCENT, UI_ALIGN_CENTER);
+
+  int nc = keyCols(), last = keyRows();
+  int gap = 6, kh = 40;
+  int kw = (w - 48 - gap * (nc - 1)) / nc;
+  int gx = x + 24, gy = fy + fh + 18;
+  for (int r = 0; r <= last; r++) {
+    int cols = r == last ? 3 : nc;
+    int bw = r == last ? (kw * nc + gap * (nc - 1) - gap * 2) / 3 : kw;
+    for (int col = 0; col < cols; col++) {
+      int bx = gx + col * (bw + gap), by = gy + r * (kh + gap);
+      bool sel = r == m_row && col == m_col;
+      bool go = r == last && col == 2;
+      if (sel)
+        uiDrawSelection(c, bx, by, bw, kh, 10, true);
+      else
+        c.fillRoundRect(bx, by, bw, kh, 10, go ? uiWithAlpha(UI_COL_ACCENT, 0x60) : 0x30FFFFFF);
+      const char *label;
+      if (r < last) label = keyLabel(r, col);
+      else if (col == 0) label = app.tr("Espacio", "Space");
+      else if (col == 1) label = app.tr("Borrar", "Delete");
+      else label = app.tr("Buscar", "Search");
+      c.drawTextFit(UI_FONT_BODY, bx, by + 6, bw, label, 0xFFFFFFFF, UI_ALIGN_CENTER);
+    }
+  }
+  const char *hints[] = {
+    app.tr("START:Buscar", "START:Search"), app.tr("A:Escribir", "A:Type"),
+    app.tr("X:Borrar", "X:Delete"), app.tr("Y:Espacio", "Y:Space"),
+    app.tr("BACK:Borrar todo", "BACK:Clear"), app.tr("B:Cancelar", "B:Cancel")
+  };
+  app.drawHints(c, hints, 6);
+}
+
 void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
 {
+  if (m_search) {
+    drawSearch(app, c);
+    return;
+  }
   c.fillRect(0, 0, UI_W, UI_H, 0x90000000);
   int w = 640, h = 470;
   int x = (UI_W - w) / 2, y = 100;
-  c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
+  uiDrawPanel(c, x, y, w, h, 20, 0xFA);
   c.drawTextFit(UI_FONT_BODY, x + 32, y + 22, w - 64, m_title.c_str(), UI_COL_TEXT);
 
   // Text field with a blinking caret
@@ -1135,7 +1320,10 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
     for (int col = 0; col < cols; col++) {
       int bx = gx + col * (bw + gap), by = gy + r * (kh + gap);
       bool sel = r == m_row && col == m_col;
-      c.fillRoundRect(bx, by, bw, kh, 10, sel ? UI_COL_ACCENT : 0x30FFFFFF);
+      if (sel)
+        uiDrawSelection(c, bx, by, bw, kh, 10, true);
+      else
+        c.fillRoundRect(bx, by, bw, kh, 10, 0x30FFFFFF);
       const char *label;
       if (r < last) label = keyLabel(r, col);
       else if (col == 0) label = app.tr("Espacio", "Space");
@@ -1147,9 +1335,9 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
   const char *hints[] = {
     app.tr("A:Escribir", "A:Type"), app.tr("X:Borrar", "X:Delete"),
     app.tr("Y:Espacio", "Y:Space"), app.tr("START:Aceptar", "START:Done"),
-    app.tr("B:Cancelar", "B:Cancel")
+    app.tr("BACK:Borrar todo", "BACK:Clear"), app.tr("B:Cancelar", "B:Cancel")
   };
-  app.drawHints(c, hints, 5);
+  app.drawHints(c, hints, 6);
 }
 
 // --- UiCaptureScreen ---------------------------------------------------------
@@ -1184,7 +1372,7 @@ void UiCaptureScreen::draw(UiApp &app, UiCanvas &c)
   c.fillRect(0, 0, UI_W, UI_H, 0xA0000000);
   int w = 640, h = 220;
   int x = (UI_W - w) / 2, y = (UI_H - h) / 2 - 20;
-  c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
+  uiDrawPanel(c, x, y, w, h, 20, 0xFA);
   c.drawTextFit(UI_FONT_TITLE, x, y + 36, w, app.tr("Presiona un bot\xf3n", "Press a button"),
                 UI_COL_TEXT, UI_ALIGN_CENTER);
   char line[160];
@@ -1207,7 +1395,7 @@ UiConfirmScreen::UiConfirmScreen(const std::string &message, int purpose, const 
 
 UiPickerScreen::UiPickerScreen(UiMenuScreen *menu, int itemId, const std::string &title,
                                const std::vector<std::string> &values, int style, int selected)
-  : m_menu(menu), m_itemId(itemId), m_title(title), m_values(values), m_style(style)
+  : m_menu(menu), m_itemId(itemId), m_title(title), m_values(values), m_style(style), m_orig(selected)
 {
   m_list.sel = selected;   // the current value
   m_list.scroll = selected > 4 ? selected - 4 : 0;
@@ -1223,8 +1411,15 @@ void UiPickerScreen::update(UiApp &app, const UiInputState &in)
     m_list.move(delta, n, true);
     app.onMenuChange(*m_menu, m_itemId, delta);   // applied right away
   }
-  if (in.pressed & (PAD_BIT(PAD_A) | PAD_BIT(PAD_B)))
+  if (in.pressed & PAD_BIT(PAD_B)) {
+    // Cancel: step back to the value it had when the list opened.
+    int back = m_list.sel - m_orig;
+    for (int i = 0; i < back; i++) app.onMenuChange(*m_menu, m_itemId, -1);
+    for (int i = 0; i > back; i--) app.onMenuChange(*m_menu, m_itemId, 1);
     app.pop();
+  } else if (in.pressed & (PAD_BIT(PAD_A) | PAD_BIT(PAD_START))) {
+    app.pop();
+  }
 }
 
 void UiPickerScreen::draw(UiApp &app, UiCanvas &c)
@@ -1239,7 +1434,7 @@ void UiPickerScreen::draw(UiApp &app, UiCanvas &c)
     h = 96 + rows * rh + 20;
     x = (UI_W - w) / 2;
     y = (UI_H - h) / 2 - 20;
-    c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
+    uiDrawPanel(c, x, y, w, h, 20, 0xFA);
   } else {
     // Side panel on the right, full height.
     c.fillRect(0, 0, UI_W, UI_H, 0x60000000);
@@ -1247,7 +1442,7 @@ void UiPickerScreen::draw(UiApp &app, UiCanvas &c)
     h = UI_H;
     x = UI_W - w;
     y = 0;
-    c.fillRect(x, y, w, h, uiWithAlpha(UI_COL_PANEL, 0xF8));
+    uiDrawPanel(c, x, y, w, h, 0, 0xF8);
     c.fillRect(x, y, 3, h, UI_COL_ACCENT);
     y += 40;
     h -= 40 + 80;
@@ -1266,16 +1461,14 @@ void UiPickerScreen::draw(UiApp &app, UiCanvas &c)
       break;
     int ry = listY + i * rh;
     bool sel = idx == m_list.sel;
-    if (sel) {
-      c.fillRoundRect(x + 16, ry + 2, w - 32, rh - 4, 10, UI_COL_ROW_SEL);
-      c.fillRoundRect(x + 16, ry + 10, 4, rh - 20, 2, UI_COL_ACCENT);
-    }
+    if (sel)
+      uiDrawRowSelection(c, x + 16, ry + 2, w - 32, rh - 4);
     c.drawTextFit(UI_FONT_BODY, x + 36, ry + 8, w - 72, m_values[idx].c_str(),
                   sel ? UI_COL_TEXT : 0xFFD0D5E2);
   }
   c.resetClip();
   drawScrollbar(c, x + w - 12, listY, visible * rh, m_list.scroll, visible, (int)m_values.size());
-  const char *hints[] = { app.tr("A:Listo", "A:Done"), app.tr("B:Cerrar", "B:Close") };
+  const char *hints[] = { app.tr("A:Aceptar", "A:OK"), app.tr("B:Cancelar", "B:Cancel") };
   if (m_style == OPT_STYLE_LIST) {
     app.drawHints(c, hints, 2);
   } else {
@@ -1283,7 +1476,7 @@ void UiPickerScreen::draw(UiApp &app, UiCanvas &c)
     int hy = UI_H - 64;
     c.fillRect(x + 28, hy - 8, w - 56, 1, COL_DIVIDER);
     c.drawText(UI_FONT_SMALL, x + 28, hy + 4,
-               app.tr("Arriba/abajo: cambiar   A / B: cerrar", "Up/down: change   A / B: close"),
+               app.tr("Arriba/abajo: cambiar  A: listo  B: cancelar", "Up/down: change  A: done  B: cancel"),
                UI_COL_TEXT_DIM);
   }
 }
@@ -1305,7 +1498,7 @@ void UiConfirmScreen::draw(UiApp &app, UiCanvas &c)
   c.fillRect(0, 0, UI_W, UI_H, 0xA0000000);
   int w = 640, h = 200;
   int x = (UI_W - w) / 2, y = (UI_H - h) / 2 - 20;
-  c.fillRoundRect(x, y, w, h, 20, uiWithAlpha(UI_COL_PANEL, 0xFA));
+  uiDrawPanel(c, x, y, w, h, 20, 0xFA);
   c.drawTextFit(UI_FONT_BODY, x + 24, y + 50, w - 48, m_message.c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
   const char *hints[] = { app.tr("A:S\xed", "A:Yes"), app.tr("B:No", "B:No") };
   app.drawHints(c, hints, 2);

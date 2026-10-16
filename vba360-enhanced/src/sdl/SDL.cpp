@@ -1155,7 +1155,7 @@ void sdlInitVideo() {
 		pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 	}
 
-	showSpeed = g_cfg.showFps ? 2 : 0;
+	showSpeed = xboxShowFps() ? 2 : 0;
 }
 
 #define MOD_KEYS    (KMOD_CTRL|KMOD_SHIFT|KMOD_ALT|KMOD_META)

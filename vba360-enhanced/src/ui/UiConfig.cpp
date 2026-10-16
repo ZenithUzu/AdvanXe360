@@ -74,7 +74,7 @@ struct ConfigReader
     if (k == "language") c.language = clampInt(v, 0, 1, c.language);
     else if (k == "hide_non_games") c.hideNonGames = clampInt(v, 0, 1, c.hideNonGames);
     else if (k == "last_dir") c.lastDir = v;
-    else if (k == "menu_theme") c.menuTheme = clampInt(v, 0, 5, c.menuTheme);
+    else if (k == "menu_theme") c.menuTheme = clampInt(v, 0, 6, c.menuTheme);
     else if (k == "option_style") c.optionStyle = clampInt(v, 0, OPT_STYLE_COUNT - 1, c.optionStyle);
     else if (k == "menu_background") c.menuBackground = v;
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
@@ -135,6 +135,10 @@ struct GameConfigReader
     else if (k == "screen_effect") c.screenEffect = clampInt(v, 0, EFFECT_COUNT - 1, c.screenEffect);
     else if (k == "gb_palette") c.gbPalette = clampInt(v, 0, GB_PALETTE_COUNT - 1, c.gbPalette);
     else if (k == "sgb_mode") c.sgbMode = clampInt(v, 0, 1, c.sgbMode);
+    else if (k == "gba_color") c.gbaColor = clampInt(v, 0, 2, c.gbaColor);
+    else if (k == "frame_blend") c.frameBlend = clampInt(v, 0, 2, c.frameBlend);
+    else if (k == "show_fps") c.showFps = clampInt(v, 0, 1, c.showFps);
+    else if (k == "frame_skip") c.frameSkip = clampInt(v, 0, 4, c.frameSkip);
     else if (k == "custom_controls") c.customControls = clampInt(v, 0, 1, c.customControls);
     else if (k.compare(0, 4, "ctl_") == 0) {
       for (int i = 0; i < ACT_COUNT; i++)
@@ -228,6 +232,7 @@ bool UiConfig::save(const std::string &path) const
 UiGameConfig::UiGameConfig()
   : saveType(SAVE_AUTO), rtc(TRI_AUTO), patch(1), custom(0),
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), screenEffect(EFFECT_NONE), gbPalette(0), sgbMode(1),
+    gbaColor(0), frameBlend(0), showFps(0), frameSkip(0),
     customControls(0)
 {
   UiConfig defaults;
@@ -248,6 +253,10 @@ void UiGameConfig::copyVideoFrom(const UiConfig &cfg)
   screenEffect = cfg.screenEffect;
   gbPalette = cfg.gbPalette;
   sgbMode = cfg.sgbBorders ? 1 : 0;
+  gbaColor = cfg.gbaColor;
+  frameBlend = cfg.frameBlend;
+  showFps = cfg.showFps;
+  frameSkip = cfg.frameSkip;
 }
 
 bool UiGameConfig::load(const std::string &path)
@@ -264,6 +273,7 @@ bool UiGameConfig::save(const std::string &path) const
   fprintf(f, "save_type=%d\nrtc=%d\npatch=%d\n", saveType, rtc, patch);
   fprintf(f, "custom=%d\nfilter=%d\nstretch=%d\nscreen_effect=%d\ngb_palette=%d\nsgb_mode=%d\n",
           custom, filter, stretch, screenEffect, gbPalette, sgbMode);
+  fprintf(f, "gba_color=%d\nframe_blend=%d\nshow_fps=%d\nframe_skip=%d\n", gbaColor, frameBlend, showFps, frameSkip);
   fprintf(f, "custom_controls=%d\n", customControls);
   if (customControls)
     for (int i = 0; i < ACT_COUNT; i++)
