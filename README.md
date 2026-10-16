@@ -1,442 +1,242 @@
 # vba360-enhanced-ai
 
-🌐 [English](README.en.md) · **Español**
+🌐 **Español** · [English](README.en.md)
 
-Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew, funciona con BadUpdate / RGH / JTAG), con **marcos de Super Game Boy**.
+[![Plataforma](https://img.shields.io/badge/plataforma-Xbox%20360-107C10)](#instalación)
+[![Consolas](https://img.shields.io/badge/emula-GBA%20%C2%B7%20GB%20%C2%B7%20GBC-6F64F0)](#qué-emula-y-qué-no)
+[![Licencia](https://img.shields.io/badge/licencia-GPL%20v2-blue)](#notas-y-créditos)
+[![Descarga](https://img.shields.io/github/v/release/ZenithUzu/vba360-enhanced-ai?label=descargar)](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest)
 
-> 🆕 **Novedades:** los juegos de **Game Boy y Game Boy Color** corren ahora en el núcleo **Gambatte** (también los que son solo de Color, como Pokémon Cristal), y los juegos de Super Game Boy pueden mostrar **su marco** y sus colores. Cada juego puede tener **su propia configuración de imagen** (botón Y).
-Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced).
+Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew: BadUpdate, RGH o JTAG). Basado en VisualBoyAdvance-M, con el núcleo **Gambatte** para Game Boy / Color, **marcos de Super Game Boy**, menú propio y opciones por juego.
 
-**[⬇️ Descargar la última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest)**
-
-> 🤖 **Aviso:** los cambios de este fork fueron hechos con ayuda de inteligencia artificial (Claude, de Anthropic). Lo mantengo por **pasatiempo**, sin fines de lucro y sin ninguna garantía.
-
-Eres **libre de usarlo o no**, de copiarlo, modificarlo y compartirlo, bajo los términos de la licencia GPL del proyecto original. Todo el crédito del emulador y del port es de sus autores originales (ver más abajo).
-
-## Instalación
-
-1. Descarga el `.zip` de la [última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest).
-2. Copia la carpeta `VBA360` a tu consola (por ejemplo `Hdd1:\Emulators\VBA360\`) por FTP o USB.
-3. Ábrela desde Aurora (`default.xex`). Las demás carpetas se crean solas.
-4. Pon tus ROMs donde quieras (disco duro o USB) y búscalas desde el explorador del emulador.
-
-## Funciones
-
-**Interfaz**
-- Interfaz propia, simple y rápida, dibujada por el emulador (ya no usa las escenas XUI originales).
-- Pestañas **Juegos · Recientes · Favoritos · Ajustes** (LB / RB).
-- Explorador de **unidades y carpetas** (disco duro, USB, unidades de memoria, carpeta del emulador) con vista previa del último momento jugado y aviso si la ROM tiene parche.
-- **Buscar y ordenar** en la pestaña Juegos: **BACK** abre un teclado para buscar por nombre: la lista se filtra mientras escribes y muestra cuántos resultados hay, **START** (o la tecla *Buscar*) deja la búsqueda, **B** la cancela y **BACK** borra todo lo escrito (en la lista, B quita la búsqueda), **START** cambia el orden (A-Z, Z-A o jugados recientemente) y **LT / RT** saltan a la letra anterior / siguiente.
-- **Portadas:** si hay una imagen con el nombre del juego, se muestra en la vista previa. Ver [Portadas](#portadas).
-- **Español e inglés**, con una línea de ayuda en cada opción.
-- **Cómo se cambia una opción** (*Ajustes → Interfaz e idioma → Al cambiar una opción*): **panel lateral** (A abre los valores a la derecha), **lista emergente** (en el centro) o **clásico** (izquierda / derecha). En los dos primeros el cambio se ve al momento (filtros, fondos, colores) **A** (o START) lo deja y **B** lo cancela (vuelve al valor que tenía). Ahora también las opciones de dos valores (Sí / No, Apagado / Encendido...), la sensibilidad de inclinación y el modo del reloj se abren en el panel; izquierda / derecha siguen funcionando en los tres.
-- **Temas de colores** (Predeterminado, Xbox 360, Game Boy, Game Boy Color, Game Boy Advance, Rojo y **Frutiger Aero**, con botones brillantes tipo cristal, paneles translúcidos y un fondo de cielo con burbujas) e **imagen de fondo** propia para el menú (*Ajustes → Interfaz e idioma*).
-
-**Menú dentro del juego** (clic del stick derecho; se puede cambiar en Controles)
-- Guardar y cargar **estados en 9 ranuras**, cada una con miniatura.
-- **Avance rápido** de 2x, 3x, 4x, 6x, 8x o máximo, manteniendo o alternando el botón.
-- Trucos, opciones del juego, ajustes, captura de pantalla, reiniciar y salir.
-
-**Compatibilidad con hacks y ROMs**
-- **Parches BPS / UPS / IPS automáticos** hasta 32 MB: la ROM limpia no se modifica.
-- **Guardado de batería** (`.sav`) en GBA y GB: lo que guardas dentro del juego se escribe al salir, al abrir el menú y periódicamente.
-- El **tipo de guardado** (Flash 64/128 KB, SRAM, EEPROM) y el **reloj RTC** se detectan **leyendo la ROM**, no por el ID del cartucho. Así guardan bien los hacks de Pokémon aunque conserven el ID original.
-- **Opciones por juego** (botón Y sobre un juego, o *Opciones del juego* en el menú dentro del juego), guardadas por nombre de archivo: tipo de guardado y reloj (GBA), parche, la **imagen de ese juego**: *Como en Ajustes* o *Personalizada* (filtro, tamaño, efecto, colores de Game Boy, **corrección de color** (sólo GBA), **mezcla de cuadros**, **mostrar FPS**, **salto de cuadros** y, en juegos de Super Game Boy, modo **Normal** o **Super Game Boy**) y los **botones de ese juego** (*Como en Ajustes* o *Personalizados*, con su propia pantalla de *Configurar botones*). Lo de Ajustes sigue valiendo para todos los demás juegos.
-- ROMs comprimidas en `.zip` y `.7z`.
-
-**Game Boy y Game Boy Color** (núcleo [Gambatte](#game-boy-y-game-boy-color))
-- Juegos de **Game Boy** y **Game Boy Color** (`.gb`, `.gbc`), con sus colores, guardado de batería, reloj (Pokémon Oro/Plata/Cristal) y vibración en los cartuchos que la traen.
-- Los juegos de Game Boy se pueden ver con una paleta fija o con la **automática**, los colores que les daba el Game Boy Color.
-- **Super Game Boy:** el **marco** y los colores que cada juego traía para el Super Game Boy (Pokémon Rojo/Azul/Amarillo, Donkey Kong, Kirby...). Ver [Super Game Boy](#super-game-boy).
-- **Kirby Tilt 'n' Tumble** (cartucho MBC7, con sensor de inclinación y su propia memoria de guardado): se inclina con el stick, como los juegos de GBA con sensor. Ver [Juegos con sensores](#juegos-con-sensores).
-
-**Núcleo de GBA más rápido y compatible** (mejoras tomadas de [VBA-Next](https://github.com/libretro/vba-next))
-- Los fondos se dibujan de 8 en 8 píxeles en vez de uno por uno, y los fondos con rotación que no están girando usan un camino rápido. La imagen es **idéntica** a la de antes (comparada cuadro por cuadro); el dibujo de fondos hace unas 60 % menos operaciones.
-- El proyecto compila con las opciones de velocidad del compilador de Xbox 360 que usaba VBA-Next.
-- Arreglos: la memoria de guardado también responde en su dirección espejo (0x0F000000) y con el valor repetido en lecturas de 16/32 bits, como en la consola; lecturas desalineadas de VRAM; tiempo de las multiplicaciones; rotación de 32 bits en Thumb. Con estos arreglos ya arrancan los juegos de **Classic NES Series / Famicom Mini**.
-
-**Trucos**
-- Están en **Opciones del juego** (botón Y sobre un juego, o *Opciones de este juego* en el menú dentro del juego) → **Trucos y códigos**. El emulador sabe si el juego es de GBA o de GB/GBC y ofrece los tipos que corresponden:
-  - **GBA:** Automático, GameShark / Action Replay v1-v2, GameShark v3 / Action Replay v3, CodeBreaker y VBA (`dirección:valor`).
-  - **GB / GBC:** Automático, **GameShark** (`01XXXXXX`) y **Game Genie** (`XXX-XXX-XXX` o `XXX-XXX`).
-- Se escriben con un **teclado en pantalla** (después puedes ponerle nombre) o se **importan** de archivos `.cht` / `.txt` (también el formato de RetroArch).
-- Cada juego guarda **su propia lista**, separada por consola (`cheats\gba\` y `cheats\gb\`), aunque el juego no esté abierto; un código de GB nunca se aplica a un juego de GBA ni al revés. Las listas de versiones anteriores se convierten solas la primera vez.
-
-**Ajustes**
-- **Video:** filtro (nítido, suave, Scale2x, LQ2x); tamaño original (GBA 3:2, GB 10:9), pantalla completa, **entero** (píxel exacto: GBA x4, GB x5) o **16:9** (llena toda la TV, imagen estirada); **efecto de pantalla** (líneas tipo CRT o rejilla tipo LCD); **colores de Game Boy** (41 opciones: gris, verde clásico, Game Boy original, Pocket, Light, las **32 paletas oficiales de Super Game Boy** de la 1-A a la 4-H, sepia, azul, rojo y **automática**, como en el Game Boy Color); **fondo negro o con imagen propia** (centrada, rellenar o estirar); **corrección de color de GBA** (*Suave* o *Como la pantalla real*: quita los colores chillones que los juegos usaban para compensar la pantalla oscura del GBA; fórmula del shader *gba-color* de Pokefan531); **mezcla de cuadros** (*Mezclar 2 cuadros* quita el parpadeo de los sprites que se encienden y apagan cada cuadro, como en Golden Sun o F-Zero; *Estela de LCD* imita el rastro de la pantalla original); mostrar FPS y salto de cuadros.
-- **Audio:** sonido, silenciar durante el avance rápido, **volumen** (25 % a 200 %) y **retraso del sonido** (Normal 100 ms, Bajo 60 ms o Mínimo 40 ms: con menos retraso el sonido va más pegado a la imagen; si oyes cortes, vuelve a Normal).
-- **Emulación:** velocidad y modo del avance rápido, BIOS original opcional y formato de los códigos de 16 dígitos.
-- **Guardado:** carpeta de partidas y de estados (junto a la ROM o en la carpeta del emulador), guardar estado al salir, continuar donde lo dejaste y **copias de seguridad del `.sav`**: al abrir un juego se guarda una copia de su partida en `saves\backups\` (las 3 últimas: `-1` es la más nueva). Si un hack o un truco daña la partida, copia la de respaldo encima del `.sav`.
-- **Controles:** todos los botones reasignables (también turbo A/B, avance rápido, menú, guardado y carga rápida). Puedes elegir de la lista o simplemente presionar el botón nuevo.
-
-## Capturas
-
-**Pokémon SoulGold (hack) con imagen de borde y contador de FPS:**
+Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced) · **[⬇️ Descargar la última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest)**
 
 | | |
 |---|---|
-| ![Gameplay 1](docs/screenshots/gameplay-soulgold-1.png) | ![Gameplay 2](docs/screenshots/gameplay-soulgold-2.png) |
+| ![Castlevania: Aria of Sorrow](docs/screenshots/gba-castlevania.png) | ![Super Mario Bros. (Classic NES Series)](docs/screenshots/nes-smb-game.png) |
+| ![Zelda: Link's Awakening DX](docs/screenshots/gbc-zelda-dx.png) | ![Pokémon Amarillo con marco de Super Game Boy](docs/screenshots/sgb-yellow-border.png) |
 
-**Game Boy con efectos de pantalla y paletas** (*Pokémon Edición Roja*):
+*Todas las capturas son de una Xbox 360 real (tomadas con Aurora). Estas cuatro muestran las cuatro cosas que corre: GBA, Classic NES Series, Game Boy Color y Super Game Boy.*
+
+> 🤖 Los cambios de este fork se hicieron con ayuda de inteligencia artificial (Claude, de Anthropic). Lo mantengo por **pasatiempo**, sin fines de lucro y sin garantía. Eres libre de usarlo, copiarlo, modificarlo y compartirlo bajo la licencia GPL.
+
+---
+
+# Funciones
+
+- **GBA** con el núcleo VBA-M, más rápido y compatible gracias a mejoras de VBA-Next. Ya arrancan los juegos de **Classic NES Series / Famicom Mini**.
+- **Game Boy y Game Boy Color** con **Gambatte** (el núcleo de RetroArch), incluidos los juegos que son sólo de Color.
+- **Super Game Boy:** el marco y los colores que cada juego traía.
+- **Hacks:** parches **BPS / UPS / IPS** automáticos y guardado detectado leyendo la ROM (los hacks de Pokémon guardan bien).
+- **Sensores de cartucho** con el stick derecho: sol (Boktai), inclinación (Yoshi, Koro Koro, Kirby Tilt 'n' Tumble), giroscopio y vibración (WarioWare: Twisted!, Drill Dozer).
+- **Estados** en 9 ranuras con miniatura, **avance rápido**, **trucos** (GameShark, Action Replay, CodeBreaker, Game Genie) y **reloj** ajustable.
+- **Imagen:** filtros, tamaños, efectos **CRT / LCD**, **corrección de color** de GBA, **mezcla de cuadros**, 41 paletas de Game Boy y fondo con tu propia imagen.
+- **Opciones por juego:** imagen, botones, trucos, tipo de guardado y parche, guardados por nombre de archivo.
+- **Menú propio** en español e inglés, con 7 temas (incluido **Frutiger Aero**), imagen de fondo, portadas, búsqueda y favoritos.
+
+## Game Boy Advance
+
+| | |
+|---|---|
+| ![Castlevania](docs/screenshots/gba-castlevania.png) | ![Pokémon Unbound](docs/screenshots/gba-unbound-patch.png) |
+
+Estas muestran juegos de GBA: *Castlevania: Aria of Sorrow* tal cual, y *Pokémon Unbound*, un hack que se abrió como **ROM limpia + parche `.bps`** con el mismo nombre (el parche se aplica solo, en memoria).
+
+| | |
+|---|---|
+| ![Super Mario Bros. título](docs/screenshots/nes-smb-title.png) | ![Super Mario Bros. jugando](docs/screenshots/nes-smb-game.png) |
+
+Estas muestran **Classic NES Series** (*Super Mario Bros.* para GBA): antes no arrancaba; ahora llega al título y se juega.
+
+## Game Boy, Game Boy Color y Super Game Boy
+
+| | |
+|---|---|
+| ![Zelda DX](docs/screenshots/gbc-zelda-dx.png) | ![Pokémon Cristal](docs/screenshots/gbc-crystal.png) |
+
+Estas muestran el núcleo **Gambatte**: *Zelda: Link's Awakening DX* a color y *Pokémon Cristal*, un juego **sólo de Game Boy Color** que antes no corría.
+
+| | |
+|---|---|
+| ![Pokémon Amarillo con marco](docs/screenshots/sgb-yellow-border.png) | ![Pokémon Amarillo con marco y fondo](docs/screenshots/sgb-yellow-background.png) |
+
+Estas muestran el **marco de Super Game Boy** de *Pokémon Amarillo*: la primera con fondo negro y la segunda con una imagen de fondo propia a los lados.
+
+## Sensores del cartucho
+
+| | |
+|---|---|
+| ![Boktai: sensor solar](docs/screenshots/gba-boktai-sun.png) | ![Yoshi Topsy-Turvy](docs/screenshots/gba-yoshi-tilt.png) |
+| ![Controles: sensores](docs/screenshots/controls-sensors.png) | ![Controles de Kirby Tilt 'n' Tumble](docs/screenshots/controls-kirby.png) |
+
+Estas muestran los **sensores**: arriba, *Boktai* con el medidor de sol en pantalla (*Luz solar 0/10*, se sube y baja con el stick derecho) y *Yoshi Topsy-Turvy*, que se inclina con el stick. Abajo, la sección *Sensores de movimiento* de Controles y los controles propios de *Kirby Tilt 'n' Tumble* (GBC), que sólo muestran la inclinación porque ese cartucho no tiene sensor de sol.
+
+## Imagen: efectos, colores y fondos
+
+| | |
+|---|---|
+| ![Castlevania con efecto LCD](docs/screenshots/fx-castlevania-lcd.png) | ![Super Mario Bros. con efecto LCD](docs/screenshots/fx-smb-lcd.png) |
+| ![Link's Awakening con fondo](docs/screenshots/gb-zelda-background.png) | ![Zelda DX título con fondo](docs/screenshots/gbc-zelda-dx-title.png) |
+
+Estas muestran la **imagen**: arriba, el efecto **LCD** con la **corrección de color** de GBA (colores menos chillones, como la pantalla real); abajo, juegos de Game Boy en su tamaño original con una **imagen de fondo** propia a los lados.
 
 | | |
 |---|---|
 | ![Sin efecto, paleta gris](docs/screenshots/gb-no-effect.png) | ![CRT, paleta verde](docs/screenshots/gb-crt-green.png) |
-| *Sin efecto, paleta Gris (original)* | *CRT, paleta verde* |
 | ![LCD, paleta Pocket](docs/screenshots/gb-lcd-pocket.png) | ![LCD, paleta Light](docs/screenshots/gb-lcd-light.png) |
-| *LCD, paleta Game Boy Pocket* | *LCD, paleta Game Boy Light* |
 
-**Ajustes:**
+Estas muestran **efectos y paletas de Game Boy** en *Pokémon Rojo*: sin efecto con paleta gris, **CRT** con paleta verde y **LCD** con las paletas Pocket y Light.
+
+## Menú y ajustes
 
 | | |
 |---|---|
-| ![Video](docs/screenshots/settings-video-es.png) | ![Controles](docs/screenshots/controls.png) |
-| ![Guardado](docs/screenshots/settings-saving.png) | ![Emulación](docs/screenshots/settings-emulation.png) |
-| ![Audio](docs/screenshots/settings-audio.png) | ![Acerca de](docs/screenshots/about.png) |
-| ![Interfaz (español)](docs/screenshots/settings-interface-es.png) | ![Interface (English)](docs/screenshots/settings-interface-en.png) |
+| ![Video](docs/screenshots/menu-video.png) | ![Audio](docs/screenshots/menu-audio.png) |
+| ![Emulación](docs/screenshots/menu-emulation.png) | ![Guardado](docs/screenshots/menu-saving.png) |
+| ![Interfaz e idioma](docs/screenshots/menu-interface.png) | ![Reloj de los juegos](docs/screenshots/menu-clock.png) |
 
-## Cómo usar un hack
+Estas muestran las pantallas de **Ajustes**: Video, Audio (volumen y retraso), Emulación, Guardado (con *Solución de problemas* para borrar estados dañados), Interfaz e idioma y el **reloj** personalizado para juegos como Pokémon Esmeralda.
 
-Hay dos formas:
-
-**1. Hack ya parchado (`.gba`).** Ábrelo como cualquier otro juego. Los hacks distribuidos como `.gba` arrancan y guardan normal; por ejemplo, el **Pokémon SoulGold** de las capturas es un hack de GBA en este formato. Es la forma recomendada, porque rinde mejor.
-
-**2. ROM limpia + parche.** Pon la ROM limpia y el parche en la misma carpeta, con **el mismo nombre**:
-
-```
-Pokemon Unbound.gba
-Pokemon Unbound.bps
-```
-
-Al abrir la ROM, el parche se aplica solo, en memoria. Ojo: con parches puede haber caídas de rendimiento (ver [Errores conocidos](#errores-conocidos)); si te pasa, usa la ROM ya parchada.
-
-## Fondo de la pantalla
-
-Por defecto el fondo alrededor del juego es **negro**. Para usar una imagen, ponla en la carpeta `borders\` junto a `default.xex` (puedes tener varias, con cualquier nombre) y elígela en **Ajustes → Video → Fondo de la pantalla**. Formatos: **PNG, JPG, BMP, TGA y DDS** (WebP no). Lo ideal es 1280×720, pero con **Ajuste del fondo** puedes dejarla **Centrada** (completa, al centro), **Rellenar** (cubre toda la pantalla) o **Estirar**. El juego se dibuja encima, así que solo se ven los lados. Hay un ejemplo en [`extras/borders/border.png`](extras/borders/border.png).
-
-**Medidas para diseñar tu propio fondo** (imagen de **1280×720**, ajuste *Centrada* o *Estirar*; en 1920×1080 multiplica todo por 1.5). El juego tapa este rectángulo:
-
-| Consola | Tamaño de imagen | Rectángulo del juego (x, y, ancho × alto) | Espacio libre a los lados |
-|---|---|---|---|
-| GBA | Original | 100, 0, 1080 × 720 | 100 px a cada lado |
-| GBA | Entera | 160, 40, 960 × 640 | 160 px a los lados, 40 px arriba y abajo |
-| GB | Original / Entera | 240, 0, 800 × 720 | 240 px a cada lado |
-| GBA y GB | Pantalla completa | 80, 40, 1120 × 640 | 80 px a los lados, 40 px arriba y abajo |
-| GBA y GB | 16:9 | 0, 0, 1280 × 720 | ninguno (el juego cubre toda la pantalla) |
-
-Si usas GBA y GB con el mismo fondo, deja el diseño importante en los 100 px de cada orilla.
-
-## Efectos de pantalla y colores
-
-En **Ajustes → Video**:
-
-- **Efecto de pantalla:**
-  - **CRT (TV antigua):** líneas de barrido que se adelgazan en colores claros y una máscara tipo rejilla de fósforo. Adaptado del shader *zfast_crt* de Greg Hogan (GPL v2+), tomado de [libretro/glsl-shaders → `crt/shaders/zfast_crt.glsl`](https://github.com/libretro/glsl-shaders/blob/master/crt/shaders/zfast_crt.glsl).
-  - **LCD (pantalla portátil):** rejilla fina y subpíxeles rojo/verde/azul, como la pantalla de una portátil. Adaptado del shader *lcd3x* de Gigaherz (dominio público), tomado de [libretro/glsl-shaders → `handheld/shaders/lcd3x.glsl`](https://github.com/libretro/glsl-shaders/blob/master/handheld/shaders/lcd3x.glsl).
-  - Los dos se tradujeron de GLSL (RetroArch) a HLSL para la Xbox 360 y funcionan en GBA y GB. Se ven mejor con **Tamaño de imagen → Entera**.
-- **Colores (Game Boy):** 41 opciones para los juegos de Game Boy (los de Game Boy Color usan siempre sus propios colores). **Automática** da a cada juego los colores que le ponía el Game Boy Color al arrancarlo (o los de Super Game Boy, si son más vistosos); los juegos que no están en esa lista se ven en gris. Las de Game Boy original (DMG), Pocket, Light y las **32 de Super Game Boy** (1-A a 4-H) se tomaron del core Gambatte de RetroArch: [libretro/gambatte-libretro → `libgambatte/libretro/gbcpalettes.h`](https://github.com/libretro/gambatte-libretro/blob/master/libgambatte/libretro/gbcpalettes.h) (Sindre Aamås, GPL v2). Además: Gris (original), Verde clásico y los extras Sepia, Azul y Rojo.
-
-## Juegos con sensores
-
-Algunos cartuchos de GBA (y uno de Game Boy Color) traían hardware extra. El emulador lo reconoce solo, por el código del juego, y lo imita con el control:
-
-| Juego | Hardware del cartucho | Cómo se usa en la Xbox |
-|---|---|---|
-| *Boktai 1 y 2*, *Shin Bokura no Taiyou* | Sensor de luz solar + reloj | **Stick derecho arriba = más sol, abajo = menos** (0 a 10; aparece en pantalla). En el nivel 10 se llenan todas las barras |
-| *WarioWare: Twisted!* | Giroscopio + vibración | Girar = **stick derecho** a la izquierda o a la derecha; la vibración pasa al control |
-| *Drill Dozer* | Vibración | La vibración pasa al control |
-| *Yoshi Topsy-Turvy*, *Koro Koro Puzzle* | Sensor de inclinación | Inclinar = **stick derecho** |
-| *Kirby Tilt 'n' Tumble* (GBC) | Acelerómetro + memoria EEPROM (MBC7) | Inclinar = **stick derecho**; la partida se guarda en el `.sav` (256 bytes) |
-
-En **Ajustes → Controles**, más abajo de los botones, está la sección **Sensores de movimiento**. Cada movimiento se mapea a una dirección de stick, igual que los botones:
-
-| Movimiento | Por defecto |
+| | |
 |---|---|
-| Inclinar a la derecha | Stick derecho → derecha |
-| Inclinar a la izquierda | Stick derecho → izquierda |
-| Inclinar hacia arriba | Stick derecho → arriba |
-| Inclinar hacia abajo | Stick derecho → abajo |
-| Más luz solar (Boktai) | Stick derecho → arriba |
-| Menos luz solar (Boktai) | Stick derecho → abajo |
+| ![Opciones del juego](docs/screenshots/game-options-custom.png) | ![Opciones del juego: imagen personalizada](docs/screenshots/game-options-custom-2.png) |
+| ![Trucos y códigos](docs/screenshots/game-cheats.png) | ![Controles de un juego](docs/screenshots/game-controls-gbc.png) |
 
-- El **giro** de WarioWare: Twisted! usa las mismas direcciones que inclinar a la izquierda / derecha.
-- Para cambiar uno: selecciónalo, presiona **A** y mueve **cualquier stick** hacia donde quieras. También puedes elegir de la lista con izquierda/derecha, o dejarlo sin asignar con **X**. **START** restablece todo.
-- **Sensibilidad de inclinación** (50 % a 200 %).
+Estas muestran las **opciones por juego** (botón **Y** sobre un juego): la imagen *Personalizada* (modo Super Game Boy, filtro, tamaño, efecto, mezcla de cuadros, FPS y salto de cuadros sólo para ese juego), los **trucos** y los **botones propios** de un juego de Game Boy Color.
 
-Los sensores **sólo se activan en los juegos que los tienen**, así que no interfieren con nada más. Si mapeas un sensor al stick izquierdo, en ese juego el stick izquierdo deja de mover la cruceta para que no choquen.
+| | |
+|---|---|
+| ![Panel lateral](docs/screenshots/picker-panel.png) | ![Lista emergente](docs/screenshots/picker-list.png) |
+| ![Elegir imagen de fondo](docs/screenshots/picker-background.png) | ![Controles dentro del juego](docs/screenshots/ingame-controls-overlay.png) |
 
-El sensor solar, el giroscopio y la vibración se adaptaron de la VisualBoyAdvance-M actual ([`src/core/gba/gbaRtc.cpp`](https://github.com/visualboyadvance-m/visualboyadvance-m/blob/master/src/core/gba/gbaRtc.cpp), GPL v2+). La escala de sol se amplió respecto a la de VBA-M (que en el nivel máximo solo mostraba 6 de 8 barras en Boktai).
+Estas muestran **cómo se cambia una opción**: con **panel lateral** o **lista emergente** (A abre los valores, B cancela), eligiendo una imagen de fondo, y el menú abierto **encima del juego** (clic del stick derecho).
 
-## Reloj de los juegos
+| | |
+|---|---|
+| ![Tema Predeterminado](docs/screenshots/theme-default.png) | ![Tema Rojo](docs/screenshots/theme-red.png) |
+| ![Tema Game Boy Advance](docs/screenshots/theme-gba.png) | ![Tema Frutiger Aero](docs/screenshots/theme-frutiger-aero.png) |
+| ![Imagen de fondo del menú](docs/screenshots/menu-background-image.png) | ![Menú en inglés](docs/screenshots/controls-english.png) |
 
-Los juegos de GBA con reloj (Pokémon Rubí/Zafiro/Esmeralda, Boktai...) usan la hora de la consola. En **Ajustes → Reloj de los juegos → Personalizada** puedes elegir otro año, mes, día, hora y minuto; a partir de ahí el reloj sigue avanzando normal. *Volver a la hora de la consola* lo deshace.
+Estas muestran los **temas**: Predeterminado, Rojo, Game Boy Advance y **Frutiger Aero** (botones de cristal y burbujas); abajo, el menú con una **imagen de fondo** propia y el menú en **inglés**.
 
-## Game Boy y Game Boy Color
+---
 
-Los juegos de Game Boy y Game Boy Color corren en **Gambatte**, un núcleo muy preciso de Sindre Aamås, tomado de [libretro/gambatte-libretro](https://github.com/libretro/gambatte-libretro) (GPL v2), el mismo que usa RetroArch. Por eso funcionan los juegos **solo de Game Boy Color** (Pokémon Cristal, Super Mario Bros. Deluxe, Zelda: Oracle of Seasons...) y los homebrew modernos.
+# Instalación
 
-- **Colores:** los juegos de Game Boy Color se ven como en su pantalla (corrección de color "precisa" de Gambatte). Los de Game Boy usan la paleta de *Ajustes → Video → Colores (Game Boy)*.
-- **Guardado:** el `.sav` es la memoria del cartucho tal cual, así que sirven las partidas de otros emuladores. En los cartuchos con reloj (Pokémon Oro/Plata/Cristal) el reloj se guarda al final del mismo archivo. Los **estados** guardados con versiones anteriores del emulador no sirven para los juegos de Game Boy.
-- **Trucos:** GameShark (`01XXXXXX`) y Game Genie (`XXX-XXX-XXX`).
-- **BIOS (opcional):** con *BIOS original* activado, `bios\gb_bios.bin` (256 bytes) y `bios\gbc_bios.bin` (2304 bytes) muestran el logo de arranque. Sin ellas los juegos arrancan directo.
-- *Kirby Tilt 'n' Tumble* (cartucho MBC7 con sensor de inclinación) ya funciona: se inclina con el stick derecho. Siguen sin funcionar la *Game Boy Camera* y el cartucho *TAMA5* de Bandai (Tamagotchi).
+1. Descarga el `.zip` de la [última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest).
+2. Copia la carpeta `VBA360` a tu consola (por ejemplo `Hdd1:\Emulators\VBA360\`) por FTP o USB.
+3. Ábrela desde Aurora (`default.xex`). Las demás carpetas se crean solas.
+4. Pon tus ROMs donde quieras (disco duro o USB) y búscalas desde el emulador. También abre `.zip` y `.7z`.
+
+# Uso
+
+**En la lista de juegos**
+
+| Botón | Qué hace |
+|---|---|
+| A | Jugar / abrir carpeta |
+| B | Subir de carpeta (o quitar la búsqueda) |
+| X | Agregar o quitar de favoritos |
+| Y | Opciones del juego |
+| BACK | Buscar (la lista se filtra mientras escribes; START busca) |
+| START | Cambiar el orden (A-Z, Z-A, recientes) |
+| LT / RT | Saltar a la letra anterior / siguiente |
+| LB / RB | Pestañas: Juegos · Recientes · Favoritos · Ajustes |
+
+**Dentro del juego** (todo se puede cambiar en *Ajustes → Controles*)
+
+| Botón | Qué hace |
+|---|---|
+| Cruceta o stick izquierdo | Cruceta |
+| B / A | Botón A / B del GBA (como en la consola de Nintendo) |
+| LB / RB | L / R (sólo GBA) |
+| START / BACK | Start / Select |
+| Y / X | Turbo A / Turbo B |
+| RT | Avance rápido |
+| Clic del stick derecho | Menú: estados, trucos, opciones, captura, reiniciar y salir |
+| Stick derecho | Sensores (sólo en los juegos que los tienen) |
+
+**Opciones**
+
+- **Ajustes:** Video, Audio, Emulación, Guardado, Controles, Reloj de los juegos e Interfaz e idioma. Cada opción tiene una línea de ayuda.
+- **Opciones del juego** (Y sobre un juego, o en el menú dentro del juego): tipo de guardado y reloj (GBA), parche, trucos, **imagen** (*Como en Ajustes* o *Personalizada*) y **botones** (*Como en Ajustes* o *Personalizados*).
+- **Trucos:** se escriben con el teclado en pantalla o se importan de `.cht` / `.txt` (también de RetroArch). Cada juego guarda su lista, separada para GBA (`cheats\gba\`) y GB/GBC (`cheats\gb\`).
+
+# Consejos y problemas comunes
+
+## Hacks y parches
+
+- **Hack ya parchado (`.gba`):** ábrelo como cualquier juego. Es lo que rinde mejor.
+- **ROM limpia + parche:** ponlos juntos con el **mismo nombre** (`Pokemon Unbound.gba` + `Pokemon Unbound.bps`). El parche se aplica solo al abrirla (hasta 32 MB) y la ROM no se modifica. Con parches puede haber bajones de FPS; si pasa, usa la ROM ya parchada (en *Opciones del juego → Guardar ROM ya parchada*).
+
+## Fondo alrededor del juego
+
+Pon imágenes (PNG, JPG, BMP, TGA o DDS; ideal 1280×720) en `borders\` y elígelas en *Ajustes → Video → Fondo de la pantalla* (*Centrada*, *Rellenar* o *Estirar*). Hay un ejemplo en [`extras/borders/border.png`](extras/borders/border.png). El juego tapa este rectángulo de una imagen de 1280×720:
+
+| Consola | Tamaño | Rectángulo del juego (x, y, ancho × alto) |
+|---|---|---|
+| GBA | Original | 100, 0, 1080 × 720 |
+| GBA | Entera | 160, 40, 960 × 640 |
+| GB | Original / Entera | 240, 0, 800 × 720 |
+| GBA y GB | Pantalla completa | 80, 40, 1120 × 640 |
+| GBA y GB | 16:9 | toda la pantalla |
+
+## Menú: temas, fondo y portadas
+
+- **Tema y fondo del menú:** en *Ajustes → Interfaz e idioma*. Las imágenes para el menú van en `backgrounds\`.
+- **Portadas:** pon `covers\<nombre de la ROM>.png` (o `.jpg`), por ejemplo `covers\Pokemon Esmeralda.png`. Unos 400×400 px bastan.
 
 ## Super Game Boy
 
-En **Ajustes → Video → Super Game Boy (marcos)**:
-
-| Opción | Qué hace |
-|---|---|
-| **Apagado** (por defecto) | Los juegos de Game Boy usan la paleta elegida en *Colores (Game Boy)* |
-| **Juegos de Game Boy** | Los juegos hechos para el Super Game Boy muestran **su marco** y sus colores por zonas, como en el Super Nintendo |
-| **También compatibles con Color** | Igual, y además los juegos que también son de Game Boy Color (Pokémon Amarillo, Oro/Plata, Zelda DX...) se juegan en modo Super Game Boy en vez de a color |
-
-También se puede elegir **por juego**: botón Y → *Imagen de este juego: Personalizada* → *Modo de juego: Normal / Super Game Boy* (solo aparece en los juegos que tienen funciones de Super Game Boy).
-
-- Se aplica **al abrir el juego** (la imagen pasa a 256×224 con el marco).
-- El marco lo envía el propio juego al arrancar; mientras tanto, o en juegos sin marco, el borde se ve negro. El marco genérico del Super Game Boy no se incluye.
-- Los estados guardados incluyen el marco y los colores.
-- Adaptado de [SameBoy](https://github.com/LIJI32/SameBoy) (`Core/sgb.c`, de Lior Halphon, licencia MIT).
-
-## Portadas
-
-Pon la portada de un juego en la carpeta `covers\` junto a `default.xex`, con **el mismo nombre que la ROM** y extensión `.png` o `.jpg`. Por ejemplo, para `Pokemon Esmeralda.gba` usa `covers\Pokemon Esmeralda.png`. También vale una imagen junto a la ROM con su mismo nombre (`Pokemon Esmeralda.png`).
-
-La portada se muestra en la vista previa a la derecha de la lista, con sus proporciones. Si un juego no tiene portada, se ve la miniatura de la última partida como antes. Unos 400×400 píxeles bastan; imágenes más grandes también funcionan, pero tardan un poco más en cargar.
-
-## Menú: temas e imagen de fondo
-
-En **Ajustes → Interfaz e idioma**:
-
-- **Tema de colores:** Predeterminado (morado), Xbox 360 (verde), Game Boy (verde oliva), Game Boy Color (frambuesa), Game Boy Advance (índigo), Rojo y **Frutiger Aero** (azul cielo y agua, verde de fondo, burbujas; las selecciones son píldoras brillantes con reflejo y los paneles parecen cristal esmerilado, al estilo de Windows Vista / 7 y el Xbox 360 de la época). El texto sigue siendo claro sobre oscuro en todos.
-- **Imagen de fondo:** pon imágenes (PNG, JPG, BMP, TGA o DDS; ideal 1280×720) en la carpeta `backgrounds\` junto a `default.xex` y elígela. Se oscurece con los colores del tema para que el texto se lea bien.
-
-## Carpetas que crea el emulador
-
-Junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\` (portadas), `saves\backups\` (copias de las partidas) y `bios\` (pon ahí `gba_bios.bin`, `gb_bios.bin` o `gbc_bios.bin` si quieres usar la BIOS original). La configuración se guarda en `vba360.ini`.
-
-El archivo **`vba360.log`** (junto a `default.xex`) registra lo que pasa en cada sesión: el juego que se abre, el núcleo usado, los guardados y los errores. Si algo falla, mándalo junto con tu reporte.
-
-## Limitaciones
-
-- **Super Game Boy:** no se incluye el marco genérico de la consola, ni la animación y el sonido de arranque, ni el sonido extra que usaban unos pocos juegos.
-- **Game Boy Color (nuevo):** el soporte con Gambatte es reciente; si un juego falla, abre un *issue*.
-- **Classic NES Series / Famicom Mini** (los juegos de NES para GBA, como *Super Mario Bros.* o *Zelda*): **ya arrancan** gracias a los arreglos de memoria tomados de VBA-Next.
-- **No se emula (todavía):**
-  - **Cable link** y **adaptador inalámbrico** (multijugador e intercambios), ni en GBA ni en GB/GBC.
-  - **e-Reader** y sus tarjetas, **Game Boy Camera**, **Game Boy Printer** e **infrarrojo** del Game Boy Color.
-  - El cartucho **TAMA5** de Bandai (Tamagotchi) de Game Boy.
-
-## Errores conocidos
-
-- ~~**Líneas de colores / menú alrededor del juego**~~ **(solucionado):** con el fondo negro o con un efecto activo, a veces se veían líneas de colores o el menú a los lados del juego. Ahora el emulador pinta todo el fondo de negro en cada cuadro y limpia la imagen del juego al iniciar. Si aun así llegara a pasar, usar una **imagen de fondo** lo evita (Ajustes → Video → Fondo de la pantalla).
-
-- **Rendimiento con parches:** los juegos que se cargan con un parche **UPS / IPS / BPS** aplicado al vuelo pueden tener bajones de FPS. Los hacks ya parchados en `.gba` no tienen este problema.
-
-## Estado
-
-Probado en consola (BadUpdate + Aurora). Proyecto en desarrollo: si encuentras errores, abre un *issue*.
-
-## Créditos
-
-- **Autores originales del emulador:** Forgotten (VisualBoyAdvance) y el **equipo de VBA-M**, además del equipo de **VBA-GX**, cuyo código usa el port.
-- **Port original a Xbox 360:** los autores de **VBA360** y la librería **libSDLx360**, con apoyo de **Team Avalaunch** y **Team XeLove**.
-- **Fork vba360-enhanced:** [**frankischilling**](https://github.com/frankischilling), que arregló la compilación del port y es la base de este proyecto.
-- **Este fork (vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu). Idea, pruebas en consola, compilación y capturas.
-- **Programación con IA:** **Claude** (de [Anthropic](https://www.anthropic.com)). Escribió los cambios de código y la documentación de este fork.
-- **Fuente de la interfaz:** [Inter](https://rsms.me/inter/), de Rasmus Andersson (licencia SIL OFL).
-- **Efectos de pantalla:** adaptados de [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders): *zfast_crt* de Greg Hogan (GPL v2+) para CRT y *lcd3x* de Gigaherz (dominio público) para LCD.
-- **Núcleo de Game Boy y Game Boy Color:** [Gambatte](https://github.com/libretro/gambatte-libretro), de **Sindre Aamås** y los colaboradores de gambatte-libretro (libretro), GPL v2. Detalles de la versión usada en [`src/gambatte/README-VBA360.txt`](vba360-enhanced/src/gambatte/README-VBA360.txt).
-- **Super Game Boy y cartuchos MBC7:** marcos, colores, acelerómetro y EEPROM adaptados de [SameBoy](https://github.com/LIJI32/SameBoy), de **Lior Halphon** (licencia MIT).
-- **Mejoras del núcleo de GBA:** dibujo por bloques, camino rápido de fondos rotados, opciones del compilador y los arreglos de memoria que hacen arrancar Classic NES Series, tomados de [VBA-Next](https://github.com/libretro/vba-next) (libretro, mantenido por **Squarepusher / twinaphex**, GPL v2).
-- **Corrección de color de GBA:** fórmulas del shader *gba-color* de **Pokefan531** (libretro).
-- **Pruebas del núcleo:** [gba-tests](https://github.com/jsmolka/gba-tests) de **jsmolka**, *cpu_instrs* de **Blargg** y [dmg-acid2 / cgb-acid2](https://github.com/mattcurrie/dmg-acid2) de **Matt Currie**, usadas para comprobar que los cambios no rompen nada.
-- **Paletas de Game Boy:** tomadas del mismo core Gambatte: Game Boy original, Pocket, Light, las 32 de Super Game Boy y las automáticas del Game Boy Color.
-- **Sensores del cartucho** (sol, giroscopio, vibración): adaptados de la [VisualBoyAdvance-M actual](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
-- **Sonido de Game Boy y lectura de archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de Shay Green (blargg).
-
-La lista completa de créditos y librerías está en el [README original](#original-readme-vba360-enhanced).
-
----
-
-# Original README (vba360-enhanced)
-
-> Texto original del proyecto en el que se basa este fork (en inglés). Algunas funciones que menciona pueden no funcionar igual en este fork; ver [Limitaciones](#limitaciones).
-
-An enhanced Xbox 360 port of VisualBoyAdvance-M (VBA-M), a Game Boy and Game Boy Advance emulator.
-
-> **Note:** This can also be built with newer versions of Visual Studio and the Xbox 360 SDK/XDK. If you want to update from Visual Studio 2008, try using Visual Studio 2010. Confirmed working on Xbox 360 SDK 21256.3.
-
-## ⚠️ Work in Progress
-
-**IMPORTANT:** This project is currently a **work in progress** focused solely on fixing build issues and getting the source code to compile and run on Xbox 360. **No new features are being added at this time.** The goal is to restore functionality and ensure the existing codebase builds successfully.
-
-## About
-
-vba360-enhanced is based on VisualBoyAdvance-M (VBA-M), ported to the Xbox 360 platform. This project aims to provide a functional Game Boy and Game Boy Advance emulator for Xbox 360 users.
-
-### Background of VBA
-
-In 2004, Forgotten created the original VisualBoyAdvance (VBA) emulator. At the time, VBA was being released through vba.ngemu.com. Following the initial release, the project was handed over to the VBA team.
-
-Development of the original VBA ceased in 2004 with the release of 1.8 beta 3. However, the project continued through various developers aiming to improve VBA but not united in their efforts to do so. These "forked" versions improved on the original VBA but needed focus and unity to capture all the different improvements being accomplished.
-
-### The Rise of VBA-M
-
-In an effort to bring some cohesion to the multiplicity of releases, a version named VBA-M was created. VBA-M is now in active development, with updates as current as November 2009.
-
-In addition to the DirectX version for the Windows platform, there is also one based on SDL, the free, platform-independent, graphics library. VBA is available for a variety of operating systems, such as Linux, BSD, Mac OS X, Xbox, and BeOS. VisualBoyAdvance has also been ported to GameCube and Wii.
-
-### About VBA360
-
-Visual Boy Advance 360 (VBA360) is an Xbox 360 port of VBA-M. This enhanced version (vba360-enhanced) is based on that work, with a focus on fixing build issues and ensuring the codebase compiles and runs correctly on Xbox 360.
-
-Some code parts of VBA-GX are used in VBA360. Credit to the VBA-GX coders for their hard work.
-
-VBA360 uses libSDLx360 (SDL libraries for the Xbox 360), which is included in this project.
-
-## Features
-
-- Game Boy Advance / Game Boy / Game Boy Color / Super Game Boy emulation
-- Graphics / Sound / Controller support
-- Savestate and Battery save support
-- Enhanced Graphics Filter support
-- Bilinear / Point hardware filtering
-- Compressed ROM Support (.zip, .7z)
-- Favorites Support
-- Supports 64k/128k Flash Saves
-- Turbo support (Right Trigger)
-- In-game menu activation via right thumbstick
-
-**Note:** These features are from the original VBA360 port. This enhanced version focuses on fixing build issues to ensure these features work correctly.
-
-## Credits
-
-### Original Developers
-
-- **Forgotten** (1999-2003) - Original VisualBoyAdvance developer
-- **VBA Development Team** (2004-2006) - VisualBoyAdvance-M development team
-- **VBA-GX Team** - Code parts from VBA-GX are used in VBA360
-- **VBA360 Original Port** - Xbox 360 port of VBA-M
-- **Team Avalaunch** - Xbox development tools and support
-- **Team XeLove** - Xbox development community support
-
-### Third-Party Libraries
-
-This project uses the following open-source libraries:
-
-- **SDL (Simple DirectMedia Layer)** - Cross-platform multimedia library
-  - Ported to Xbox 360 as libSDLx360 (also referred to as libSDL360x)
-  - Copyright (C) 1997-2002 Sam Lantinga
-  - Source code available separately at: https://github.com/frankischilling/libSDLx360
-
-- **libpng** - PNG image format library
-  - Version 1.4.0
-  - Copyright (C) 1998-2002, 2004, 2006-2010 Glenn Randers-Pehrson
-
-- **zlib** - Compression library
-  - Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
-
-- **File_Extractor** - Archive extraction library
-  - Version 1.0.0
-  - Author: Shay Green <gblargg@gmail.com>
-  - License: GNU LGPL 2.1 or later
-
-- **SDL_ttf** - TrueType font rendering for SDL
-  - Ported to Xbox 360 as SDL_ttf360
-
-## License
-
-This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-
-## Building
-
-### Requirements
-
-- Microsoft Visual Studio 2008 (or compatible)
-- Xbox 360 SDK
-- Xbox 360 development kit or compatible environment
-
-### Build Instructions
-
-1. Open `vbam.sln` in Visual Studio
-2. Ensure all dependencies are properly configured:
-   - `libSDLx360` must be built first
-   - `File_Extractor` library must be available
-3. Select the desired configuration (Debug, Release, or Release_LTCG)
-4. Build the solution
-
-### Project Structure
-
-- `src/` - Main source code
-- `libSDLx360/` - SDL library port for Xbox 360
-- `SDL_ttf360/` - SDL_ttf library port for Xbox 360
-- `dependencies/` - Third-party dependencies
-- `Skin/` - Xbox 360 UI skin files
-
-### Technical Notes
-
-**emucrc32.c Implementation:**
-
-This project uses `emucrc32.c`, a portable CRC32 wrapper originally developed for [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced). This file provides a flexible CRC32 implementation that can work with or without zlib:
-
-- When `HAVE_ZLIB` is defined, it uses zlib's `crc32()` function
-- When `EMUCRC32_STANDALONE` is defined, it uses a self-contained CRC32 implementation
-- Provides compatibility functions (`emu_crc32()`, `calc_crc32()`) expected by older emulator codebases
-- Also provides `crc32()` wrapper for unzip code compatibility
-
-This shared implementation ensures consistent CRC32 handling across both snes360-enhanced and vba360-enhanced projects.
-
-## Current Status
-
-✅ **Build Status: The project now builds and runs successfully on Xbox 360!**
-
-This project has completed the initial phase of fixing compilation and build issues. The codebase now compiles without errors and runs on Xbox 360 hardware. Recent fixes include:
-
-- Fixed zlib compilation errors (added `HAVE_ZLIB` preprocessor definition)
-- Fixed SDL header include issues
-- Fixed PNG I/O for Xbox 360 HANDLE-based file operations
-- Fixed library linking paths
-- Added missing zlib source files (`crc32.c`, `explode.c`, `unreduce.c`, `unshrink.c`)
-- Added stub implementation for `SDL_AppActiveInit`
-- Created Xbox 360 image configuration file (`xex.xml`)
-- Uses `emucrc32.c` - A portable CRC32 wrapper originally developed for [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) and now shared across both projects
-
-**Next Steps:** With the build issues resolved, the next phase will focus on adding new features and improvements to enhance the emulator's functionality and user experience.
-
-## Known Issues
-
-- This is a work in progress - functionality may be incomplete or unstable
-- Some features may not work as expected
-- Performance may vary depending on the Xbox 360 hardware configuration
-
-## Disclaimer
-
-This software is provided for educational and research purposes. Users are responsible for ensuring they have the legal right to use any ROM files with this emulator. The developers do not condone piracy or copyright infringement.
-
-## Background and Notes
-
-The Xbox 360 scene already has a port of XeBoyAdvance, which is a top class emulator. Props to LoveMHZ for his hard work and efforts, especially considering it was developed on a retail kit.
-
-Visual Boy Advance 360 started out as a simple proof of concept project. The original VBA360 port was developed as a learning project to understand PPC architecture and optimization techniques for the Xbox 360 platform.
-
-This enhanced version (vba360-enhanced) continues that work by focusing on fixing build issues and ensuring the codebase compiles and runs correctly. The source code has been provided in the interests of the scene and GPL compliance.
-
-**Note:** The codebase may contain some "quick and dirty" hacks and optimizations from the original proof of concept. You have been warned.
-
-## Acknowledgments
-
-Special thanks to:
-- The original VisualBoyAdvance and VBA-M development teams
-- The VBA-GX development team
-- The original VBA360 port developers
-- LoveMHZ for XeBoyAdvance (an excellent alternative Xbox 360 GBA emulator)
-- All contributors to the open-source libraries used in this project
-- The Xbox 360 homebrew development community
-
----
-**Note:** This project is not affiliated with, endorsed by, or associated with Nintendo, Microsoft, or any other company. Game Boy and Game Boy Advance are trademarks of Nintendo Co., Ltd., or associated with Nintendo, Microsoft, or any other company. Game Boy and Game Boy Advance are trademarks of Nintendo Co., Ltd.
+En *Ajustes → Video → Super Game Boy (marcos)*: **Apagado**, **Juegos de Game Boy** o **También compatibles con Color** (Pokémon Amarillo, Oro/Plata, Zelda DX... se juegan con marco en vez de a color). También por juego: *Opciones del juego → Personalizada → Modo de juego*. Se aplica al abrir el juego; el marco lo manda el propio juego al arrancar.
+
+## Si algo falla
+
+- **Partida dañada:** al abrir un juego se guarda una copia del `.sav` en `saves\backups\` (las 3 últimas; `-1` es la más nueva). Cópiala encima del `.sav`.
+- **Un juego se cuelga al cargar o al abrir:** *Ajustes → Guardado → Borrar todos los estados guardados* quita estados viejos o dañados.
+- **Algo se ve o se comporta raro:** *Ajustes → Interfaz e idioma → Restablecer toda la configuración* vuelve todo a lo de fábrica (partidas, estados y trucos se quedan).
+- **Para reportar un error:** manda `vba360.log` y `vba360-anterior.log` (junto a `default.xex`).
+- **BIOS (opcional):** `bios\gba_bios.bin`, `bios\gb_bios.bin` o `bios\gbc_bios.bin`, y activa *Usar BIOS original* (Emulación).
+
+Carpetas que crea junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\` y `bios\`. La configuración está en `vba360.ini`.
+
+# Qué emula y qué no
+
+**Sí:**
+- Game Boy Advance, incluidos **Classic NES Series / Famicom Mini**.
+- Game Boy y Game Boy Color (también juegos sólo de Color), con reloj y vibración.
+- Super Game Boy (marcos y colores de cada juego).
+- Sensores: sol (Boktai), inclinación (Yoshi Topsy-Turvy, Koro Koro Puzzle, **Kirby Tilt 'n' Tumble**), giroscopio y vibración (WarioWare: Twisted!, Drill Dozer).
+
+**No (todavía):**
+- **Cable link** y **adaptador inalámbrico** (multijugador e intercambios).
+- **e-Reader**, **Game Boy Camera**, **Game Boy Printer** e **infrarrojo** del Game Boy Color.
+- El cartucho **TAMA5** de Bandai (Tamagotchi).
+- Super Game Boy completo: falta el marco genérico, la animación y los sonidos de arranque, y el sonido extra de unos pocos juegos.
+
+# Compilar
+
+1. Visual Studio 2010 con el Xbox 360 SDK (probado con 21256.3).
+2. Abre `vba360-enhanced/vbam.sln`, elige **Release | Xbox 360** y usa **Rebuild Solution** (compila también `libSDLx360`).
+3. El resultado es `default.xex`.
+
+Más detalles técnicos en el [README original](docs/README-original.md).
+
+# Notas y créditos
+
+- **Este fork (vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu): idea, pruebas en consola, compilación y capturas.
+- **Programación con IA:** **Claude** ([Anthropic](https://www.anthropic.com)): cambios de código y documentación.
+- **Fork vba360-enhanced:** [**frankischilling**](https://github.com/frankischilling), que arregló la compilación del port; base de este proyecto.
+- **Port a Xbox 360:** los autores de **VBA360** y **libSDLx360**, con apoyo de **Team Avalaunch** y **Team XeLove**.
+- **Emulador:** Forgotten (VisualBoyAdvance), el **equipo de VBA-M** y el equipo de **VBA-GX**.
+- **Núcleo de Game Boy / Color:** [Gambatte](https://github.com/libretro/gambatte-libretro), de **Sindre Aamås** y el equipo de libretro (GPL v2). También sus paletas de Game Boy.
+- **Super Game Boy y MBC7 (Kirby Tilt 'n' Tumble):** adaptados de [SameBoy](https://github.com/LIJI32/SameBoy), de **Lior Halphon** (MIT).
+- **Mejoras del núcleo de GBA y arreglos para Classic NES Series:** [VBA-Next](https://github.com/libretro/vba-next) (libretro, **Squarepusher / twinaphex**, GPL v2).
+- **Sensores de cartucho:** de la [VisualBoyAdvance-M actual](https://github.com/visualboyadvance-m/visualboyadvance-m) (GPL v2+).
+- **Corrección de color de GBA:** shader *gba-color* de **Pokefan531**.
+- **Efectos de pantalla:** *zfast_crt* de **Greg Hogan** (GPL v2+) y *lcd3x* de **Gigaherz** (dominio público), de [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders).
+- **Pruebas:** [gba-tests](https://github.com/jsmolka/gba-tests) de **jsmolka**, *cpu_instrs* de **Blargg** y [dmg-acid2 / cgb-acid2](https://github.com/mattcurrie/dmg-acid2) de **Matt Currie**.
+- **Sonido de Game Boy y archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de **Shay Green (blargg)**.
+- **Fuente:** [Inter](https://rsms.me/inter/), de **Rasmus Andersson** (SIL OFL). **Librerías:** zlib, libpng y SDL.
+
+Licencia **GPL v2** (como VisualBoyAdvance-M). La lista completa de créditos del proyecto original está en el [README original](docs/README-original.md).
