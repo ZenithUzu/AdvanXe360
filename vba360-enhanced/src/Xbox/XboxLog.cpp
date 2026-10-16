@@ -2,6 +2,7 @@
 #include "XboxLog.h"
 #include <string.h>
 #include <time.h>
+#include <string>
 
 namespace {
 FILE *g_log = 0;
@@ -32,7 +33,18 @@ void xboxLogOpen(const char *path)
 {
   if (g_log)
     return;
-  g_log = fopen(path, "w");
+  // Keep the previous session's log (it may hold the steps before a
+  // freeze that needed a forced power-off).
+  std::string prev = std::string(path);
+  size_t dot = prev.rfind('.');
+  prev = (dot == std::string::npos ? prev : prev.substr(0, dot)) + "-anterior.log";
+  remove(prev.c_str());
+  rename(path, prev.c_str());
+  // "c": every fflush goes to the disk, not only to the cache, so the
+  // lines are there even after a hard freeze.
+  g_log = fopen(path, "wc");
+  if (!g_log)
+    g_log = fopen(path, "w");
   if (g_log)
     xboxLog("VBA360 enhanced-ai log (built " __DATE__ " " __TIME__ ")");
 }

@@ -146,13 +146,15 @@ SoundSDL::~SoundSDL()
 	SDL_CondSignal(_cond);
 	SDL_mutexV(_mutex);
 
+	// Stop the audio thread first: it may be about to lock _mutex in
+	// read(), and waiting on a destroyed mutex could hang the console.
+	SDL_CloseAudio();
+
 	SDL_DestroyCond(_cond);
 	_cond = NULL;
 
 	SDL_DestroyMutex(_mutex);
 	_mutex = NULL;
-
-	SDL_CloseAudio();
 
 	emulating = iSave;
 }

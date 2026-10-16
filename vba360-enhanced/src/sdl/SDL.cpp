@@ -1868,11 +1868,13 @@ int gba_main(char *path, char *fname)
   fprintf(stdout,"Shutting down\n");
   remoteCleanUp();
   soundShutdown();
+  fprintf(stdout, "Exit: sound closed\n");
 
   if(gbRom != NULL || rom != NULL) {
     // Save first: xboxOnGameExiting() forgets which ROM was running.
     sdlWriteBattery();
     xboxOnGameExiting();
+    fprintf(stdout, "Exit: freeing the game\n");
     emulator.emuCleanUp();
   }
 
@@ -1897,7 +1899,9 @@ int gba_main(char *path, char *fname)
   StopLirc();
 #endif
 
+  fprintf(stdout, "Exit: SDL quit\n");
   SDL_Quit();
+  fprintf(stdout, "Exit: back to the menu\n");
   return 0;
 }
 

@@ -23,8 +23,8 @@ enum
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
-  S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE,
+  S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
@@ -36,6 +36,7 @@ enum
 enum
 {
   CONFIRM_QUIT = 1, CONFIRM_DELETE_CHEAT, CONFIRM_RESET_CONTROLS, CONFIRM_RESET_GAME,
+  CONFIRM_DELETE_STATES, CONFIRM_RESET_ALL,
   KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC, KEYBOARD_SEARCH
 };
 
@@ -704,6 +705,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
           m_cfg.saveBackups ? tr("3 copias", "3 copies") : tr("No", "No"),
           tr("Al abrir un juego copia su partida a saves\\backups (guarda las 3 \xfaltimas).",
              "Opening a game copies its save to saves\\backups (keeps the last 3)."));
+    m.addHeader(tr("Soluci\xf3n de problemas", "Troubleshooting"));
+    m.add(S_DELETE_STATES, ITEM_ACTION, tr("Borrar todos los estados guardados", "Delete all save states"), "",
+          tr("Ranuras y estado autom\xe1tico de todos los juegos (por si uno viejo falla). Las partidas .sav no se tocan.",
+             "Slots and automatic state of every game (in case an old one fails). .sav saves are kept."));
     break;
   }
 
@@ -731,6 +736,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
     }
     m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
           tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
+    m.addHeader(tr("Soluci\xf3n de problemas", "Troubleshooting"));
+    m.add(U_RESET_ALL, ITEM_ACTION, tr("Restablecer toda la configuraci\xf3n", "Reset all settings"), "",
+          tr("Ajustes y opciones de cada juego vuelven a lo de f\xe1""brica. Partidas, estados, trucos y recientes se quedan.",
+             "Settings and every game's options go back to defaults. Saves, states, cheats and recents stay."));
     break;
   }
 
@@ -1136,7 +1145,16 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
       m_cfg.lastDir.clear();
       saveAll();
       toast(tr("Listo", "Done"));
+    } else if (id == U_RESET_ALL) {
+      openConfirm(tr("\xbfRestablecer los ajustes y las opciones de todos los juegos?",
+                     "Reset the settings and every game's options?"), CONFIRM_RESET_ALL, "");
     }
+    return;
+
+  case MENU_SETTINGS_SAVES:
+    if (id == S_DELETE_STATES)
+      openConfirm(tr("\xbf""Borrar los estados guardados de todos los juegos?",
+                     "Delete the save states of every game?"), CONFIRM_DELETE_STATES, "");
     return;
 
   case MENU_CLOCK:
@@ -1611,6 +1629,29 @@ void UiApp::onConfirm(int purpose, const std::string &arg)
     m_host.resetGame();
     request(UI_REQ_RESUME);
     break;
+  case CONFIRM_DELETE_STATES: {
+    std::vector<std::string> roms = m_recents.items();
+    roms.insert(roms.end(), m_favorites.items().begin(), m_favorites.items().end());
+    int n = m_host.deleteAllStates(roms);
+    m_thumbs.clear();
+    m_thumbKeys.clear();
+    rebuildMenus();
+    toast(std::string(tr("Estados borrados: ", "States deleted: ")) + intStr(n));
+    break;
+  }
+  case CONFIRM_RESET_ALL: {
+    int lang = m_cfg.language;
+    m_cfg = UiConfig();
+    m_cfg.language = lang;   // keep the language the menu is in
+    m_gameCfg = UiGameConfig();
+    m_host.deleteAllGameConfigs();
+    m_covers.clear();
+    saveAll();
+    m_host.applySettings();
+    rebuildMenus();
+    toast(tr("Configuraci\xf3n restablecida", "Settings reset"));
+    break;
+  }
   }
 }
 

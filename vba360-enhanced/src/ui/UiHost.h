@@ -43,6 +43,11 @@ public:
   virtual bool fileExists(const std::string &path) = 0;
   // Folder the emulator runs from ("GAME:\").
   virtual std::string emulatorDir() = 0;
+  // Troubleshooting (Settings): delete every save state of every game
+  // (the states folder, and next to these ROMs when states are kept there);
+  // delete every game's own options. Return how many files went.
+  virtual int deleteAllStates(const std::vector<std::string> &knownRoms) { return 0; }
+  virtual int deleteAllGameConfigs() { return 0; }
 
   // --- Current game (only meaningful while a game is loaded) ------------
   virtual std::string currentRom() = 0;          // full path, "" if none

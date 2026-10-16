@@ -408,6 +408,55 @@ public:
 
   virtual bool fileExists(const std::string &path) { return pathExists(path); }
   virtual std::string emulatorDir() { return xboxEmulatorDir(); }
+
+  // Deletes the files in a folder of the emulator with one of two
+  // extensions (lower case, with the dot).
+  int deleteInFolder(const char *folder, const char *ext1, const char *ext2)
+  {
+    std::vector<UiDirEntry> files;
+    if (!listDir(uiJoinPath(xboxEmulatorDir(), folder), files))
+      return 0;
+    int n = 0;
+    for (size_t i = 0; i < files.size(); i++) {
+      if (files[i].isDir)
+        continue;
+      std::string ext = uiExtension(files[i].name);
+      if ((ext == ext1 || (ext2 && ext == ext2)) && DeleteFile(files[i].path.c_str()))
+        n++;
+    }
+    return n;
+  }
+
+  virtual int deleteAllStates(const std::vector<std::string> &knownRoms)
+  {
+    int n = deleteInFolder("states", ".sgm", ".tmb");
+    // States kept next to the ROMs: the games the menu knows about.
+    for (size_t r = 0; r < knownRoms.size(); r++) {
+      for (int slot = 0; slot <= 9; slot++) {
+        char suffix[16];
+        if (slot == 0)
+          strcpy(suffix, "-auto");
+        else
+          sprintf(suffix, "-%d", slot);
+        std::string base = uiStripExtension(uiFileName(knownRoms[r])) + suffix;
+        std::string sgm = uiJoinPath(romDirOf(knownRoms[r]), uiSafeFileName(base, ".sgm"));
+        if (DeleteFile(sgm.c_str()))
+          n++;
+        DeleteFile((uiStripExtension(sgm) + ".tmb").c_str());
+      }
+    }
+    fprintf(stdout, "Deleted %d save states\n", n);
+    return n;
+  }
+
+  virtual int deleteAllGameConfigs()
+  {
+    int n = deleteInFolder("config", ".ini", 0);
+    fprintf(stdout, "Deleted %d game option files\n", n);
+    if (!g_rom.empty())
+      g_gameCfg = UiGameConfig();
+    return n;
+  }
   virtual std::string currentRom() { return g_rom; }
 
   virtual bool saveState(int slot)
@@ -1035,9 +1084,12 @@ void xboxOnGameExiting()
   xboxCartridgeRumble(false);
   if (g_ui)
     g_ui->saveAll();   // keeps the sunlight level changed with the stick
+  fprintf(stdout, "Exit: thumbnail\n");
   saveFrameThumb(uiGameFile(xboxEmulatorDir(), "thumbs", g_rom, "", ".tmb"));
-  if (g_cfg.autoSaveState)
+  if (g_cfg.autoSaveState) {
+    fprintf(stdout, "Exit: automatic state\n");
     g_host.saveState(0);
+  }
   if (g_ui)
     g_ui->fastForward = false;
   g_ffHeld = false;
@@ -1394,9 +1446,10 @@ void xboxApplySettings()
 {
   // The game options may have just changed in the in-game menu.
   if (!g_rom.empty()) {
+    // No file (never set, or deleted by "Reset all settings") = defaults.
     UiGameConfig fresh;
-    if (fresh.load(uiGameFile(xboxEmulatorDir(), "config", g_rom, "", ".ini")))
-      g_gameCfg = fresh;
+    fresh.load(uiGameFile(xboxEmulatorDir(), "config", g_rom, "", ".ini"));
+    g_gameCfg = fresh;
   }
   applySoundFlags();
   applyBorder();
