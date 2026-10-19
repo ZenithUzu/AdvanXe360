@@ -35,7 +35,7 @@ Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba
 - **Safe saves:** an automatic `.sav` backup every time a game is opened, plus options to delete broken states or reset all settings.
 - **Picture:** filters (sharp, smooth, Scale2x, LQ2x), sizes (original, full screen, integer and 16:9), **CRT / LCD** effects, GBA **color correction**, **frame blending**, 41 Game Boy palettes and a background with your own image.
 - **Per-game options:** picture, buttons, cheats, save type and patch, stored by file name.
-- **Its own menu** in English and Spanish, with 7 themes (including **Frutiger Aero**), background image, covers, search and favorites.
+- **Its own menu** in English and Spanish, with 7 themes (including **Frutiger Aero**), background image, **moving bubbles and water**, covers, search and favorites.
 
 ## Game Boy Advance
 
@@ -200,6 +200,7 @@ Put images (PNG, JPG, BMP, TGA or DDS; 1280×720 is best) in `borders\` and pick
 
 - **Menu theme and background:** in *Settings → Interface & language*. Menu images go in `backgrounds\`.
 - **Game list** (*Interface & language*): **Carousel** (the default) puts one big box up front, its neighbours beside it and the rest edge-on, showing the box spine; **Shelf** shows the boxes on two shelves; **Names** is the usual file list. Games without box art show as a plain box with their name.
+- **Moving background effect** (*Interface & language*): rising **Bubbles**, **Water** (swaying light rays and waves along the bottom), **Bubbles and water**, or **None**. It works with any theme and over your own background image.
 - **Game list preview** (*Interface & language*): *Box art or last played*, *Box art only* or *Last played only* (the picture of the last moment you played).
 - **Automatic box art:** with the console online, go to *Game options* (Y on a game) → **Box art** → *Download box art* (that game) or *Download box art for this folder* (every game without one). They come from [thumbnails.libretro.com](https://thumbnails.libretro.com) (the same as RetroArch) for GBA, GB and GBC. They're found best when the ROM has its **official name** (No-Intro), e.g. `Pokemon - Emerald Version (USA, Europe).gba`; short names like `Pokemon Emerald` usually work too, but hacks or translated names don't. If that server ever stops working, another one can be set in `vba360.ini` with `cover_server=`.
 - **Covers by hand:** put `covers\<ROM name>.png` (or `.jpg`), for example `covers\Pokemon Emerald.png`. About 400×400 px is enough. Downloads never replace a game's existing cover, except *Download box art* for that game.

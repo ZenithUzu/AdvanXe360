@@ -25,7 +25,7 @@ enum
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_LIST_VIEW,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_LIST_VIEW, U_EFFECT,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
@@ -309,6 +309,10 @@ void UiApp::update(unsigned int held)
     m_dirtyFrames = 3;
   if ((m_frame % 15) == 0)
     m_dirtyFrames = m_dirtyFrames > 1 ? m_dirtyFrames : 1;
+  // Moving background: 30 frames a second is enough (the menu is drawn in
+  // software). In game the menus float over the game, without it.
+  if (m_cfg.bgEffect && !m_inGame && (m_frame & 1) == 0)
+    m_dirtyFrames = m_dirtyFrames > 1 ? m_dirtyFrames : 1;
 }
 
 void UiApp::startStickCapture(int id)
@@ -425,6 +429,7 @@ void UiApp::drawBackground(UiCanvas &c)
                m_bgCacheTheme == m_cfg.menuTheme && m_bgCacheName == m_cfg.menuBackground;
   if (fresh && c.width() == UI_W && c.height() == UI_H) {
     c.copyFrom(&m_bgCache[0]);
+    uiDrawEffects(c, m_cfg.bgEffect, m_frame);
     return;
   }
   // Optional image from backgrounds\, under a veil of the theme's colors so
@@ -443,7 +448,6 @@ void UiApp::drawBackground(UiCanvas &c)
   } else {
     c.fillGradient(0, 0, UI_W, UI_H, UI_COL_BG_TOP, UI_COL_BG_BOTTOM);
   }
-  uiDrawBackgroundDecor(c, m_bgPixels.size() != (size_t)(UI_W * UI_H));
   if (c.width() == UI_W && c.height() == UI_H) {
     m_bgCache.assign(c.pixels(), c.pixels() + UI_W * UI_H);
     m_bgCacheTheme = m_cfg.menuTheme;
@@ -452,6 +456,7 @@ void UiApp::drawBackground(UiCanvas &c)
     std::vector<UiColor>().swap(m_bgPixels);
     m_bgName = "\x01";   // reload it if the cache is ever rebuilt
   }
+  uiDrawEffects(c, m_cfg.bgEffect, m_frame);
 }
 
 void UiApp::drawHeader(UiCanvas &c, const char *title, const char *subtitle)
@@ -759,6 +764,13 @@ void UiApp::buildMenu(UiMenuScreen &m)
       (m.add(U_PREVIEW, ITEM_OPTION, tr("Vista previa de la lista", "Game list preview"), pv[m_cfg.previewMode],
              tr("Qu\xe9 se ve junto a la lista: la portada o la imagen de la \xfaltima vez que jugaste.",
                 "What shows next to the list: the box art or a picture of the last time you played."))).choice = m_cfg.previewMode;
+    }
+    {
+      const char *fx[UI_EFFECT_COUNT] = { tr("Ninguno", "None"), tr("Burbujas", "Bubbles"),
+                                          tr("Agua", "Water"), tr("Burbujas y agua", "Bubbles and water") };
+      (m.add(U_EFFECT, ITEM_OPTION, tr("Efecto animado del fondo", "Moving background effect"), fx[m_cfg.bgEffect],
+             tr("Burbujas que suben y agua en movimiento sobre el fondo (o tu imagen), con cualquier tema.",
+                "Rising bubbles and moving water over the background (or your image), with any theme."))).choice = m_cfg.bgEffect;
     }
     m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
           tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
@@ -1407,6 +1419,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_OPTION_STYLE) m_cfg.optionStyle = wrapIndex(m_cfg.optionStyle, delta, OPT_STYLE_COUNT);
     else if (id == U_PREVIEW) m_cfg.previewMode = wrapIndex(m_cfg.previewMode, delta, PREVIEW_COUNT);
     else if (id == U_LIST_VIEW) m_cfg.listView = wrapIndex(m_cfg.listView, delta, LIST_VIEW_COUNT);
+    else if (id == U_EFFECT) m_cfg.bgEffect = wrapIndex(m_cfg.bgEffect, delta, UI_EFFECT_COUNT);
     else if (id == U_BACKGROUND) {
       std::vector<std::string> images = cachedImages("backgrounds");
       int choice = wrapIndex(menuImageChoice(m_cfg, images), delta, (int)images.size() + 1);

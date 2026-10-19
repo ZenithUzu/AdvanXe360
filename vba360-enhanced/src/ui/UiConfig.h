@@ -71,6 +71,8 @@ enum UiOptionStyle { OPT_STYLE_PANEL = 0, OPT_STYLE_LIST, OPT_STYLE_CLASSIC, OPT
 // box art, or only the last played moment.
 enum UiPreviewMode { PREVIEW_COVER_OR_LAST = 0, PREVIEW_COVER, PREVIEW_LAST, PREVIEW_COUNT };
 // Game list: box art on a shelf, file names, or a carousel of box art.
+// Moving background effect: bits, so "both" is just the two together.
+enum UiBgEffect { UI_EFFECT_BUBBLES = 1, UI_EFFECT_WATER = 2, UI_EFFECT_COUNT = 4 };
 enum UiListView { LIST_VIEW_COVERS = 0, LIST_VIEW_NAMES, LIST_VIEW_CAROUSEL, LIST_VIEW_COUNT };
 
 struct UiConfig
@@ -86,6 +88,7 @@ struct UiConfig
   std::string coverServer;      // box art server (plain HTTP), Game options -> Cover
   int previewMode;              // UiPreviewMode: what the game list's preview shows
   int listView;                 // UiListView
+  int bgEffect;                 // UiBgEffect bits (0 = none)
 
   // Video
   int filter;            // UiFilter

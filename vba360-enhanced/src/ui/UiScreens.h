@@ -272,8 +272,9 @@ void uiDrawSelection(UiCanvas &c, int x, int y, int w, int h, int radius, bool s
 // Panel / dialog box in the theme's panel color.
 void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha);
 // Theme decorations over the background gradient (bubbles, glow...).
-// scenery: also paint the theme's own picture (false over a background image).
-void uiDrawBackgroundDecor(UiCanvas &c, bool scenery);
+// Moving effects over the menu background (Interface -> Background effect),
+// UI_EFFECT_* bits; frame drives the motion.
+void uiDrawEffects(UiCanvas &c, int effects, int frame);
 
 // Layout (1280x720, inside the TV safe area).
 enum

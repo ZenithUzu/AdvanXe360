@@ -1,6 +1,7 @@
 #include "UiScreens.h"
 #include "UiGlyphs.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
@@ -105,14 +106,6 @@ void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
 
 namespace {
 
-UiColor mixColor(UiColor a, UiColor b, int t, int n)   // a..b, t of n
-{
-  UiColor r = 0xFF000000;
-  for (int s = 0; s < 24; s += 8)
-    r |= (UiColor)((((a >> s) & 0xFF) * (n - t) + ((b >> s) & 0xFF) * t) / n) << s;
-  return r;
-}
-
 // A thin anti-aliased circle outline.
 void drawRing(UiCanvas &c, int cx, int cy, int r, UiColor col)
 {
@@ -145,36 +138,49 @@ void drawBubble(UiCanvas &c, int x, int y, int r)
 
 } // namespace
 
-void uiDrawBackgroundDecor(UiCanvas &c, bool scenery)
+void uiDrawEffects(UiCanvas &c, int effects, int frame)
 {
-  if (UI_THEME_STYLE != THEME_AERO)
-    return;
   const int W = c.width(), H = c.height();
-  if (scenery) {
-    // A meadow under a clear sky: deep blue up top (where the text is), a
-    // bright horizon, green hills below.
-    int hz = H * 80 / 100;
-    c.fillGradient(0, 0, W, hz, 0xFF0A4A86, 0xFF1E6FB5);
-    c.fillGradient(0, hz, W, H - hz, 0xFF1E6FB5, 0xFF5AB8E8);
-    for (int i = 0; i < 9; i++)                                   // sun, up right
-      c.fillCircle(W * 78 / 100, H * 12 / 100, 380 - i * 40, 0x0AFFFFFF);
-    const int bands = 14;
-    for (int i = 0; i < bands; i++) {                             // far hill, right
-      UiColor col = mixColor(0xFF2E8A26, 0xFF083806, i, bands);
-      c.fillCircle(W * 85 / 100, hz - 60 + 1300 + i * 8, 1300, col);
+  const float t = (float)frame;
+  if (effects & UI_EFFECT_WATER) {
+    // Light from the surface: wide rays that sway slowly and fade with depth.
+    for (int i = 0; i < 5; i++) {
+      float x0 = W * (0.10f + 0.20f * i) + 70.0f * sinf(t * 0.011f + i * 1.7f);
+      int depth = H * 3 / 4;
+      for (int y = 0; y < depth; y += 8) {   // 8-pixel strips: half the work, same look
+        float k = (float)y / depth;
+        int w = (int)(60 + 110 * k);
+        int a = (int)(26 * (1.0f - k));
+        if (a <= 0)
+          break;
+        c.fillRect((int)(x0 + y * 0.35f) - w / 2, y, w, 8, uiWithAlpha(0xBFEFFF, a));
+      }
     }
-    for (int i = 0; i < bands; i++) {                             // near hill, left
-      UiColor col = mixColor(0xFF3A9A1C, 0xFF0A4005, i, bands);
-      c.fillCircle(W * 28 / 100, hz - 30 + 1500 + i * 9, 1500, col);
+    // The water surface along the bottom: two swells moving apart.
+    for (int x = 0; x < W; x += 6) {
+      float y1 = H - 96 + 10 * sinf(x * 0.012f + t * 0.045f) + 5 * sinf(x * 0.031f - t * 0.03f);
+      float y2 = H - 70 + 8 * sinf(x * 0.017f - t * 0.05f + 1.3f);
+      c.fillRect(x, (int)y1, 6, H - (int)y1, 0x1E3FA9E8);
+      c.fillRect(x, (int)y1, 6, 2, 0x58FFFFFF);
+      c.fillRect(x, (int)y2, 6, H - (int)y2, 0x18206FB0);
+      c.fillRect(x, (int)y2, 6, 1, 0x40CFF4FF);
     }
   }
-  // Bubbles (fixed places, so the cached background never changes).
-  static const short bub[][3] = {
-    { 1180, 170, 44 }, { 1095, 255, 20 }, { 1225, 335, 13 }, { 965, 145, 11 },
-    { 115, 590, 34 }, { 215, 515, 15 }, { 62, 470, 9 }, { 705, 655, 22 },
-    { 1010, 600, 30 }, { 1150, 525, 16 }, { 1245, 655, 21 }, { 905, 300, 7 } };
-  for (size_t i = 0; i < sizeof(bub) / sizeof(bub[0]); i++)
-    drawBubble(c, bub[i][0] * W / 1280, bub[i][1] * H / 720, bub[i][2]);
+  if (effects & UI_EFFECT_BUBBLES) {
+    // Bubbles rise at their own speed, sway a little and start over below.
+    static const short bub[][4] = {   // x, radius, speed (1/10 px per frame), phase
+      { 90, 18, 9, 0 }, { 210, 9, 14, 3 }, { 330, 26, 7, 5 }, { 470, 12, 12, 1 },
+      { 600, 7, 16, 4 }, { 720, 20, 8, 2 }, { 830, 10, 13, 6 }, { 950, 30, 6, 7 },
+      { 1060, 14, 11, 8 }, { 1170, 22, 8, 9 }, { 1240, 8, 15, 10 }, { 40, 11, 12, 11 },
+      { 520, 16, 10, 12 }, { 1110, 6, 17, 13 } };
+    for (size_t i = 0; i < sizeof(bub) / sizeof(bub[0]); i++) {
+      int r = bub[i][1];
+      int span = H + r * 4;
+      int y = H + r * 2 - (int)((t * bub[i][2] / 10 + bub[i][3] * 97) ) % span;
+      int x = bub[i][0] * W / 1280 + (int)(r * 0.8f * sinf(t * 0.03f + bub[i][3]));
+      drawBubble(c, x, y, r);
+    }
+  }
 }
 
 namespace {
