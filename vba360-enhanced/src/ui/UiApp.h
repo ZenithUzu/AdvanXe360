@@ -88,6 +88,7 @@ public:
 
   void push(UiScreen *s);
   void pop();
+  int screenCount() const { return (int)m_stack.size(); }
   void request(UiRequest r, const std::string &rom = "");
   void openMenu(int menuId, const std::string &rom = "");
   void rebuildMenus();

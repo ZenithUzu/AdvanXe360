@@ -89,6 +89,8 @@ struct UiConfig
   int previewMode;              // UiPreviewMode: what the game list's preview shows
   int listView;                 // UiListView
   int bgEffect;                 // UiBgEffect bits (0 = none)
+  int startScreen;              // 0 = library, 1 = file browser
+  std::string libraryDir;       // the library's games folder ("" = lastDir)
 
   // Video
   int filter;            // UiFilter

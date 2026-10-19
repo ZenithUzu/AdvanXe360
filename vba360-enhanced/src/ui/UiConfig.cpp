@@ -81,6 +81,8 @@ struct ConfigReader
     else if (k == "preview_mode") c.previewMode = clampInt(v, 0, PREVIEW_COUNT - 1, c.previewMode);
     else if (k == "list_view") c.listView = clampInt(v, 0, LIST_VIEW_COUNT - 1, c.listView);
     else if (k == "bg_effect") c.bgEffect = clampInt(v, 0, UI_EFFECT_COUNT - 1, c.bgEffect);
+    else if (k == "start_screen") c.startScreen = clampInt(v, 0, 1, c.startScreen);
+    else if (k == "library_dir") c.libraryDir = v;
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
     else if (k == "stretch") c.stretch = clampInt(v, 0, SIZE_COUNT - 1, c.stretch);
     else if (k == "border") c.border = clampInt(v, 0, 1, c.border);
@@ -168,6 +170,7 @@ UiConfig::UiConfig()
   previewMode = PREVIEW_COVER_OR_LAST;
   listView = LIST_VIEW_CAROUSEL;
   bgEffect = UI_EFFECT_BUBBLES;
+  startScreen = 0;
   resetControls();
 }
 
@@ -219,6 +222,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "menu_theme=%d\nmenu_background=%s\noption_style=%d\nlist_sort=%d\n",
           menuTheme, menuBackground.c_str(), optionStyle, listSort);
   fprintf(f, "cover_server=%s\npreview_mode=%d\nlist_view=%d\nbg_effect=%d\n", coverServer.c_str(), previewMode, listView, bgEffect);
+  fprintf(f, "start_screen=%d\nlibrary_dir=%s\n", startScreen, libraryDir.c_str());
   fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nborder_image=%s\nborder_fit=%d\n",
           filter, stretch, border, borderImage.c_str(), borderFit);
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",

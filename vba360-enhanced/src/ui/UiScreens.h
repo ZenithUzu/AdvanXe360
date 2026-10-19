@@ -64,12 +64,6 @@ private:
   void activate(UiApp &app);
   void drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
   void drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
-  // Box art view: the games standing on shelves (Interface -> Game list).
-  bool shelfMode(UiApp &app) const;
-  bool carouselMode(UiApp &app) const;
-  void drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
-  void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
-  enum { SHELF_COLS = 6, SHELF_ROWS = 2 };
   int rowHeight() const;
   void jumpLetter(int dir);
   void cycleSort(UiApp &app);
@@ -81,6 +75,31 @@ private:
   UiListState m_list[TAB_COUNT];
   bool m_dirError;
   std::string m_filter;              // list filter the rows were built with
+};
+
+// --- Library: the start screen. The consoles (each as its cartridge), then
+// one console's games as box art in a carousel or on shelves. Only ROMs:
+// folders and settings live in the browser (BACK). Games are sorted into
+// consoles by file type, from the library folder and its subfolders.
+class UiLibraryScreen : public UiScreen
+{
+public:
+  UiLibraryScreen(UiApp &app, const std::string &selectRom);
+  virtual void update(UiApp &app, const UiInputState &in);
+  virtual void draw(UiApp &app, UiCanvas &c);
+  virtual void onResume(UiApp &app);
+
+private:
+  enum { SYSTEMS = 4 };                 // GBA, GBC, GB, zip / 7z
+  void scan(UiApp &app);
+  void scanDir(UiApp &app, const std::string &dir, int depth, int &budget);
+  std::vector<std::string> m_games[SYSTEMS];
+  UiListState m_list[SYSTEMS];
+  std::vector<int> m_systems;           // consoles with games, in order
+  int m_sys;                            // index into m_systems
+  bool m_inSystem;                      // showing that console's games
+  bool m_rescan;                        // back from the browser: look again
+  std::string m_root;                   // folder the games were read from
 };
 
 // --- Generic list menu (settings pages, quick menu, cheats, controls) --------

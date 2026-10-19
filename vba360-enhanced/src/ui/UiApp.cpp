@@ -25,7 +25,7 @@ enum
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_LIST_VIEW, U_EFFECT,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_EFFECT,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
@@ -214,7 +214,10 @@ void UiApp::openHome(const std::string &selectRom)
   fastForward = false;
   m_thumbKeys.clear();   // a new preview may have been written while playing
   m_thumbs.clear();
-  push(new UiHomeScreen(*this, selectRom));
+  if (m_cfg.startScreen == 0)
+    push(new UiLibraryScreen(*this, selectRom));
+  else
+    push(new UiHomeScreen(*this, selectRom));
 }
 
 void UiApp::openInGameMenu()
@@ -753,10 +756,12 @@ void UiApp::buildMenu(UiMenuScreen &m)
                "An image from the backgrounds\\ folder (1280x720 is best), darkened."))).choice = choice;
     }
     {
-      const char *lv[LIST_VIEW_COUNT] = { tr("Estante", "Shelf"), tr("Nombres", "Names"), tr("Carrusel", "Carousel") };
-      (m.add(U_LIST_VIEW, ITEM_OPTION, tr("Lista de juegos", "Game list"), lv[m_cfg.listView],
-             tr("Carrusel: una portada al frente y las dem\xe1s a los lados. Estante: las portadas en repisas. Nombres: los archivos.",
-                "Carousel: one box up front, the rest beside it. Shelf: the boxes on shelves. Names: the files."))).choice = m_cfg.listView;
+      const char *st[2] = { tr("Biblioteca", "Library"), tr("Explorador", "File browser") };
+      std::string lib = m_cfg.libraryDir.empty() ? std::string(tr("la \xfaltima carpeta abierta", "the last folder opened")) : m_cfg.libraryDir;
+      (m.add(U_START, ITEM_OPTION, tr("Pantalla de inicio", "Start screen"), st[m_cfg.startScreen],
+             std::string(tr("Biblioteca: consolas y portadas, sin carpetas (BACK abre el explorador). Juegos de: ",
+                            "Library: consoles and box art, no folders (BACK opens the browser). Games from: ")) + lib +
+             tr(" (Y sobre una carpeta en el explorador la cambia).", " (Y on a folder in the browser changes it)."))).choice = m_cfg.startScreen;
     }
     {
       const char *pv[PREVIEW_COUNT] = { tr("Portada o \xfaltima partida", "Box art or last played"),
@@ -1419,7 +1424,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_THEME) m_cfg.menuTheme = wrapIndex(m_cfg.menuTheme, delta, UI_THEME_COUNT);
     else if (id == U_OPTION_STYLE) m_cfg.optionStyle = wrapIndex(m_cfg.optionStyle, delta, OPT_STYLE_COUNT);
     else if (id == U_PREVIEW) m_cfg.previewMode = wrapIndex(m_cfg.previewMode, delta, PREVIEW_COUNT);
-    else if (id == U_LIST_VIEW) m_cfg.listView = wrapIndex(m_cfg.listView, delta, LIST_VIEW_COUNT);
+    else if (id == U_START) m_cfg.startScreen = wrapIndex(m_cfg.startScreen, delta, 2);
     else if (id == U_EFFECT) m_cfg.bgEffect = wrapIndex(m_cfg.bgEffect, delta, UI_EFFECT_COUNT);
     else if (id == U_BACKGROUND) {
       std::vector<std::string> images = cachedImages("backgrounds");
