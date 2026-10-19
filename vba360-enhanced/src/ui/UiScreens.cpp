@@ -155,6 +155,31 @@ void drawBadge(UiCanvas &c, int x, int y, const char *text, UiColor bg, UiColor 
   c.drawText(UI_FONT_SMALL, x + 7, y + 1, text, fg);
 }
 
+const char *romKind(const std::string &name);
+
+// What stands for a game: its box art, else (Interface -> Game list preview)
+// the picture of the last time it was played. Both null: nothing yet.
+const UiApp::Cover *gameArt(UiApp &app, const std::string &rom, const UiThumb *&thumb)
+{
+  int mode = app.cfg().previewMode;
+  thumb = 0;
+  if (mode != PREVIEW_LAST) {
+    const UiApp::Cover *cv = app.cover(rom, !app.inputHeld());
+    if (cv)
+      return cv;
+    // Covers are read once the list stops; until then don't flash the
+    // last-played picture where the cover is about to appear.
+    if (!app.coverChecked(rom)) {
+      app.drawAgain();
+      return 0;
+    }
+    if (mode == PREVIEW_COVER)
+      return 0;
+  }
+  thumb = app.thumb(app.gameThumbPath(rom));
+  return 0;
+}
+
 const char *romKind(const std::string &name)
 {
   std::string e = uiExtension(name);
@@ -514,10 +539,20 @@ void UiHomeScreen::update(UiApp &app, const UiInputState &in)
   UiListState &ls = m_list[m_tab];
   int count = (int)m_rows.size();
   int visible = (UI_FOOTER_Y - 12 - (UI_HEADER_H + 20)) / rowHeight();
-  if (in.repeat & PAD_BIT(PAD_UP)) ls.move(-1, count, true);
-  if (in.repeat & PAD_BIT(PAD_DOWN)) ls.move(1, count, true);
-  if (in.repeat & PAD_BIT(PAD_LEFT)) ls.move(-visible, count, false);
-  if (in.repeat & PAD_BIT(PAD_RIGHT)) ls.move(visible, count, false);
+  bool shelf = shelfMode(app);
+  if (shelf) {
+    // Shelf: left / right along a shelf, up / down to the shelf above / below.
+    if ((in.repeat & PAD_BIT(PAD_LEFT)) && ls.sel > 0) ls.sel--;
+    if ((in.repeat & PAD_BIT(PAD_RIGHT)) && ls.sel < count - 1) ls.sel++;
+    if ((in.repeat & PAD_BIT(PAD_UP)) && ls.sel >= SHELF_COLS) ls.sel -= SHELF_COLS;
+    if ((in.repeat & PAD_BIT(PAD_DOWN)) && ls.sel / SHELF_COLS < (count - 1) / SHELF_COLS)
+      ls.sel = std::min(ls.sel + SHELF_COLS, count - 1);
+  } else {
+    if (in.repeat & PAD_BIT(PAD_UP)) ls.move(-1, count, true);
+    if (in.repeat & PAD_BIT(PAD_DOWN)) ls.move(1, count, true);
+    if (in.repeat & PAD_BIT(PAD_LEFT)) ls.move(-visible, count, false);
+    if (in.repeat & PAD_BIT(PAD_RIGHT)) ls.move(visible, count, false);
+  }
   if (m_tab == TAB_GAMES && !m_dir.empty()) {
     // Games: LT / RT jump to the previous / next first letter.
     if (in.repeat & PAD_BIT(PAD_LT)) jumpLetter(-1);
@@ -526,7 +561,13 @@ void UiHomeScreen::update(UiApp &app, const UiInputState &in)
     if (in.repeat & PAD_BIT(PAD_LT)) ls.move(-count, count, false);
     if (in.repeat & PAD_BIT(PAD_RT)) ls.move(count, count, false);
   }
-  ls.ensureVisible(visible);
+  if (shelf) {
+    int row = ls.sel / SHELF_COLS;   // scroll counts shelves here
+    if (row < ls.scroll) ls.scroll = row;
+    if (row >= ls.scroll + SHELF_ROWS) ls.scroll = row - SHELF_ROWS + 1;
+  } else {
+    ls.ensureVisible(visible);
+  }
 
   if (m_tab == TAB_GAMES && !m_dir.empty()) {
     if (in.pressed & PAD_BIT(PAD_BACK)) {
@@ -725,16 +766,22 @@ void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
   }
 
   // New covers are read only once the list stops moving.
-  const UiApp::Cover *cv = app.cover(r.path, !app.inputHeld());
-  const UiThumb *t = cv ? 0 : app.thumb(app.gameThumbPath(r.path));
+  const UiThumb *t = 0;
+  const UiApp::Cover *cv = gameArt(app, r.path, t);
+  int boxH = th;
   if (cv) {
-    // Box art: whole image, proportions kept, centered in the preview box.
-    c.fillRoundRect(x + pad, ty, tw, th, 10, 0x40000000);
+    // Box art: as wide as the panel, as tall as its proportions need
+    // (leaving room for the name and details below).
+    int maxH = h - pad * 2 - 140;
+    if (maxH > UiApp::COVER_MAX_H) maxH = UiApp::COVER_MAX_H;
     int dw = tw, dh = cv->h * tw / cv->w;
-    if (dh > th) { dh = th; dw = cv->w * th / cv->h; }
+    if (dh > maxH) { dh = maxH; dw = cv->w * maxH / cv->h; }
     if (dw < 1) dw = 1;
     if (dh < 1) dh = 1;
-    c.blitScaled(&cv->px[0], cv->w, cv->h, cv->w, x + pad + (tw - dw) / 2, ty + (th - dh) / 2, dw, dh);
+    int dx = x + pad + (tw - dw) / 2;
+    c.fillRoundRect(dx - 3, ty - 3, dw + 6, dh + 6, 8, 0x50000000);
+    c.blitScaled(&cv->px[0], cv->w, cv->h, cv->w, dx, ty, dw, dh);
+    boxH = dh;
   } else if (t) {
     c.fillRoundRect(x + pad - 2, ty - 2, tw + 4, th + 4, 10, 0x40000000);
     c.blitScaled(&t->px[0], t->w, t->h, t->w, x + pad, ty, tw, th);
@@ -743,15 +790,17 @@ void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
     const char *k = romKind(r.path);
     c.drawTextFit(UI_FONT_TITLE, x + pad, ty + th / 2 - 20, tw, k, 0x50FFFFFF, UI_ALIGN_CENTER);
   }
-  int ly = ty + th + 16;
+  int ly = ty + boxH + 16;
   std::string name = uiStripExtension(uiFileName(r.path));
   c.drawTextFit(UI_FONT_BODY, x + pad, ly, tw, name.c_str(), UI_COL_TEXT);
   ly += 40;
 
   char line[256];
   if (r.size) {
-    sprintf(line, "%s  \xb7  %s", romKind(r.path), formatSize(r.size).c_str());
-    c.drawTextFit(UI_FONT_SMALL, x + pad, ly, tw, line, UI_COL_TEXT_DIM);
+    const char *k = romKind(r.path);
+    int bw = c.textWidth(UI_FONT_SMALL, k) + 14;
+    drawBadge(c, x + pad, ly, k, 0x30FFFFFF, UI_COL_TEXT);
+    c.drawTextFit(UI_FONT_SMALL, x + pad + bw + 10, ly, tw - bw - 10, formatSize(r.size).c_str(), UI_COL_TEXT_DIM);
     ly += 28;
   }
   std::string patch = findPatch(app, r.path);
@@ -764,6 +813,109 @@ void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
     c.fillCircle(x + pad + 6, ly + 11, 6, COL_FAV);
     c.drawText(UI_FONT_SMALL, x + pad + 20, ly, app.tr("En favoritos", "In favorites"), COL_FAV);
   }
+}
+
+bool UiHomeScreen::shelfMode(UiApp &app) const
+{
+  return app.cfg().listView == LIST_VIEW_COVERS && m_tab != TAB_SETTINGS &&
+         !(m_tab == TAB_GAMES && m_dir.empty());   // drives stay a list
+}
+
+// Box art standing on shelves: boxes of any shape share a baseline like on a
+// real shelf; the chosen one lifts off it. The name and details of the
+// chosen game run along the bottom.
+void UiHomeScreen::drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
+{
+  UiListState &ls = m_list[m_tab];
+  const int count = (int)m_rows.size();
+  const int gap = 24;
+  const int tileW = (w - gap * (SHELF_COLS - 1)) / SHELF_COLS;
+  const int stripH = 64;                                    // name of the chosen game
+  const int shelfH = (h - stripH) / SHELF_ROWS;
+  const int artH = shelfH - 34;                             // tallest box on a shelf
+  const int lift = 10;
+
+  for (int r = 0; r < SHELF_ROWS; r++) {
+    int base = y + (r + 1) * shelfH - 18;                   // where the boxes stand
+    // The shelf: a lit edge and its shadow.
+    c.fillRect(x - 8, base, w + 16, 3, uiWithAlpha(UI_COL_ACCENT, 0x70));
+    c.fillGradient(x - 8, base + 3, w + 16, 12, 0x38000000, 0x00000000);
+    for (int col = 0; col < SHELF_COLS; col++) {
+      int idx = (ls.scroll + r) * SHELF_COLS + col;
+      if (idx >= count)
+        break;
+      const Row &row = m_rows[idx];
+      bool sel = idx == ls.sel;
+      int tx = x + col * (tileW + gap);
+      int maxW = tileW, maxH = artH - lift;
+      int aw, ah;
+      const UiThumb *t = 0;
+      const UiApp::Cover *cv = row.isDir ? 0 : gameArt(app, row.path, t);
+      if (cv) {
+        aw = maxW; ah = cv->h * maxW / cv->w;
+        if (ah > maxH) { ah = maxH; aw = cv->w * maxH / cv->h; }
+      } else if (t) {
+        aw = maxW; ah = maxW * t->h / t->w;
+      } else {
+        aw = maxW * 4 / 5; ah = aw * 6 / 5;                 // a blank cartridge label
+      }
+      if (aw < 1) aw = 1;
+      if (ah < 1) ah = 1;
+      int ax = tx + (tileW - aw) / 2;
+      int ay = base - ah - (sel ? lift : 0);
+      if (sel)
+        uiDrawSelection(c, ax - 7, ay - 7, aw + 14, ah + 14, 12, false);
+      else
+        c.fillRect(ax + 4, base - 4, aw - 8, 4, 0x50000000);   // contact shadow
+      int bright = sel ? 256 : 190;
+      if (cv) {
+        c.blitScaled(&cv->px[0], cv->w, cv->h, cv->w, ax, ay, aw, ah, bright);
+      } else if (t) {
+        c.blitScaled(&t->px[0], t->w, t->h, t->w, ax, ay, aw, ah, bright);
+      } else {
+        c.fillRoundRect(ax, ay, aw, ah, 10, uiWithAlpha(UI_COL_PANEL, 0xE0));
+        c.fillRoundRect(ax + 8, ay + 8, aw - 16, ah * 3 / 5, 6, 0x30FFFFFF);
+        if (row.isDir) {
+          drawFolderIcon(c, ax + aw / 2 - 13, ay + ah * 3 / 10 - 4, COL_DIR);
+        } else {
+          c.drawTextFit(UI_FONT_TITLE, ax + 8, ay + ah * 3 / 10 - 14, aw - 16, romKind(row.path),
+                        sel ? UI_COL_TEXT : 0x80FFFFFF, UI_ALIGN_CENTER);
+        }
+        std::string name = row.isDir ? row.title : uiStripExtension(uiFileName(row.path));
+        c.drawTextFit(UI_FONT_SMALL, ax + 8, ay + ah * 3 / 5 + 18, aw - 16, name.c_str(),
+                      sel ? UI_COL_TEXT : UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
+      }
+      if (!row.isDir && app.favorites().contains(row.path))
+        c.fillCircle(ax + aw - 10, ay + 10, 6, COL_FAV);
+    }
+  }
+  int shelves = (count + SHELF_COLS - 1) / SHELF_COLS;
+  drawScrollbar(c, x + w + 14, y, SHELF_ROWS * shelfH - 18, ls.scroll, SHELF_ROWS, shelves);
+
+  // The chosen game's name and details.
+  if (ls.sel < 0 || ls.sel >= count)
+    return;
+  const Row &cur = m_rows[ls.sel];
+  int sy = y + SHELF_ROWS * shelfH + 6;
+  std::string name = cur.isDir ? cur.title : uiStripExtension(uiFileName(cur.path));
+  std::string detail;
+  if (cur.isDir) {
+    detail = app.tr("Carpeta", "Folder");
+  } else {
+    const char *k = romKind(cur.path);
+    int bw = c.textWidth(UI_FONT_SMALL, k) + 14;
+    drawBadge(c, x, sy + 8, k, 0x30FFFFFF, UI_COL_TEXT);
+    if (cur.size)
+      detail = formatSize(cur.size);
+    std::string patch = findPatch(app, cur.path);
+    if (!patch.empty())
+      detail += std::string(detail.empty() ? "" : "   ") + app.tr("con parche", "patched");
+    c.drawTextFit(UI_FONT_BODY, x + bw + 12, sy + 2, w - bw - 200, name.c_str(), UI_COL_TEXT);
+    c.drawTextFit(UI_FONT_SMALL, x + w - 180, sy + 8, 180, detail.c_str(), UI_COL_TEXT_DIM, UI_ALIGN_RIGHT);
+    return;
+  }
+  c.drawTextFit(UI_FONT_BODY, x, sy + 2, w - 200, name.c_str(), UI_COL_TEXT);
+  c.drawTextFit(UI_FONT_SMALL, x + w - 180, sy + 8, 180, detail.c_str(), UI_COL_TEXT_DIM, UI_ALIGN_RIGHT);
 }
 
 void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
@@ -825,8 +977,12 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
 
   int top = UI_HEADER_H + 20;
   int listH = UI_FOOTER_Y - 12 - top;
-  drawList(app, c, UI_MARGIN_X, top, 760, listH);
-  drawInfo(app, c, 848, top, UI_W - UI_MARGIN_X - 848, listH);
+  if (shelfMode(app) && !m_rows.empty()) {
+    drawShelf(app, c, UI_MARGIN_X, top, UI_W - UI_MARGIN_X * 2, listH);
+  } else {
+    drawList(app, c, UI_MARGIN_X, top, 760, listH);
+    drawInfo(app, c, 848, top, UI_W - UI_MARGIN_X - 848, listH);
+  }
 
   // Footer hints
   std::vector<const char *> hints;

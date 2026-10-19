@@ -199,6 +199,8 @@ Pon imágenes (PNG, JPG, BMP, TGA o DDS; ideal 1280×720) en `borders\` y elíge
 ## Menú: temas, fondo y portadas
 
 - **Tema y fondo del menú:** en *Ajustes → Interfaz e idioma*. Las imágenes para el menú van en `backgrounds\`.
+- **Lista de juegos** (*Interfaz e idioma*): **Portadas** muestra las cajas de los juegos paradas en un estante (cruceta para moverte, A para jugar); **Nombres** es la lista de archivos de siempre. Los juegos sin portada salen como un cartucho con su nombre.
+- **Vista previa de la lista** (*Interfaz e idioma*): *Portada o última partida*, *Sólo portada* o *Sólo última partida* (la imagen del último momento que jugaste).
 - **Portadas automáticas:** con la consola conectada a internet, en *Opciones del juego* (Y sobre un juego) → **Portada** → *Descargar portada* (ese juego) o *Descargar portadas de esta carpeta* (todos los que no tienen). Se bajan de [thumbnails.libretro.com](https://thumbnails.libretro.com) (las mismas de RetroArch) para GBA, GB y GBC. Se encuentran mejor si la ROM tiene su **nombre oficial** (No-Intro), por ejemplo `Pokemon - Emerald Version (USA, Europe).gba`; nombres cortos como `Pokemon Emerald` también suelen funcionar, pero hacks o nombres en español no. Si ese servidor dejara de funcionar, se puede poner otro en `vba360.ini` con `cover_server=`.
 - **Portadas a mano:** pon `covers\<nombre de la ROM>.png` (o `.jpg`), por ejemplo `covers\Pokemon Esmeralda.png`. Unos 400×400 px bastan. Las descargas nunca reemplazan una portada que ya tenga el juego, salvo con *Descargar portada* de ese juego.
 

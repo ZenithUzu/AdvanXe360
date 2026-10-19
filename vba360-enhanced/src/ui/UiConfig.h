@@ -67,6 +67,11 @@ enum UiDirMode { DIR_NEXT_TO_ROM = 0, DIR_EMULATOR = 1 };
 // (A opens the panel / list; left / right work in all of them).
 enum UiListSort { SORT_NAME = 0, SORT_NAME_DESC, SORT_RECENT, SORT_COUNT };
 enum UiOptionStyle { OPT_STYLE_PANEL = 0, OPT_STYLE_LIST, OPT_STYLE_CLASSIC, OPT_STYLE_COUNT };
+// Game list preview: the box art (or else the last played moment), only the
+// box art, or only the last played moment.
+enum UiPreviewMode { PREVIEW_COVER_OR_LAST = 0, PREVIEW_COVER, PREVIEW_LAST, PREVIEW_COUNT };
+// Game list: box art on a shelf, or file names.
+enum UiListView { LIST_VIEW_COVERS = 0, LIST_VIEW_NAMES, LIST_VIEW_COUNT };
 
 struct UiConfig
 {
@@ -79,6 +84,8 @@ struct UiConfig
   int listSort;          // UiListSort: game list order
   std::string menuBackground;   // image in backgrounds\ ("" = the theme's colors)
   std::string coverServer;      // box art server (plain HTTP), Game options -> Cover
+  int previewMode;              // UiPreviewMode: what the game list's preview shows
+  int listView;                 // UiListView
 
   // Video
   int filter;            // UiFilter

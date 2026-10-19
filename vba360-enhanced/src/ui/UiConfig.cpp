@@ -78,6 +78,8 @@ struct ConfigReader
     else if (k == "option_style") c.optionStyle = clampInt(v, 0, OPT_STYLE_COUNT - 1, c.optionStyle);
     else if (k == "menu_background") c.menuBackground = v;
     else if (k == "cover_server") { if (!v.empty()) c.coverServer = v; }
+    else if (k == "preview_mode") c.previewMode = clampInt(v, 0, PREVIEW_COUNT - 1, c.previewMode);
+    else if (k == "list_view") c.listView = clampInt(v, 0, LIST_VIEW_COUNT - 1, c.listView);
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
     else if (k == "stretch") c.stretch = clampInt(v, 0, SIZE_COUNT - 1, c.stretch);
     else if (k == "border") c.border = clampInt(v, 0, 1, c.border);
@@ -162,6 +164,8 @@ UiConfig::UiConfig()
     autoSaveState(0), autoLoadState(0), stateSlot(1), saveBackups(1)
 {
   coverServer = "http://thumbnails.libretro.com";
+  previewMode = PREVIEW_COVER_OR_LAST;
+  listView = LIST_VIEW_COVERS;
   resetControls();
 }
 
@@ -212,7 +216,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "language=%d\nhide_non_games=%d\nlast_dir=%s\n", language, hideNonGames, lastDir.c_str());
   fprintf(f, "menu_theme=%d\nmenu_background=%s\noption_style=%d\nlist_sort=%d\n",
           menuTheme, menuBackground.c_str(), optionStyle, listSort);
-  fprintf(f, "cover_server=%s\n", coverServer.c_str());
+  fprintf(f, "cover_server=%s\npreview_mode=%d\nlist_view=%d\n", coverServer.c_str(), previewMode, listView);
   fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nborder_image=%s\nborder_fit=%d\n",
           filter, stretch, border, borderImage.c_str(), borderFit);
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",

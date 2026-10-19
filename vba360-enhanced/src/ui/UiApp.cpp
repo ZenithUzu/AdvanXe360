@@ -24,7 +24,7 @@ enum
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_LIST_VIEW,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
@@ -136,7 +136,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_listMatches(0)
+    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
 
@@ -286,6 +286,7 @@ void UiApp::update(unsigned int held)
     m_repeatTimer = 0;
   }
   m_prevHeld = held;
+  m_coverLoadsLeft = 1;
 
   if (!m_stack.empty())
     m_stack.back()->update(*this, in);
@@ -736,6 +737,20 @@ void UiApp::buildMenu(UiMenuScreen &m)
             tr("Una imagen de la carpeta backgrounds\\ (ideal 1280x720), oscurecida.",
                "An image from the backgrounds\\ folder (1280x720 is best), darkened."))).choice = choice;
     }
+    {
+      const char *lv[LIST_VIEW_COUNT] = { tr("Portadas", "Box art"), tr("Nombres", "Names") };
+      (m.add(U_LIST_VIEW, ITEM_OPTION, tr("Lista de juegos", "Game list"), lv[m_cfg.listView],
+             tr("Portadas: las cajas de los juegos en un estante. Nombres: la lista de archivos.",
+                "Box art: the game boxes on a shelf. Names: the list of files."))).choice = m_cfg.listView;
+    }
+    {
+      const char *pv[PREVIEW_COUNT] = { tr("Portada o \xfaltima partida", "Box art or last played"),
+                                        tr("S\xf3lo portada", "Box art only"),
+                                        tr("S\xf3lo \xfaltima partida", "Last played only") };
+      (m.add(U_PREVIEW, ITEM_OPTION, tr("Vista previa de la lista", "Game list preview"), pv[m_cfg.previewMode],
+             tr("Qu\xe9 se ve junto a la lista: la portada o la imagen de la \xfaltima vez que jugaste.",
+                "What shows next to the list: the box art or a picture of the last time you played."))).choice = m_cfg.previewMode;
+    }
     m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
           tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
     m.addHeader(tr("Soluci\xf3n de problemas", "Troubleshooting"));
@@ -1081,8 +1096,8 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
   // Box art from the libretro thumbnail server.
   m.addHeader(tr("Portada", "Box art"));
   m.add(G_COVER_ONE, ITEM_ACTION, tr("Descargar portada", "Download box art"), "",
-        tr("La busca en internet (thumbnails.libretro.com) y la guarda en covers\.",
-           "Looks it up online (thumbnails.libretro.com) and saves it in covers\."));
+        tr("La busca en internet (thumbnails.libretro.com) y la guarda en covers\\.",
+           "Looks it up online (thumbnails.libretro.com) and saves it in covers\\."));
   m.add(G_COVER_FOLDER, ITEM_ACTION, tr("Descargar portadas de esta carpeta", "Download box art for this folder"), "",
         tr("Para todos los juegos de la carpeta que a\xfan no tienen portada.",
            "For every game in the folder that has no box art yet."));
@@ -1379,6 +1394,8 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_HIDE) m_cfg.hideNonGames ^= 1;
     else if (id == U_THEME) m_cfg.menuTheme = wrapIndex(m_cfg.menuTheme, delta, UI_THEME_COUNT);
     else if (id == U_OPTION_STYLE) m_cfg.optionStyle = wrapIndex(m_cfg.optionStyle, delta, OPT_STYLE_COUNT);
+    else if (id == U_PREVIEW) m_cfg.previewMode = wrapIndex(m_cfg.previewMode, delta, PREVIEW_COUNT);
+    else if (id == U_LIST_VIEW) m_cfg.listView = wrapIndex(m_cfg.listView, delta, LIST_VIEW_COUNT);
     else if (id == U_BACKGROUND) {
       std::vector<std::string> images = cachedImages("backgrounds");
       int choice = wrapIndex(menuImageChoice(m_cfg, images), delta, (int)images.size() + 1);
@@ -1653,7 +1670,8 @@ void UiApp::startCoverDownload(const std::string &rom, bool wholeFolder)
 
 void UiApp::onCoversClosed()
 {
-  m_covers.clear();   // show the new covers (and forget "no cover" answers)
+  m_covers.clear();
+  m_coverOrder.clear();   // show the new covers (and forget "no cover" answers)
 }
 
 const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)
@@ -1661,15 +1679,22 @@ const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)
   std::map<std::string, Cover>::iterator it = m_covers.find(rom);
   if (it != m_covers.end())
     return it->second.px.empty() ? 0 : &it->second;
-  if (!allowLoad)
+  // One file read per frame, so a shelf full of covers fills in without
+  // freezing the menu.
+  if (!allowLoad || m_coverLoadsLeft <= 0)
     return 0;
-  // Keep a few images (about 280 KB each) and the "no cover" answers.
-  int loaded = 0;
-  for (it = m_covers.begin(); it != m_covers.end(); ++it)
-    if (!it->second.px.empty())
-      loaded++;
-  if (loaded >= 8 || m_covers.size() > 200)
+  m_coverLoadsLeft--;
+  // Keep the last kCoverCache images (up to ~450 KB each) and the "no cover"
+  // answers; the oldest image goes first.
+  const size_t kCoverCache = 20;
+  if (m_covers.size() > 400) {
     m_covers.clear();
+    m_coverOrder.clear();
+  }
+  while (m_coverOrder.size() >= kCoverCache) {
+    m_covers.erase(m_coverOrder.front());
+    m_coverOrder.erase(m_coverOrder.begin());
+  }
   Cover &c = m_covers[rom];
   c.w = c.h = 0;
   std::string name = uiStripExtension(uiFileName(rom));
@@ -1682,8 +1707,10 @@ const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)
     if (!m_host.fileExists(candidates[i]))
       continue;
     if (m_host.loadImageFit(candidates[i], COVER_MAX_W, COVER_MAX_H, c.px, c.w, c.h) &&
-        c.w > 0 && c.h > 0 && c.px.size() == (size_t)(c.w * c.h))
+        c.w > 0 && c.h > 0 && c.px.size() == (size_t)(c.w * c.h)) {
+      m_coverOrder.push_back(rom);
       return &c;
+    }
     c.px.clear();
   }
   return 0;
@@ -1792,6 +1819,7 @@ void UiApp::onConfirm(int purpose, const std::string &arg)
     m_gameCfg = UiGameConfig();
     m_host.deleteAllGameConfigs();
     m_covers.clear();
+    m_coverOrder.clear();
     saveAll();
     m_host.applySettings();
     rebuildMenus();

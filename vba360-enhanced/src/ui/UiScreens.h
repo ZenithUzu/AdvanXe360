@@ -64,6 +64,10 @@ private:
   void activate(UiApp &app);
   void drawList(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
   void drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
+  // Box art view: the games standing on shelves (Interface -> Game list).
+  bool shelfMode(UiApp &app) const;
+  void drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h);
+  enum { SHELF_COLS = 6, SHELF_ROWS = 2 };
   int rowHeight() const;
   void jumpLetter(int dir);
   void cycleSort(UiApp &app);

@@ -66,6 +66,8 @@ public:
   bool needsRedraw() const { return m_dirtyFrames > 0; }
   // A screen whose content changes on its own (download progress).
   void keepDrawing() { if ((m_frame % 6) == 0 && m_dirtyFrames < 2) m_dirtyFrames = 2; }
+  // Draw the next frame too (covers still loading on screen).
+  void drawAgain() { if (m_dirtyFrames < 2) m_dirtyFrames = 2; }
   // Box art download (Game options -> Cover): one game or its whole folder.
   void startCoverDownload(const std::string &rom, bool wholeFolder);
   void onCoversClosed();
@@ -124,8 +126,10 @@ public:
   // it), cached; 0 when there is none. With allowLoad false only the cache
   // is used (no disk access while the list is scrolling).
   struct Cover { std::vector<UiColor> px; int w, h; };
-  enum { COVER_MAX_W = 328, COVER_MAX_H = 218 };   // the browser's preview box
+  enum { COVER_MAX_W = 328, COVER_MAX_H = 340 };   // the browser's preview area
   const Cover *cover(const std::string &rom, bool allowLoad = true);
+  // The cover was already looked for (found or not); false while unknown.
+  bool coverChecked(const std::string &rom) const { return m_covers.find(rom) != m_covers.end(); }
   // A button is held right now (the list is being scrolled).
   bool inputHeld() const { return m_prevHeld != 0; }
 
@@ -179,6 +183,8 @@ private:
   std::string m_listFilter;
   int m_listMatches;
   std::map<std::string, Cover> m_covers;
+  std::vector<std::string> m_coverOrder;   // loaded images, oldest first
+  int m_coverLoadsLeft;                    // cover files that may still be read this frame
 
   // Cheats menu: the game, the code type picked, the code waiting for its name.
   std::string m_cheatRom;
