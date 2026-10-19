@@ -311,7 +311,8 @@ void UiApp::update(unsigned int held)
     m_dirtyFrames = m_dirtyFrames > 1 ? m_dirtyFrames : 1;
   // Moving background: 30 frames a second is enough (the menu is drawn in
   // software). In game the menus float over the game, without it.
-  if (m_cfg.bgEffect && !m_inGame && (m_frame & 1) == 0)
+  if (m_cfg.bgEffect && !m_inGame && (m_frame & 1) == 0 &&
+      m_cfg.menuTheme >= 0 && m_cfg.menuTheme < UI_THEME_COUNT && uiThemes[m_cfg.menuTheme].style == THEME_AERO)
     m_dirtyFrames = m_dirtyFrames > 1 ? m_dirtyFrames : 1;
 }
 
@@ -765,12 +766,12 @@ void UiApp::buildMenu(UiMenuScreen &m)
              tr("Qu\xe9 se ve junto a la lista: la portada o la imagen de la \xfaltima vez que jugaste.",
                 "What shows next to the list: the box art or a picture of the last time you played."))).choice = m_cfg.previewMode;
     }
-    {
+    if (uiThemes[m_cfg.menuTheme].style == THEME_AERO) {   // Frutiger Aero only
       const char *fx[UI_EFFECT_COUNT] = { tr("Ninguno", "None"), tr("Burbujas", "Bubbles"),
                                           tr("Agua", "Water"), tr("Burbujas y agua", "Bubbles and water") };
       (m.add(U_EFFECT, ITEM_OPTION, tr("Efecto animado del fondo", "Moving background effect"), fx[m_cfg.bgEffect],
-             tr("Burbujas que suben y agua en movimiento sobre el fondo (o tu imagen), con cualquier tema.",
-                "Rising bubbles and moving water over the background (or your image), with any theme."))).choice = m_cfg.bgEffect;
+             tr("Burbujas que suben y agua en movimiento sobre el fondo (o tu imagen). S\xf3lo con Frutiger Aero.",
+                "Rising bubbles and moving water over the background (or your image). Frutiger Aero only."))).choice = m_cfg.bgEffect;
     }
     m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
           tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));

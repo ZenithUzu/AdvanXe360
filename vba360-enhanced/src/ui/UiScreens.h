@@ -273,7 +273,7 @@ void uiDrawSelection(UiCanvas &c, int x, int y, int w, int h, int radius, bool s
 void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha);
 // Theme decorations over the background gradient (bubbles, glow...).
 // Moving effects over the menu background (Interface -> Background effect),
-// UI_EFFECT_* bits; frame drives the motion.
+// UI_EFFECT_* bits; frame drives the motion. Frutiger Aero theme only.
 void uiDrawEffects(UiCanvas &c, int effects, int frame);
 
 // Layout (1280x720, inside the TV safe area).

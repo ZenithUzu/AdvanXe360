@@ -140,6 +140,8 @@ void drawBubble(UiCanvas &c, int x, int y, int r)
 
 void uiDrawEffects(UiCanvas &c, int effects, int frame)
 {
+  if (UI_THEME_STYLE != THEME_AERO)
+    return;   // the moving effects belong to the Frutiger Aero theme
   const int W = c.width(), H = c.height();
   const float t = (float)frame;
   if (effects & UI_EFFECT_WATER) {
