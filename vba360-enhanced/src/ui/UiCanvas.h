@@ -50,6 +50,8 @@ public:
                   int dx, int dy, int dw, int dh, int brightness = 256);
   // Copies a whole canvas-sized image (width*height pixels), ignoring the clip.
   void copyFrom(const UiColor *src);
+  // Draws a w x h image 1:1 at (x, y) using each pixel's own alpha.
+  void blitAlpha(const UiColor *src, int w, int h, int x, int y);
 
 private:
   UiColor *m_px;

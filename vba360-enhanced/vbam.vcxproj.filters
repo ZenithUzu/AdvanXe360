@@ -365,6 +365,9 @@
     <ClCompile Include="src\ui\UiConfig.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="src\ui\UiGlyphs.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
     <ClCompile Include="src\ui\UiScreens.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
@@ -515,6 +518,9 @@
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="src\ui\UiConfig.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiGlyphs.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="src\ui\UiFontData.h">

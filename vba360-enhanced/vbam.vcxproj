@@ -585,6 +585,7 @@
     <ClCompile Include="src\ui\UiCanvas.cpp" />
     <ClCompile Include="src\ui\UiCheatParse.cpp" />
     <ClCompile Include="src\ui\UiConfig.cpp" />
+    <ClCompile Include="src\ui\UiGlyphs.cpp" />
     <ClCompile Include="src\ui\UiScreens.cpp" />
     <ClCompile Include="src\ui\UiThumb.cpp" />
     <ClCompile Include="..\libPNG\src\png.c">
@@ -707,6 +708,7 @@
     <ClInclude Include="src\ui\UiCanvas.h" />
     <ClInclude Include="src\ui\UiCheatParse.h" />
     <ClInclude Include="src\ui\UiConfig.h" />
+    <ClInclude Include="src\ui\UiGlyphs.h" />
     <ClInclude Include="src\ui\UiFontData.h" />
     <ClInclude Include="src\ui\UiHost.h" />
     <ClInclude Include="src\ui\UiScreens.h" />

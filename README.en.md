@@ -255,6 +255,7 @@ More technical details in the [original README](docs/README-original.md).
 - **Screen effects:** *zfast_crt* by **Greg Hogan** (GPL v2+) and *lcd3x* by **Gigaherz** (public domain), from [libretro/glsl-shaders](https://github.com/libretro/glsl-shaders).
 - **Testing:** [gba-tests](https://github.com/jsmolka/gba-tests) by **jsmolka**, **Blargg**'s *cpu_instrs* and [dmg-acid2 / cgb-acid2](https://github.com/mattcurrie/dmg-acid2) by **Matt Currie**.
 - **Game Boy sound and compressed files:** Gb_Apu, Blip_Buffer and File_Extractor by **Shay Green (blargg)**.
+- **Button icons:** Xbox 360 controller images from **Microsoft**'s [Xbox 360 Controller Button Images](https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Xbox-360-Controller-Button-Images) pack (XNA Game Studio), Ms-PL license ([text](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt)).
 - **Typeface:** [Inter](https://rsms.me/inter/), by **Rasmus Andersson** (SIL OFL). **Libraries:** zlib, libpng and SDL.
 
 Licensed under **GPL v2** (like VisualBoyAdvance-M). The original project's full credits are in the [original README](docs/README-original.md).

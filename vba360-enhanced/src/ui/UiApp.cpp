@@ -1,4 +1,5 @@
 #include "UiApp.h"
+#include "UiGlyphs.h"
 #include "UiScreens.h"
 #include "UiCheatParse.h"
 
@@ -442,7 +443,7 @@ void UiApp::drawBackground(UiCanvas &c)
   } else {
     c.fillGradient(0, 0, UI_W, UI_H, UI_COL_BG_TOP, UI_COL_BG_BOTTOM);
   }
-  uiDrawBackgroundDecor(c);
+  uiDrawBackgroundDecor(c, m_bgPixels.size() != (size_t)(UI_W * UI_H));
   if (c.width() == UI_W && c.height() == UI_H) {
     m_bgCache.assign(c.pixels(), c.pixels() + UI_W * UI_H);
     m_bgCacheTheme = m_cfg.menuTheme;
@@ -486,15 +487,23 @@ void UiApp::drawHints(UiCanvas &c, const char *const *hints, int count)
       continue;
     std::string btn(h, colon - h);
     const char *label = colon + 1;
-    UiColor col = 0;
-    if (btn == "A") col = 0xFF5DBB63;
-    else if (btn == "B") col = 0xFFE5534B;
-    else if (btn == "X") col = 0xFF3D8BFD;
-    else if (btn == "Y") col = 0xFFF2B33D;
-    if (col) {
-      c.fillCircle(x + 15, y + 15, 15, col);
-      c.drawTextFit(UI_FONT_SMALL, x, y + 3, 30, btn.c_str(), 0xFFFFFFFF, UI_ALIGN_CENTER);
-      x += 38;
+    // The controller's own button pictures ("LB/RB" draws both).
+    std::string first = btn, second;
+    size_t slash = btn.find('/');
+    if (slash != std::string::npos) {
+      first = btn.substr(0, slash);
+      second = btn.substr(slash + 1);
+    }
+    const UiGlyph *g1 = uiGlyph(first.c_str());
+    const UiGlyph *g2 = second.empty() ? 0 : uiGlyph(second.c_str());
+    if (g1 && (second.empty() || g2)) {
+      c.blitAlpha(g1->px, g1->w, g1->h, x, y + 15 - g1->h / 2);
+      x += g1->w + 4;
+      if (g2) {
+        c.blitAlpha(g2->px, g2->w, g2->h, x, y + 15 - g2->h / 2);
+        x += g2->w + 4;
+      }
+      x += 4;
     } else {
       int bw = c.textWidth(UI_FONT_SMALL, btn.c_str()) + 18;
       c.fillRoundRect(x, y + 1, bw, 28, 8, 0x40FFFFFF);
@@ -874,6 +883,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
         { "Paletas de Game Boy", "Game Boy palettes", "Gambatte (Sindre Aam\xe5s)",
           "Paletas DMG, Pocket, Light, Super Game Boy y las autom\xe1ticas del GBC.",
           "DMG, Pocket, Light, Super Game Boy and the GBC's automatic palettes." },
+        { "Botones del control", "Controller buttons", "Microsoft (XNA Game Studio)",
+          "Im\xe1genes de los botones de Xbox 360, licencia Ms-PL.", "Xbox 360 button images, Ms-PL license." },
         { "Fuente", "Typeface", "Inter (Rasmus Andersson)",
           "SIL Open Font License.", "SIL Open Font License." },
         { "Librer\xed""as", "Libraries", "zlib, libpng, SDL",

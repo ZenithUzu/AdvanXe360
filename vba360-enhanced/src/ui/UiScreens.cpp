@@ -1,4 +1,5 @@
 #include "UiScreens.h"
+#include "UiGlyphs.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -40,27 +41,29 @@ void uiApplyTheme(int index)
   UI_THEME_STYLE = t.style;
 }
 
-// Glossy pill: base color, a soft white shine on the upper half and a
-// bright edge on top, like the buttons of that era.
+// Vista-era glossy pill: a white rim, a bright upper half that breaks
+// sharply at the middle, light coming back up from the bottom and a soft
+// blue glow around it.
 static void drawGloss(UiCanvas &c, int x, int y, int w, int h, int r, UiColor base)
 {
   if (w <= 4 || h <= 4)
     return;
   if (r > h / 2) r = h / 2;
-  c.fillRoundRect(x - 1, y - 1, w + 2, h + 2, r + 1, 0x38FFFFFF);   // thin light rim
-  c.fillRoundRect(x, y, w, h, r, base);
-  c.fillRect(x + r / 2, y + h - h / 3, w - r, h / 3 - 1, 0x18001830);   // deeper at the bottom
-  int sh = h / 2 - 1;
-  int sr = r - 2 < sh / 2 ? r - 2 : sh / 2;
-  if (sr < 0) sr = 0;
-  c.fillRoundRect(x + 3, y + 2, w - 6, sh, sr, 0x40FFFFFF);          // shine
-  c.fillRect(x + r, y + 1, w - 2 * r, 1, 0x90FFFFFF);                 // edge light
+  int ir = r > 1 ? r - 1 : 0;
+  c.fillRoundRect(x - 3, y - 3, w + 6, h + 6, r + 3, 0x308CD7FF);                // glow
+  c.fillRoundRect(x - 1, y - 1, w + 2, h + 2, r + 1, 0xE0FFFFFF);                // rim
+  c.fillRoundRect(x, y, w, h, r, base | 0xFF000000);
+  c.fillRoundRect(x + 1, y + 1, w - 2, h / 2, ir, 0x48FFFFFF);                   // upper half
+  c.fillGradient(x + r / 2, y + 1, w - r, h / 2 - 1, 0x40FFFFFF, 0x08FFFFFF);
+  c.fillGradient(x + r / 2, y + h / 2, w - r, h - h / 2 - 2, 0x00FFFFFF, 0x30FFFFFF);
+  c.fillRect(x + r, y + 1, w - 2 * r, 1, 0xF0FFFFFF);                             // top light
+  c.fillRect(x + r, y + h - 2, w - 2 * r, 1, 0x59003078);                         // bottom shade
 }
 
 void uiDrawRowSelection(UiCanvas &c, int x, int y, int w, int h)
 {
   if (UI_THEME_STYLE == THEME_AERO) {
-    drawGloss(c, x, y, w, h, 12, uiWithAlpha(UI_COL_ACCENT, 0xA8));
+    drawGloss(c, x, y, w, h, 12, UI_COL_ACCENT);
     return;
   }
   c.fillRoundRect(x, y, w, h, 10, UI_COL_ROW_SEL);
@@ -70,7 +73,12 @@ void uiDrawRowSelection(UiCanvas &c, int x, int y, int w, int h)
 void uiDrawSelection(UiCanvas &c, int x, int y, int w, int h, int radius, bool strong)
 {
   if (UI_THEME_STYLE == THEME_AERO) {
-    drawGloss(c, x, y, w, h, radius, uiWithAlpha(UI_COL_ACCENT, strong ? 0xE8 : 0x90));
+    if (strong) {
+      drawGloss(c, x, y, w, h, radius, UI_COL_ACCENT);
+    } else {   // a frame around something (a box art): glow and rim only
+      c.fillRoundRect(x - 3, y - 3, w + 6, h + 6, radius + 3, 0x408CD7FF);
+      c.fillRoundRect(x, y, w, h, radius, 0xC0FFFFFF);
+    }
     return;
   }
   c.fillRoundRect(x, y, w, h, radius, strong ? UI_COL_ACCENT : UI_COL_ROW_SEL);
@@ -82,45 +90,91 @@ void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
     c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, alpha));
     return;
   }
-  // Frosted glass: a bit more see-through, a light top and a bright edge.
-  int a = alpha >= 0xE0 ? alpha : alpha * 7 / 8;   // dialogs stay solid enough to read
+  // Glass: tinted, lighter at the top, a reflection over the upper part and
+  // a bright edge.
+  int a = alpha >= 0xE0 ? alpha : alpha * 3 / 4;   // dialogs stay solid enough to read
+  c.fillRoundRect(x + 4, y + 10, w, h, radius, 0x30001432);                      // shadow
   c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, a));
-  int hh = h / 3 < 120 ? h / 3 : 120;
-  c.fillGradient(x + radius / 2, y + 1, w - radius, hh, 0x1CFFFFFF, 0x00FFFFFF);
-  c.fillRect(x + radius, y, w - 2 * radius, 1, 0x70FFFFFF);
-  c.fillRect(x + radius, y + h - 1, w - 2 * radius, 1, 0x20FFFFFF);
+  c.fillGradient(x + radius / 2, y + 1, w - radius, h - 2, 0x20FFFFFF, 0x04FFFFFF);
+  c.fillGradient(x + radius / 2, y + 1, w - radius, h * 45 / 100, 0x30FFFFFF, 0x00FFFFFF);
+  c.fillRect(x + radius, y, w - 2 * radius, 1, 0xCCFFFFFF);
+  c.fillRect(x, y + radius, 1, h - 2 * radius, 0x70FFFFFF);
+  c.fillRect(x + w - 1, y + radius, 1, h - 2 * radius, 0x70FFFFFF);
+  c.fillRect(x + radius, y + h - 1, w - 2 * radius, 1, 0x40FFFFFF);
 }
 
-void uiDrawBackgroundDecor(UiCanvas &c)
+namespace {
+
+UiColor mixColor(UiColor a, UiColor b, int t, int n)   // a..b, t of n
+{
+  UiColor r = 0xFF000000;
+  for (int s = 0; s < 24; s += 8)
+    r |= (UiColor)((((a >> s) & 0xFF) * (n - t) + ((b >> s) & 0xFF) * t) / n) << s;
+  return r;
+}
+
+// A thin anti-aliased circle outline.
+void drawRing(UiCanvas &c, int cx, int cy, int r, UiColor col)
+{
+  int a = (int)(col >> 24);
+  for (int y = -r - 1; y <= r + 1; y++) {
+    for (int x = -r - 1; x <= r + 1; x++) {
+      int d2 = x * x + y * y;
+      int in = (r - 1) * (r - 1), out = (r + 1) * (r + 1);
+      if (d2 < in || d2 > out)
+        continue;
+      int edge = d2 < r * r ? d2 - in : out - d2;           // fade at both sides
+      int span = d2 < r * r ? r * r - in : out - r * r;
+      int aa = span > 0 ? a * edge / span : a;
+      c.fillRect(cx + x, cy + y, 1, 1, uiWithAlpha(col, aa));
+    }
+  }
+}
+
+// A soap bubble: clear body, white rim, a bright spot up-left and a cyan
+// glint down-right.
+void drawBubble(UiCanvas &c, int x, int y, int r)
+{
+  c.fillCircle(x, y, r, 0x0EFFFFFF);
+  c.fillCircle(x + r / 6, y + r / 5, r * 3 / 4, 0x1000A0FF);
+  drawRing(c, x, y, r, 0xA8FFFFFF);
+  c.fillCircle(x - r * 35 / 100, y - r * 40 / 100, r * 32 / 100, 0x40FFFFFF);
+  c.fillCircle(x - r * 35 / 100, y - r * 40 / 100, r * 20 / 100, 0xD0FFFFFF);
+  c.fillCircle(x + r * 42 / 100, y + r * 45 / 100, r * 15 / 100 + 1, 0x7078DCFF);
+}
+
+} // namespace
+
+void uiDrawBackgroundDecor(UiCanvas &c, bool scenery)
 {
   if (UI_THEME_STYLE != THEME_AERO)
     return;
   const int W = c.width(), H = c.height();
-  // Sun glow in the top-left corner.
-  for (int i = 0; i < 7; i++)
-    c.fillCircle(W / 8, -H / 10, 520 - i * 60, 0x08FFFFFF);
-  // Light streaks across the sky.
-  for (int i = 0; i < 3; i++)
-    c.fillRect(0, H / 5 + i * 34, W, 10 - i * 3, 0x08FFFFFF);
-  // Green glowing hills along the bottom, and water light over them.
-  for (int i = 0; i < 4; i++) {
-    c.fillCircle(W / 4, H + 380 - i * 14, 560 - i * 30, 0x1448D06A);
-    c.fillCircle(W * 4 / 5, H + 470 - i * 14, 640 - i * 30, 0x1236B85E);
+  if (scenery) {
+    // A meadow under a clear sky: deep blue up top (where the text is), a
+    // bright horizon, green hills below.
+    int hz = H * 80 / 100;
+    c.fillGradient(0, 0, W, hz, 0xFF0A4A86, 0xFF1E6FB5);
+    c.fillGradient(0, hz, W, H - hz, 0xFF1E6FB5, 0xFF5AB8E8);
+    for (int i = 0; i < 9; i++)                                   // sun, up right
+      c.fillCircle(W * 78 / 100, H * 12 / 100, 380 - i * 40, 0x0AFFFFFF);
+    const int bands = 14;
+    for (int i = 0; i < bands; i++) {                             // far hill, right
+      UiColor col = mixColor(0xFF2E8A26, 0xFF083806, i, bands);
+      c.fillCircle(W * 85 / 100, hz - 60 + 1300 + i * 8, 1300, col);
+    }
+    for (int i = 0; i < bands; i++) {                             // near hill, left
+      UiColor col = mixColor(0xFF3A9A1C, 0xFF0A4005, i, bands);
+      c.fillCircle(W * 28 / 100, hz - 30 + 1500 + i * 9, 1500, col);
+    }
   }
-  c.fillRect(0, H - 120, W, 2, 0x18CFFFF0);
-  // Bubbles (fixed positions, so the cached background never changes).
+  // Bubbles (fixed places, so the cached background never changes).
   static const short bub[][3] = {
-    { 1180, 160, 46 }, { 1090, 250, 22 }, { 1220, 330, 14 }, { 960, 140, 12 },
-    { 120, 600, 38 }, { 220, 520, 16 }, { 60, 470, 10 }, { 700, 640, 26 },
-    { 820, 560, 12 }, { 1010, 600, 34 }, { 1150, 520, 18 }, { 480, 90, 16 },
-    { 600, 170, 9 }, { 360, 640, 12 }, { 1240, 650, 24 }, { 900, 300, 8 } };
-  for (size_t i = 0; i < sizeof(bub) / sizeof(bub[0]); i++) {
-    int x = bub[i][0] * W / 1280, y = bub[i][1] * H / 720, r = bub[i][2];
-    c.fillCircle(x, y, r + 1, 0x1EFFFFFF);       // rim
-    c.fillCircle(x, y, r - 1, 0x10A8E8FF);       // body
-    c.fillCircle(x + r / 4, y + r / 4, r / 2, 0x0C9FF0FF);
-    c.fillCircle(x - r / 3, y - r / 3, r / 4 + 1, 0x60FFFFFF);   // shine
-  }
+    { 1180, 170, 44 }, { 1095, 255, 20 }, { 1225, 335, 13 }, { 965, 145, 11 },
+    { 115, 590, 34 }, { 215, 515, 15 }, { 62, 470, 9 }, { 705, 655, 22 },
+    { 1010, 600, 30 }, { 1150, 525, 16 }, { 1245, 655, 21 }, { 905, 300, 7 } };
+  for (size_t i = 0; i < sizeof(bub) / sizeof(bub[0]); i++)
+    drawBubble(c, bub[i][0] * W / 1280, bub[i][1] * H / 720, bub[i][2]);
 }
 
 namespace {
@@ -1069,9 +1123,10 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
   static const char *es[TAB_COUNT] = { "Juegos", "Recientes", "Favoritos", "Ajustes" };
   static const char *en[TAB_COUNT] = { "Games", "Recent", "Favorites", "Settings" };
   c.drawText(UI_FONT_TITLE, UI_MARGIN_X, 30, "VBA360", UI_COL_TEXT);
-  int tx = 330;
-  drawBadge(c, tx, 40, "LB", 0x30FFFFFF, UI_COL_TEXT_DIM);
-  tx += 52;
+  int tx = 320;
+  const UiGlyph *lb = uiGlyph("LB"), *rb = uiGlyph("RB");
+  c.blitAlpha(lb->px, lb->w, lb->h, tx, 53 - lb->h / 2);
+  tx += lb->w + 10;
   for (int i = 0; i < TAB_COUNT; i++) {
     const char *label = app.tr(es[i], en[i]);
     int w = c.textWidth(UI_FONT_BODY, label) + 36;
@@ -1080,7 +1135,7 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
     c.drawText(UI_FONT_BODY, tx + 18, 38, label, i == m_tab ? 0xFFFFFFFF : UI_COL_TEXT_DIM);
     tx += w + 8;
   }
-  drawBadge(c, tx + 4, 40, "RB", 0x30FFFFFF, UI_COL_TEXT_DIM);
+  c.blitAlpha(rb->px, rb->w, rb->h, tx + 4, 53 - rb->h / 2);
 
   // Breadcrumb / tab description
   std::string sub;

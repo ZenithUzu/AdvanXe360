@@ -339,6 +339,22 @@ void UiCanvas::blitScaled(const UiColor *src, int sw, int sh, int spitch,
   }
 }
 
+void UiCanvas::blitAlpha(const UiColor *src, int w, int h, int x, int y)
+{
+  for (int j = 0; j < h; j++) {
+    int py = y + j;
+    if (py < m_cy0 || py >= m_cy1)
+      continue;
+    for (int i = 0; i < w; i++) {
+      int px = x + i;
+      if (px < m_cx0 || px >= m_cx1)
+        continue;
+      UiColor s = src[j * w + i];
+      blendPixel(m_px + py * m_w + px, s, (int)(s >> 24));
+    }
+  }
+}
+
 void UiCanvas::copyFrom(const UiColor *src)
 {
   if (src)
