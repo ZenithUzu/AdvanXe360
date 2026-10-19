@@ -738,10 +738,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
                "An image from the backgrounds\\ folder (1280x720 is best), darkened."))).choice = choice;
     }
     {
-      const char *lv[LIST_VIEW_COUNT] = { tr("Portadas", "Box art"), tr("Nombres", "Names") };
+      const char *lv[LIST_VIEW_COUNT] = { tr("Estante", "Shelf"), tr("Nombres", "Names"), tr("Carrusel", "Carousel") };
       (m.add(U_LIST_VIEW, ITEM_OPTION, tr("Lista de juegos", "Game list"), lv[m_cfg.listView],
-             tr("Portadas: las cajas de los juegos en un estante. Nombres: la lista de archivos.",
-                "Box art: the game boxes on a shelf. Names: the list of files."))).choice = m_cfg.listView;
+             tr("Carrusel: una portada al frente y las dem\xe1s a los lados. Estante: las portadas en repisas. Nombres: los archivos.",
+                "Carousel: one box up front, the rest beside it. Shelf: the boxes on shelves. Names: the files."))).choice = m_cfg.listView;
     }
     {
       const char *pv[PREVIEW_COUNT] = { tr("Portada o \xfaltima partida", "Box art or last played"),

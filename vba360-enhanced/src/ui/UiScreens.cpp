@@ -540,7 +540,13 @@ void UiHomeScreen::update(UiApp &app, const UiInputState &in)
   int count = (int)m_rows.size();
   int visible = (UI_FOOTER_Y - 12 - (UI_HEADER_H + 20)) / rowHeight();
   bool shelf = shelfMode(app);
-  if (shelf) {
+  if (carouselMode(app)) {
+    // Carousel: left / right one by one, up / down five at a time.
+    if ((in.repeat & PAD_BIT(PAD_LEFT)) && ls.sel > 0) ls.sel--;
+    if ((in.repeat & PAD_BIT(PAD_RIGHT)) && ls.sel < count - 1) ls.sel++;
+    if (in.repeat & PAD_BIT(PAD_UP)) ls.move(-5, count, false);
+    if (in.repeat & PAD_BIT(PAD_DOWN)) ls.move(5, count, false);
+  } else if (shelf) {
     // Shelf: left / right along a shelf, up / down to the shelf above / below.
     if ((in.repeat & PAD_BIT(PAD_LEFT)) && ls.sel > 0) ls.sel--;
     if ((in.repeat & PAD_BIT(PAD_RIGHT)) && ls.sel < count - 1) ls.sel++;
@@ -821,6 +827,12 @@ bool UiHomeScreen::shelfMode(UiApp &app) const
          !(m_tab == TAB_GAMES && m_dir.empty());   // drives stay a list
 }
 
+bool UiHomeScreen::carouselMode(UiApp &app) const
+{
+  return app.cfg().listView == LIST_VIEW_CAROUSEL && m_tab != TAB_SETTINGS &&
+         !(m_tab == TAB_GAMES && m_dir.empty());
+}
+
 // Box art standing on shelves: boxes of any shape share a baseline like on a
 // real shelf; the chosen one lifts off it. The name and details of the
 // chosen game run along the bottom.
@@ -837,9 +849,10 @@ void UiHomeScreen::drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h
 
   for (int r = 0; r < SHELF_ROWS; r++) {
     int base = y + (r + 1) * shelfH - 18;                   // where the boxes stand
-    // The shelf: a lit edge and its shadow.
-    c.fillRect(x - 8, base, w + 16, 3, uiWithAlpha(UI_COL_ACCENT, 0x70));
-    c.fillGradient(x - 8, base + 3, w + 16, 12, 0x38000000, 0x00000000);
+    // A wooden plank: lit top, front edge, shadow under it.
+    c.fillGradient(x - 16, base - 3, w + 32, 6, 0xFFB98552, 0xFF8E5C33);
+    c.fillGradient(x - 16, base + 3, w + 32, 10, 0xFF6E4426, 0xFF4A2C17);
+    c.fillGradient(x - 16, base + 13, w + 32, 14, 0x60000000, 0x00000000);
     for (int col = 0; col < SHELF_COLS; col++) {
       int idx = (ls.scroll + r) * SHELF_COLS + col;
       if (idx >= count)
@@ -918,6 +931,130 @@ void UiHomeScreen::drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h
   c.drawTextFit(UI_FONT_SMALL, x + w - 180, sy + 8, 180, detail.c_str(), UI_COL_TEXT_DIM, UI_ALIGN_RIGHT);
 }
 
+// --- Carousel view -------------------------------------------------------------
+
+namespace {
+
+// A box drawn at most maxW x maxH with its own proportions (a plain
+// label when there is no art). Returns the size used.
+void boxSize(const UiApp::Cover *cv, int maxW, int maxH, int &w, int &h)
+{
+  if (!cv) { h = maxH; w = maxH * 9 / 10; return; }
+  w = maxW; h = cv->h * maxW / cv->w;
+  if (h > maxH) { h = maxH; w = cv->w * maxH / cv->h; }
+  if (w < 1) w = 1;
+  if (h < 1) h = 1;
+}
+
+void drawBox(UiCanvas &c, const UiApp::Cover *cv, int x, int y, int w, int h, int bright,
+             const std::string &name, const char *kind)
+{
+  c.fillRoundRect(x + 6, y + 10, w, h, 6, 0x60000000);      // shadow
+  if (cv) {
+    c.blitScaled(&cv->px[0], cv->w, cv->h, cv->w, x, y, w, h, bright);
+    return;
+  }
+  c.fillRoundRect(x, y, w, h, 6, uiWithAlpha(UI_COL_PANEL, 0xF0));
+  c.fillRoundRect(x + 10, y + 10, w - 20, h * 3 / 5, 4, 0x24FFFFFF);
+  c.drawTextFit(UI_FONT_TITLE, x + 10, y + h * 3 / 10 - 20, w - 20, kind, 0x70FFFFFF, UI_ALIGN_CENTER);
+  c.drawTextFit(UI_FONT_SMALL, x + 10, y + h * 3 / 5 + 24, w - 20, name.c_str(), UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
+}
+
+// The box art, read when the list stops (and drawn again until it is).
+const UiApp::Cover *boxArt(UiApp &app, const std::string &rom)
+{
+  const UiApp::Cover *cv = app.cover(rom, !app.inputHeld());
+  if (!cv && !app.coverChecked(rom))
+    app.drawAgain();
+  return cv;
+}
+
+// A box seen edge-on: the left strip of its art is the spine (GBA boxes
+// carry "GAME BOY ADVANCE" there).
+void drawSpine(UiCanvas &c, const UiApp::Cover *cv, int x, int y, int w, int h, int bright)
+{
+  if (cv) {
+    int sw = cv->w / 9 > 0 ? cv->w / 9 : 1;
+    c.blitScaled(&cv->px[0], sw, cv->h, cv->w, x, y, w, h, bright);
+  } else {
+    c.fillRect(x, y, w, h, uiWithAlpha(UI_COL_PANEL, 0xF0));
+  }
+  c.fillRect(x, y, 1, h, 0x50FFFFFF);                        // lit edge
+  c.fillRect(x, y, w, h, uiWithAlpha(0, (256 - bright) / 2));
+}
+
+} // namespace
+
+// The chosen box faces you; its neighbours stand smaller beside it and the
+// rest show only their spines, like boxes lined up on a shelf.
+void UiHomeScreen::drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
+{
+  UiListState &ls = m_list[m_tab];
+  const int count = (int)m_rows.size();
+  if (ls.sel < 0 || ls.sel >= count)
+    return;
+  const int cx = x + w / 2;
+  const int floor = y + h * 70 / 100;               // where the boxes stand
+
+  // Far boxes first (behind), edge-on; no new file reads for them.
+  for (int side = -1; side <= 1; side += 2) {
+    for (int d = 8; d >= 2; d--) {
+      int idx = ls.sel + side * d;
+      if (idx < 0 || idx >= count)
+        continue;
+      const Row &r = m_rows[idx];
+      const UiApp::Cover *cv = r.isDir ? 0 : app.cover(r.path, false);
+      int sh = 230 - d * 10, sw = 20;
+      int sx = cx + side * (385 + (d - 2) * 26) - sw / 2;
+      drawSpine(c, cv, sx, floor - sh, sw, sh, 220 - d * 15);
+    }
+  }
+  // The two neighbours.
+  for (int side = -1; side <= 1; side += 2) {
+    int idx = ls.sel + side;
+    if (idx < 0 || idx >= count)
+      continue;
+    const Row &r = m_rows[idx];
+    const UiApp::Cover *cv = r.isDir ? 0 : boxArt(app, r.path);
+    int bw, bh;
+    boxSize(cv, 190, 230, bw, bh);
+    std::string name = r.isDir ? r.title : uiStripExtension(uiFileName(r.path));
+    drawBox(c, cv, cx + side * 265 - bw / 2, floor - bh, bw, bh, 170, name, r.isDir ? "" : romKind(r.path));
+  }
+  // The chosen one, lifted off the floor.
+  const Row &cur = m_rows[ls.sel];
+  std::string name = cur.isDir ? cur.title : uiStripExtension(uiFileName(cur.path));
+  const UiApp::Cover *cv = cur.isDir ? 0 : boxArt(app, cur.path);
+  int bw, bh;
+  boxSize(cv, 300, 320, bw, bh);
+  int bx = cx - bw / 2, by = floor - bh - 14;
+  uiDrawSelection(c, bx - 8, by - 8, bw + 16, bh + 16, 12, false);
+  drawBox(c, cv, bx, by, bw, bh, 256, name, cur.isDir ? "" : romKind(cur.path));
+  if (cur.isDir)
+    drawFolderIcon(c, cx - 13, by + bh / 2 - 12, COL_DIR);
+  if (!cur.isDir && app.favorites().contains(cur.path))
+    c.fillCircle(bx + bw - 12, by + 12, 7, COL_FAV);
+
+  // Name, then what it is.
+  int ty = floor + 20;
+  c.drawTextFit(UI_FONT_TITLE, x + 40, ty, w - 80, name.c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
+  std::string detail;
+  if (cur.isDir) {
+    detail = app.tr("Carpeta", "Folder");
+  } else {
+    int info = app.romInfo(cur.path);
+    detail = (info & UI_ROM_GB) ? ((info & UI_ROM_CGB) ? "Game Boy Color" : "Game Boy") : "Game Boy Advance";
+    if (cur.size)
+      detail += "   " + formatSize(cur.size);
+    if (!findPatch(app, cur.path).empty())
+      detail += std::string("   ") + app.tr("con parche", "patched");
+  }
+  c.drawTextFit(UI_FONT_SMALL, x + 40, ty + 48, w - 80, detail.c_str(), UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
+  char pos[32];
+  sprintf(pos, "%d / %d", ls.sel + 1, count);
+  c.drawTextFit(UI_FONT_SMALL, x + w - 160, y - 4, 160, pos, UI_COL_TEXT_DIM, UI_ALIGN_RIGHT);
+}
+
 void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
 {
   if (m_tab == TAB_GAMES && m_filter != app.listFilter()) {
@@ -977,7 +1114,9 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
 
   int top = UI_HEADER_H + 20;
   int listH = UI_FOOTER_Y - 12 - top;
-  if (shelfMode(app) && !m_rows.empty()) {
+  if (carouselMode(app) && !m_rows.empty()) {
+    drawCarousel(app, c, UI_MARGIN_X, top, UI_W - UI_MARGIN_X * 2, listH);
+  } else if (shelfMode(app) && !m_rows.empty()) {
     drawShelf(app, c, UI_MARGIN_X, top, UI_W - UI_MARGIN_X * 2, listH);
   } else {
     drawList(app, c, UI_MARGIN_X, top, 760, listH);

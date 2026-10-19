@@ -165,7 +165,7 @@ UiConfig::UiConfig()
 {
   coverServer = "http://thumbnails.libretro.com";
   previewMode = PREVIEW_COVER_OR_LAST;
-  listView = LIST_VIEW_COVERS;
+  listView = LIST_VIEW_CAROUSEL;
   resetControls();
 }
 

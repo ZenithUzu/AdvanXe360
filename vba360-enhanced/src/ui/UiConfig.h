@@ -70,8 +70,8 @@ enum UiOptionStyle { OPT_STYLE_PANEL = 0, OPT_STYLE_LIST, OPT_STYLE_CLASSIC, OPT
 // Game list preview: the box art (or else the last played moment), only the
 // box art, or only the last played moment.
 enum UiPreviewMode { PREVIEW_COVER_OR_LAST = 0, PREVIEW_COVER, PREVIEW_LAST, PREVIEW_COUNT };
-// Game list: box art on a shelf, or file names.
-enum UiListView { LIST_VIEW_COVERS = 0, LIST_VIEW_NAMES, LIST_VIEW_COUNT };
+// Game list: box art on a shelf, file names, or a carousel of box art.
+enum UiListView { LIST_VIEW_COVERS = 0, LIST_VIEW_NAMES, LIST_VIEW_CAROUSEL, LIST_VIEW_COUNT };
 
 struct UiConfig
 {
