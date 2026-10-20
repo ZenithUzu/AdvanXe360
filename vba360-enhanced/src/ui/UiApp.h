@@ -12,6 +12,16 @@
 #include <vector>
 
 #include "UiCanvas.h"
+
+// A box of the cover flow for the GPU to draw (see UiCanvas::blitCard for
+// the shape). key names the picture: the same key, the same pixels.
+struct UiCard
+{
+  const UiColor *px;
+  int w, h, pitch;
+  unsigned key;
+  int dx, dw, topL, hL, topR, hR, bright, reflect;
+};
 #include "UiConfig.h"
 #include "UiHost.h"
 #include "UiThumb.h"
@@ -88,6 +98,11 @@ public:
 
   void push(UiScreen *s);
   void pop();
+  // Cover flow boxes handed to the GPU this frame, nearest first; the screen
+  // drawing on top may add them (cardsOnGpu), else it draws them itself.
+  bool cardsOnGpu() const { return m_drawingTop && m_cfg.cardRenderer == 0 && m_host.canDrawCards(); }
+  void addCard(const UiCard &card) { m_cards.push_back(card); }
+  const std::vector<UiCard> &cards() const { return m_cards; }
   int screenCount() const { return (int)m_stack.size(); }
   void request(UiRequest r, const std::string &rom = "");
   void openMenu(int menuId, const std::string &rom = "");
@@ -126,7 +141,7 @@ public:
   // Cover image for a ROM (covers\<name>.png/.jpg or <rom>.png/.jpg next to
   // it), cached; 0 when there is none. With allowLoad false only the cache
   // is used (no disk access while the list is scrolling).
-  struct Cover { std::vector<UiColor> px; int w, h; };
+  struct Cover { std::vector<UiColor> px; int w, h; unsigned id; };   // id: new for every load
   enum { COVER_MAX_W = 328, COVER_MAX_H = 340 };   // the browser's preview area
   const Cover *cover(const std::string &rom, bool allowLoad = true);
   // The cover was already looked for (found or not); false while unknown.
@@ -203,6 +218,8 @@ private:
   std::vector<UiColor> m_bgCache;
   int m_bgCacheTheme;
   int m_bgCacheVeil;
+  std::vector<UiCard> m_cards;
+  bool m_drawingTop;
   std::string m_bgCacheName;
 
   std::vector<std::string> m_thumbKeys;

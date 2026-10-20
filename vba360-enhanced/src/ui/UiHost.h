@@ -118,6 +118,9 @@ public:
   virtual void coverDownloadStatus(UiCoverStatus &out) { out = UiCoverStatus(); }
   virtual void cancelCoverDownload() {}
 
+  // The Library's cover flow can be drawn by the GPU (UiApp::cards()).
+  virtual bool canDrawCards() { return false; }
+
   // --- System --------------------------------------------------------------
   virtual void quitToDashboard() = 0;
   // Called after settings change so video/audio/input pick them up.

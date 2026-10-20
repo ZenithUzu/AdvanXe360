@@ -1070,7 +1070,7 @@ void drawCart(UiCanvas &c, int sys, int x, int y, int w, const UiApp::Cover *cv,
 // The square of a picture a box shows: the middle of the box art, or, for a
 // game without one, the console's plain box (made once per console and
 // theme color, so the cover flow and shelves can treat both the same).
-struct BoxPic { const UiColor *px; int w, h, pitch; };
+struct BoxPic { const UiColor *px; int w, h, pitch; unsigned key; };   // key: see UiCard
 
 BoxPic boxPic(const UiApp::Cover *cv, const std::string &rom)
 {
@@ -1080,6 +1080,7 @@ BoxPic boxPic(const UiApp::Cover *cv, const std::string &rom)
     b.px = &cv->px[((cv->h - side) / 2) * cv->w + (cv->w - side) / 2];
     b.w = b.h = side;
     b.pitch = cv->w;
+    b.key = cv->id;
     return b;
   }
   enum { S = 200 };
@@ -1100,6 +1101,7 @@ BoxPic boxPic(const UiApp::Cover *cv, const std::string &rom)
   }
   b.px = plain[k].pixels();
   b.w = b.h = b.pitch = S;
+  b.key = 0x80000000u | ((key * 7u + (unsigned)k) & 0x7FFFFFFF);   // changes with the theme colors
   return b;
 }
 
@@ -1146,6 +1148,7 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
   if (last > count - 1) last = count - 1;
   // Nearest first: each column remembers how high it is already covered, so
   // the parts of farther boxes hidden behind nearer ones are never drawn.
+  const bool gpu = app.cardsOnGpu();   // else drawn here, in software
   static int sky[UI_W], under[UI_W];
   for (int i = 0; i < UI_W; i++) {
     sky[i] = floor;
@@ -1175,16 +1178,25 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
         int left = cx + (int)center - cw / 2;
         // The edge nearer the middle is the taller one.
         int hL = sgn > 0 ? hn : hf, hR = sgn > 0 ? hf : hn;
-        c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, ad < 2.5f ? 24 : 0,
-                   c.width() == UI_W ? sky : 0, c.width() == UI_W ? under : 0);
+        int reflect = ad < 2.5f ? 24 : 0;
+        if (gpu) {
+          UiCard card = { b.px, b.w, b.h, b.pitch, b.key, left, cw, floor - hL, hL, floor - hR, hR, bright, reflect };
+          app.addCard(card);
+        } else {
+          c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, reflect,
+                     c.width() == UI_W ? sky : 0, c.width() == UI_W ? under : 0);
+        }
       }
     }
   }
   const std::string &cur = roms[ls.sel];
-  if (app.favorites().contains(cur))
-    c.fillCircle(cx + S / 2 - 14, floor - S + 14, 7, COL_FAV);
   int ty = floor + S * 30 / 100 - 8;
   c.drawTextFit(UI_FONT_TITLE, x + 40, ty, w - 80, romTitle(cur).c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
+  if (app.favorites().contains(cur)) {   // beside the title (GPU boxes would cover a dot on the box)
+    int tw = c.textWidth(UI_FONT_TITLE, romTitle(cur).c_str());
+    if (tw > w - 80) tw = w - 80;
+    c.fillCircle(cx - tw / 2 - 18, ty + 24, 7, COL_FAV);
+  }
   c.drawTextFit(UI_FONT_SMALL, x + 40, ty + 48, w - 80, romMeta(app, cur, sys).c_str(), UI_COL_TEXT_DIM,
                 UI_ALIGN_CENTER);
 }

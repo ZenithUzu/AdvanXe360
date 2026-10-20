@@ -8,6 +8,8 @@
 
 #include "XboxHost.h"
 #include "../ui/UiCanvas.h"
+#include "../ui/UiApp.h"
+#include <map>
 
 extern IDirect3DDevice9 *pDevice;
 
@@ -67,6 +69,149 @@ bool compile(const char *src, const char *profile, ID3DXBuffer **code)
   if (errors)
     errors->Release();
   return SUCCEEDED(hr);
+}
+
+// --- Cover flow boxes on the GPU ---------------------------------------------
+// Each box is a quad with its picture; w = 1/height gives the perspective
+// (the GPU divides by it, which also maps the picture without the bend two
+// flat triangles would have). Each reflection is a second quad below it.
+
+struct CardVertex
+{
+  float x, y, z, w;
+  float u, v, fade, pad;   // fade: the quad's opacity at this corner
+};
+
+const char *kCardVS =
+  "struct VS_IN  { float4 Pos : POSITION; float4 UV : TEXCOORD0; };\n"
+  "struct VS_OUT { float4 Pos : POSITION; float4 UV : TEXCOORD0; };\n"
+  "VS_OUT main(VS_IN In) { VS_OUT o; o.Pos = In.Pos; o.UV = In.UV; return o; }\n";
+// c0.rgb: brightness. The picture's own alpha is ignored (boxes are solid).
+const char *kCardPS =
+  "sampler tex : register(s0);\n"
+  "float4 c0 : register(c0);\n"
+  "float4 main(float4 uv : TEXCOORD0) : COLOR {\n"
+  "  float4 c = tex2D(tex, uv.xy); return float4(c.rgb * c0.rgb, uv.z); }\n";
+IDirect3DVertexShader9 *g_cardVs = 0;
+IDirect3DPixelShader9 *g_cardPs = 0;
+IDirect3DVertexDeclaration9 *g_cardDecl = 0;
+
+struct CardTex { IDirect3DTexture9 *tex; DWORD fence; unsigned used; };
+std::map<unsigned, CardTex> g_cardTex;   // by UiCard::key
+unsigned g_cardFrame = 0;
+enum { MAX_CARD_TEXTURES = 40 };
+
+bool cardInit()
+{
+  if (g_cardDecl)
+    return g_cardVs && g_cardPs;
+  ID3DXBuffer *code = 0;
+  if (compile(kCardVS, "vs_2_0", &code)) {
+    pDevice->CreateVertexShader((const DWORD *)code->GetBufferPointer(), &g_cardVs);
+    code->Release();
+  }
+  if (compile(kCardPS, "ps_2_0", &code)) {
+    pDevice->CreatePixelShader((const DWORD *)code->GetBufferPointer(), &g_cardPs);
+    code->Release();
+  }
+  static const D3DVERTEXELEMENT9 decl[] = {
+    { 0, 0, D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0 },
+    { 0, 16, D3DDECLTYPE_FLOAT4, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0 },
+    D3DDECL_END()
+  };
+  pDevice->CreateVertexDeclaration(decl, &g_cardDecl);
+  return g_cardVs && g_cardPs && g_cardDecl;
+}
+
+// The GPU copy of a box picture, made the first time its key is seen.
+IDirect3DTexture9 *cardTexture(const UiCard &c)
+{
+  std::map<unsigned, CardTex>::iterator it = g_cardTex.find(c.key);
+  if (it != g_cardTex.end()) {
+    it->second.used = g_cardFrame;
+    return it->second.tex;
+  }
+  if (g_cardTex.size() >= MAX_CARD_TEXTURES) {   // drop the least recently drawn
+    std::map<unsigned, CardTex>::iterator old = g_cardTex.begin();
+    for (it = g_cardTex.begin(); it != g_cardTex.end(); ++it)
+      if (it->second.used < old->second.used)
+        old = it;
+    if (old->second.fence)
+      pDevice->BlockOnFence(old->second.fence);
+    old->second.tex->Release();
+    g_cardTex.erase(old);
+  }
+  IDirect3DTexture9 *tex = 0;
+  if (FAILED(pDevice->CreateTexture(c.w, c.h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT, &tex, NULL)) || !tex)
+    return 0;
+  D3DLOCKED_RECT lr;
+  if (SUCCEEDED(tex->LockRect(0, &lr, NULL, 0))) {
+    for (int y = 0; y < c.h; y++)
+      memcpy((BYTE *)lr.pBits + y * lr.Pitch, c.px + y * c.pitch, c.w * 4);
+    tex->UnlockRect(0);
+  }
+  CardTex ct = { tex, 0, g_cardFrame };
+  g_cardTex[c.key] = ct;
+  return tex;
+}
+
+void drawCards(const std::vector<UiCard> &cards)
+{
+  if (cards.empty() || !cardInit())
+    return;
+  g_cardFrame++;
+  pDevice->SetRenderState(D3DRS_VIEWPORTENABLE, FALSE);
+  pDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+  pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+  pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+  pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+  pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+  pDevice->SetVertexDeclaration(g_cardDecl);
+  pDevice->SetVertexShader(g_cardVs);
+  pDevice->SetPixelShader(g_cardPs);
+  pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+  pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+  pDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+  pDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+  for (int i = (int)cards.size() - 1; i >= 0; i--) {   // farthest first
+    const UiCard &c = cards[i];
+    IDirect3DTexture9 *tex = cardTexture(c);
+    if (!tex || c.hL <= 0 || c.hR <= 0)
+      continue;
+    float b = c.bright / 256.0f;
+    float k[4] = { b, b, b, 1.0f };
+    pDevice->SetPixelShaderConstantF(0, k, 1);
+    pDevice->SetTexture(0, tex);
+    float wl = 1.0f / c.hL, wr = 1.0f / c.hR;
+    float x0 = c.dx - 0.5f, x1 = c.dx + c.dw - 0.5f;
+    float t0 = c.topL - 0.5f, t1 = c.topR - 0.5f;
+    float b0 = t0 + c.hL, b1 = t1 + c.hR;
+    CardVertex v[4] = {
+      { x0 * wl, t0 * wl, 0, wl, 0, 0, 1, 0 },
+      { x1 * wr, t1 * wr, 0, wr, 1, 0, 1, 0 },
+      { x0 * wl, b0 * wl, 0, wl, 0, 1, 1, 0 },
+      { x1 * wr, b1 * wr, 0, wr, 1, 1, 1, 0 }
+    };
+    pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(CardVertex));
+    if (c.reflect > 0) {   // mirrored below, fading out (as UiCanvas::blitCard)
+      float rl = c.hL * c.reflect / 100.0f, rr = c.hR * c.reflect / 100.0f;
+      float vl = 1.0f - (float)c.reflect / 100.0f;
+      float a = 0.345f * b;
+      CardVertex r[4] = {
+        { x0 * wl, (b0 + 1) * wl, 0, wl, 0, 1, a, 0 },
+        { x1 * wr, (b1 + 1) * wr, 0, wr, 1, 1, a, 0 },
+        { x0 * wl, (b0 + 1 + rl) * wl, 0, wl, 0, vl, 0, 0 },
+        { x1 * wr, (b1 + 1 + rr) * wr, 0, wr, 1, vl, 0, 0 }
+      };
+      pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, r, sizeof(CardVertex));
+    }
+  }
+  DWORD fence = pDevice->InsertFence();
+  for (std::map<unsigned, CardTex>::iterator it = g_cardTex.begin(); it != g_cardTex.end(); ++it)
+    if (it->second.used == g_cardFrame)
+      it->second.fence = fence;
+  pDevice->SetTexture(0, NULL);
+  pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 }
 
 IDirect3DTexture9 *g_border = 0;
@@ -191,7 +336,7 @@ bool xboxUiRendererInit()
   return g_vs && g_ps && g_decl;
 }
 
-void xboxUiPresent(const UiCanvas &canvas, bool changed)
+void xboxUiPresent(const UiCanvas &canvas, bool changed, const std::vector<UiCard> *cards)
 {
   if (!g_vs && !xboxUiRendererInit())
     return;
@@ -253,6 +398,8 @@ void xboxUiPresent(const UiCanvas &canvas, bool changed)
   pDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
   pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(UiVertex));
   g_texFence[g_texCur] = pDevice->InsertFence();
+  if (cards)
+    drawCards(*cards);
   pDevice->Present(NULL, NULL, NULL, NULL);
 }
 

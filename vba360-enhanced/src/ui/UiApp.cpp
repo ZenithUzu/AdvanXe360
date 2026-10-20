@@ -26,7 +26,7 @@ enum
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_EFFECT,
-  U_BG_VIS, U_PANELS, U_ACCENT, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
+  U_BG_VIS, U_PANELS, U_ACCENT, U_CARDS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
@@ -138,7 +138,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
+    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_drawingTop(false), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
 
@@ -363,6 +363,7 @@ void UiApp::updateStickCapture()
 void UiApp::draw(UiCanvas &c)
 {
   uiApplyTheme(m_cfg.menuTheme, uiAccentTints[m_cfg.accentTint], uiPanelOpacityPercent[m_cfg.panelOpacity]);
+  m_cards.clear();
   if (m_stack.empty()) {
     drawBackground(c);
     return;
@@ -383,9 +384,11 @@ void UiApp::draw(UiCanvas &c)
   }
   for (size_t i = base; i < m_stack.size(); i++) {
     m_hintsAllowed = i + 1 == m_stack.size();
+    m_drawingTop = m_hintsAllowed;   // nothing drawn over it: GPU boxes can go on top
     m_stack[i]->draw(*this, c);
   }
   m_hintsAllowed = true;
+  m_drawingTop = false;
 
   if (m_toastFrames > 0 && !m_toast.empty()) {
     int a = m_toastFrames < 20 ? m_toastFrames * 12 : 240;
@@ -825,6 +828,12 @@ void UiApp::buildMenu(UiMenuScreen &m)
       (m.add(U_ACCENT, ITEM_OPTION, tr("Tono de resaltado", "Highlight color"), tint[m_cfg.accentTint],
              tr("El color de la selecci\xf3n y los detalles, sobre cualquier tema.",
                 "The color of the selection and details, over any theme."))).choice = m_cfg.accentTint;
+      if (m_host.canDrawCards()) {
+        const char *rd[2] = { tr("Tarjeta gr\xe1""fica", "Graphics card"), tr("Procesador", "Processor") };
+        (m.add(U_CARDS, ITEM_OPTION, tr("Dibujo del carrusel", "Carousel drawing"), rd[m_cfg.cardRenderer],
+               tr("Tarjeta gr\xe1""fica: fluido. Procesador: el de antes, por si algo se ve mal.",
+                  "Graphics card: smooth. Processor: the previous way, in case something looks wrong."))).choice = m_cfg.cardRenderer;
+      }
     }
     if (uiThemes[m_cfg.menuTheme].style == THEME_AERO) {   // Frutiger Aero only
       m.addHeader(tr("Efectos de Frutiger Aero", "Frutiger Aero effects"));
@@ -1500,6 +1509,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_BG_VIS) m_cfg.bgVisibility = wrapIndex(m_cfg.bgVisibility, delta, BG_VIS_COUNT);
     else if (id == U_PANELS) m_cfg.panelOpacity = wrapIndex(m_cfg.panelOpacity, delta, PANEL_OPACITY_COUNT);
     else if (id == U_ACCENT) m_cfg.accentTint = wrapIndex(m_cfg.accentTint, delta, ACCENT_TINT_COUNT);
+    else if (id == U_CARDS) m_cfg.cardRenderer ^= 1;
     else if (id == U_BUBBLES) m_cfg.bubbleAmount = wrapIndex(m_cfg.bubbleAmount, delta, EFFECT_LEVEL_COUNT);
     else if (id == U_WATER) m_cfg.waterStrength = wrapIndex(m_cfg.waterStrength, delta, EFFECT_LEVEL_COUNT);
     else if (id == U_BACKGROUND) {
@@ -1814,6 +1824,8 @@ const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)
       continue;
     if (m_host.loadImageFit(candidates[i], COVER_MAX_W, COVER_MAX_H, c.px, c.w, c.h) &&
         c.w > 0 && c.h > 0 && c.px.size() == (size_t)(c.w * c.h)) {
+      static unsigned nextId = 0;
+      c.id = ++nextId & 0x7FFFFFFF;   // the GPU's copy is keyed by it
       m_coverOrder.push_back(rom);
       return &c;
     }

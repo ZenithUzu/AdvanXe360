@@ -88,7 +88,7 @@ VOID __cdecl main()
     bool redraw = ui.needsRedraw();
     if (redraw)
       ui.draw(canvas);
-    xboxUiPresent(canvas, redraw);
+    xboxUiPresent(canvas, redraw, &ui.cards());
 
     std::string rom;
     if (ui.takeRequest(rom) != UI_REQ_LAUNCH)

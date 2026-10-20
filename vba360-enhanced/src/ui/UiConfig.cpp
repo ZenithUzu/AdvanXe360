@@ -94,6 +94,7 @@ struct ConfigReader
     else if (k == "bubble_amount") c.bubbleAmount = clampInt(v, 0, EFFECT_LEVEL_COUNT - 1, c.bubbleAmount);
     else if (k == "water_strength") c.waterStrength = clampInt(v, 0, EFFECT_LEVEL_COUNT - 1, c.waterStrength);
     else if (k == "menu_music") c.menuMusic = clampInt(v, 0, MUSIC_MODE_COUNT - 1, c.menuMusic);
+    else if (k == "card_renderer") c.cardRenderer = clampInt(v, 0, 1, c.cardRenderer);
     else if (k == "music_volume") c.musicVolume = clampInt(v, 0, MUSIC_VOLUME_COUNT - 1, c.musicVolume);
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
     else if (k == "stretch") c.stretch = clampInt(v, 0, SIZE_COUNT - 1, c.stretch);
@@ -190,6 +191,7 @@ UiConfig::UiConfig()
   waterStrength = 1;
   menuMusic = MUSIC_IN_ORDER;
   musicVolume = 2;
+  cardRenderer = 0;
   resetControls();
 }
 
@@ -244,7 +246,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "start_screen=%d\nlibrary_dir=%s\n", startScreen, libraryDir.c_str());
   fprintf(f, "bg_visibility=%d\npanel_opacity=%d\naccent_tint=%d\nbubble_amount=%d\nwater_strength=%d\n",
           bgVisibility, panelOpacity, accentTint, bubbleAmount, waterStrength);
-  fprintf(f, "menu_music=%d\nmusic_volume=%d\n", menuMusic, musicVolume);
+  fprintf(f, "menu_music=%d\nmusic_volume=%d\ncard_renderer=%d\n", menuMusic, musicVolume, cardRenderer);
   fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nborder_image=%s\nborder_fit=%d\n",
           filter, stretch, border, borderImage.c_str(), borderFit);
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",

@@ -716,6 +716,8 @@ public:
     XLaunchNewImage("", 0);
   }
 
+  virtual bool canDrawCards() { return true; }
+
   virtual void applySettings()
   {
     applySoundFlags();

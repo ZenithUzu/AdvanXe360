@@ -106,6 +106,7 @@ struct UiConfig
   int waterStrength;            // 0 soft, 1 normal, 2 strong
   int menuMusic;                // UiMusicMode: songs from music\ in the menu
   int musicVolume;              // index into uiMusicVolumePercent
+  int cardRenderer;             // cover flow: 0 = GPU (when the host can), 1 = software
   std::string libraryDir;       // the library's games folder ("" = lastDir)
 
   // Video
