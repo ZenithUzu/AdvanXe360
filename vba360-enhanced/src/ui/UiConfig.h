@@ -73,6 +73,15 @@ enum UiPreviewMode { PREVIEW_COVER_OR_LAST = 0, PREVIEW_COVER, PREVIEW_LAST, PRE
 // Game list: box art on a shelf, file names, or a carousel of box art.
 // Moving background effect: bits, so "both" is just the two together.
 enum UiBgEffect { UI_EFFECT_BUBBLES = 1, UI_EFFECT_WATER = 2, UI_EFFECT_COUNT = 4 };
+// Theme look (Interface): how much of the background image shows through,
+// how see-through the panels are, and an accent color instead of the theme's.
+enum { BG_VIS_COUNT = 4, PANEL_OPACITY_COUNT = 4, ACCENT_TINT_COUNT = 9, EFFECT_LEVEL_COUNT = 3,
+       MUSIC_MODE_COUNT = 3, MUSIC_VOLUME_COUNT = 4 };
+extern const int uiBgVeilAlpha[BG_VIS_COUNT];          // theme veil over the image
+extern const int uiPanelOpacityPercent[PANEL_OPACITY_COUNT];
+extern const unsigned int uiAccentTints[ACCENT_TINT_COUNT];   // [0] unused: the theme's own
+extern const int uiMusicVolumePercent[MUSIC_VOLUME_COUNT];
+enum UiMusicMode { MUSIC_OFF = 0, MUSIC_IN_ORDER, MUSIC_SHUFFLE };
 enum UiListView { LIST_VIEW_COVERS = 0, LIST_VIEW_NAMES, LIST_VIEW_CAROUSEL, LIST_VIEW_COUNT };
 
 struct UiConfig
@@ -90,6 +99,13 @@ struct UiConfig
   int listView;                 // UiListView
   int bgEffect;                 // UiBgEffect bits (0 = none)
   int startScreen;              // 0 = library, 1 = file browser
+  int bgVisibility;             // index into uiBgVeilAlpha
+  int panelOpacity;             // index into uiPanelOpacityPercent
+  int accentTint;               // index into uiAccentTints (0 = the theme's)
+  int bubbleAmount;             // 0 few, 1 normal, 2 many
+  int waterStrength;            // 0 soft, 1 normal, 2 strong
+  int menuMusic;                // UiMusicMode: songs from music\ in the menu
+  int musicVolume;              // index into uiMusicVolumePercent
   std::string libraryDir;       // the library's games folder ("" = lastDir)
 
   // Video

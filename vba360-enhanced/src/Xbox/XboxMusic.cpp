@@ -1,0 +1,211 @@
+// Menu music (see XboxMusic.h). Streams the file in small buffers from the
+// menu loop, so no thread is needed; it shares SDL's XAudio2 engine.
+#include "XboxMusic.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <vector>
+
+static unsigned int le16(const unsigned char *p) { return p[0] | (p[1] << 8); }
+static unsigned long le32(const unsigned char *p)
+{
+  return (unsigned long)p[0] | ((unsigned long)p[1] << 8) | ((unsigned long)p[2] << 16) | ((unsigned long)p[3] << 24);
+}
+
+bool musicParseWav(const unsigned char *buf, long len, WavInfo &out)
+{
+  if (len < 12 || memcmp(buf, "RIFF", 4) != 0 || memcmp(buf + 8, "WAVE", 4) != 0)
+    return false;
+  bool haveFmt = false;
+  long pos = 12;
+  while (pos + 8 <= len) {
+    const unsigned char *ck = buf + pos;
+    unsigned long size = le32(ck + 4);
+    if (memcmp(ck, "fmt ", 4) == 0 && pos + 8 + 16 <= len) {
+      unsigned int format = le16(ck + 8);
+      out.channels = (int)le16(ck + 10);
+      out.rate = (int)le32(ck + 12);
+      out.bits = (int)le16(ck + 22);
+      // 1 = PCM; 0xFFFE = extensible, which is PCM here when 16-bit.
+      if ((format != 1 && format != 0xFFFE) || out.bits != 16 || out.channels < 1 || out.channels > 2 ||
+          out.rate < 8000 || out.rate > 96000)
+        return false;
+      haveFmt = true;
+    } else if (memcmp(ck, "data", 4) == 0) {
+      if (!haveFmt)
+        return false;
+      out.dataStart = pos + 8;
+      out.dataBytes = (long)size;
+      return true;
+    }
+    pos += 8 + (long)((size + 1) & ~1UL);   // chunks are padded to even sizes
+  }
+  return false;
+}
+
+#ifdef _XBOX
+
+#include <xtl.h>
+#include <xaudio2.h>
+
+#include "../ui/UiApp.h"
+
+UiHost &xboxHost();               // XboxHost.cpp (its header pulls in the whole core)
+std::string xboxEmulatorDir();
+
+extern "C" IXAudio2 *XboxSDL_AudioEngine(void);   // libSDLx360 SDL_xboxaudio.c
+
+namespace {
+
+enum { BUFFERS = 4, BUFFER_BYTES = 64 * 1024 };
+
+IXAudio2SourceVoice *g_voice = 0;
+FILE *g_file = 0;
+long g_left = 0;                       // bytes of the song not read yet
+int g_rate = 0, g_channels = 0;
+unsigned char g_buf[BUFFERS][BUFFER_BYTES];
+int g_next = 0;                        // buffer to fill next
+std::vector<std::string> g_songs;
+int g_song = -1;
+int g_lastMode = -1;
+int g_failures = 0;                    // songs in a row that wouldn't play
+
+void closeSong()
+{
+  if (g_voice) {
+    g_voice->Stop(0);
+    g_voice->FlushSourceBuffers();
+    g_voice->DestroyVoice();
+    g_voice = 0;
+  }
+  if (g_file) {
+    fclose(g_file);
+    g_file = 0;
+  }
+  g_left = 0;
+}
+
+void listSongs()
+{
+  srand((unsigned int)GetTickCount());
+  g_songs.clear();
+  std::vector<UiDirEntry> e;
+  xboxHost().listDir(uiJoinPath(xboxEmulatorDir(), "music"), e);
+  for (size_t i = 0; i < e.size(); i++)
+    if (!e[i].isDir && uiExtension(e[i].name) == ".wav")
+      g_songs.push_back(e[i].path);
+}
+
+// Opens the next song; false if there is none that plays.
+bool openSong(int mode)
+{
+  closeSong();
+  if (g_songs.empty() || g_failures >= (int)g_songs.size())
+    return false;
+  if (mode == MUSIC_SHUFFLE && g_songs.size() > 1) {
+    int n;
+    do n = rand() % (int)g_songs.size(); while (n == g_song);
+    g_song = n;
+  } else {
+    g_song = (g_song + 1) % (int)g_songs.size();
+  }
+  g_file = fopen(g_songs[g_song].c_str(), "rb");
+  if (!g_file)
+    return false;
+  unsigned char head[512];
+  long got = (long)fread(head, 1, sizeof(head), g_file);
+  WavInfo w;
+  IXAudio2 *engine = XboxSDL_AudioEngine();
+  if (!engine || !musicParseWav(head, got, w) || fseek(g_file, w.dataStart, SEEK_SET) != 0) {
+    closeSong();
+    return false;
+  }
+  WAVEFORMATEX f;
+  memset(&f, 0, sizeof(f));
+  f.wFormatTag = WAVE_FORMAT_PCM;
+  f.nChannels = (WORD)w.channels;
+  f.nSamplesPerSec = (DWORD)w.rate;
+  f.wBitsPerSample = 16;
+  f.nBlockAlign = (WORD)(w.channels * 2);
+  f.nAvgBytesPerSec = f.nSamplesPerSec * f.nBlockAlign;
+  if (FAILED(engine->CreateSourceVoice(&g_voice, &f))) {
+    g_voice = 0;
+    closeSong();
+    return false;
+  }
+  g_left = w.dataBytes;
+  g_next = 0;
+  g_voice->Start(0);
+  return true;
+}
+
+// Tops the voice's queue up; false once the song has fully played.
+bool feed()
+{
+  XAUDIO2_VOICE_STATE st;
+  g_voice->GetState(&st);
+  while (st.BuffersQueued < BUFFERS && g_left > 0 && g_file) {
+    long want = g_left < BUFFER_BYTES ? g_left : BUFFER_BYTES;
+    want &= ~3L;
+    long got = want > 0 ? (long)fread(g_buf[g_next], 1, want, g_file) & ~1L : 0;
+    if (got <= 0) {
+      g_left = 0;
+      break;
+    }
+    g_left -= got;
+    unsigned char *p = g_buf[g_next];
+    for (long i = 0; i + 1 < got; i += 2) {   // .wav is little-endian, the console big-endian
+      unsigned char t = p[i];
+      p[i] = p[i + 1];
+      p[i + 1] = t;
+    }
+    XAUDIO2_BUFFER b;
+    memset(&b, 0, sizeof(b));
+    b.AudioBytes = (UINT32)got;
+    b.pAudioData = p;
+    if (FAILED(g_voice->SubmitSourceBuffer(&b)))
+      return false;
+    g_next = (g_next + 1) % BUFFERS;
+    st.BuffersQueued++;
+  }
+  return g_left > 0 || st.BuffersQueued > 0;
+}
+
+} // namespace
+
+void xboxMusicUpdate(int mode, int volumePercent)
+{
+  if (mode == MUSIC_OFF) {
+    if (g_voice || g_file)
+      closeSong();
+    g_lastMode = mode;
+    return;
+  }
+  if (g_lastMode == MUSIC_OFF || g_lastMode < 0) {   // turned on, or back from a game: look again
+    listSongs();
+    g_failures = 0;
+  }
+  g_lastMode = mode;
+  if (!g_voice) {
+    if (g_failures >= (int)g_songs.size())
+      return;   // nothing that plays: don't keep trying every frame
+    if (!openSong(mode)) {
+      g_failures++;
+      return;
+    }
+    g_failures = 0;
+  }
+  g_voice->SetVolume(volumePercent / 100.0f);
+  if (!feed())
+    closeSong();   // the next frame starts the next song
+}
+
+void xboxMusicStop()
+{
+  closeSong();
+  g_lastMode = -1;
+}
+
+#endif // _XBOX

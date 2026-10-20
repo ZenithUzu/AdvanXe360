@@ -355,6 +355,76 @@ void UiCanvas::blitAlpha(const UiColor *src, int w, int h, int x, int y)
   }
 }
 
+void UiCanvas::blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int dy, int dw, int dh, int bright)
+{
+  if (dw <= 0 || dh <= 0 || sw <= 0 || sh <= 0)
+    return;
+  for (int j = 0; j < dh; j++) {
+    int py = dy + j;
+    if (py < m_cy0 || py >= m_cy1)
+      continue;
+    int fy = (int)(((long long)j * 2 + 1) * sh * 128 / dh) - 128;   // 8.8 source row
+    if (fy < 0) fy = 0;
+    int y0 = fy >> 8, ty = fy & 255, y1 = y0 + 1 < sh ? y0 + 1 : y0;
+    for (int i = 0; i < dw; i++) {
+      int px = dx + i;
+      if (px < m_cx0 || px >= m_cx1)
+        continue;
+      int fx = (int)(((long long)i * 2 + 1) * sw * 128 / dw) - 128;
+      if (fx < 0) fx = 0;
+      int x0 = fx >> 8, tx = fx & 255, x1 = x0 + 1 < sw ? x0 + 1 : x0;
+      UiColor p[4] = { src[y0 * sw + x0], src[y0 * sw + x1], src[y1 * sw + x0], src[y1 * sw + x1] };
+      int wgt[4] = { (256 - tx) * (256 - ty), tx * (256 - ty), (256 - tx) * ty, tx * ty };
+      // Weighted by alpha so transparent edges don't darken the colors.
+      int a = 0, r = 0, g = 0, b = 0;
+      for (int k = 0; k < 4; k++) {
+        int pa = (int)(p[k] >> 24) * (wgt[k] >> 8);
+        a += pa;
+        r += ((p[k] >> 16) & 0xFF) * (pa >> 8);
+        g += ((p[k] >> 8) & 0xFF) * (pa >> 8);
+        b += (p[k] & 0xFF) * (pa >> 8);
+      }
+      int al = a >> 8;
+      if (al <= 0)
+        continue;
+      int div = a >> 8;
+      r = r / div * bright >> 8; g = g / div * bright >> 8; b = b / div * bright >> 8;
+      if (r > 255) r = 255;
+      if (g > 255) g = 255;
+      if (b > 255) b = 255;
+      blendPixel(m_px + py * m_w + px, 0xFF000000 | (r << 16) | (g << 8) | b, al > 255 ? 255 : al);
+    }
+  }
+}
+
+void UiCanvas::addLight(const unsigned char *map, int mw, int mh, int scale, UiColor tint)
+{
+  int tr = (tint >> 16) & 0xFF, tg = (tint >> 8) & 0xFF, tb = tint & 0xFF;
+  for (int my = 0; my < mh; my++) {
+    for (int sy = 0; sy < scale; sy++) {
+      int py = my * scale + sy;
+      if (py < m_cy0 || py >= m_cy1)
+        continue;
+      UiColor *row = m_px + py * m_w;
+      const unsigned char *src = map + my * mw;
+      for (int mx = 0; mx < mw; mx++) {
+        int v = src[mx];
+        if (!v)
+          continue;
+        int add_r = tr * v >> 8, add_g = tg * v >> 8, add_b = tb * v >> 8;
+        for (int sx = 0; sx < scale; sx++) {
+          int px = mx * scale + sx;
+          if (px < m_cx0 || px >= m_cx1)
+            continue;
+          UiColor d = row[px];
+          int r = ((d >> 16) & 0xFF) + add_r, g = ((d >> 8) & 0xFF) + add_g, b = (d & 0xFF) + add_b;
+          row[px] = (d & 0xFF000000) | ((r > 255 ? 255 : r) << 16) | ((g > 255 ? 255 : g) << 8) | (b > 255 ? 255 : b);
+        }
+      }
+    }
+  }
+}
+
 void UiCanvas::copyFrom(const UiColor *src)
 {
   if (src)

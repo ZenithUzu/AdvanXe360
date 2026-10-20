@@ -1,15 +1,15 @@
-# vba360-enhanced-ai
+# XeFork360
 
 🌐 **Español** · [English](README.en.md)
 
 [![Plataforma](https://img.shields.io/badge/plataforma-Xbox%20360-107C10)](#instalación)
 [![Consolas](https://img.shields.io/badge/emula-GBA%20%C2%B7%20GB%20%C2%B7%20GBC-6F64F0)](#qué-emula-y-qué-no)
 [![Licencia](https://img.shields.io/badge/licencia-GPL%20v2-blue)](#notas-y-créditos)
-[![Descarga](https://img.shields.io/github/v/release/ZenithUzu/vba360-enhanced-ai?label=descargar)](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest)
+[![Descarga](https://img.shields.io/github/v/release/ZenithUzu/XeFork360?label=descargar)](https://github.com/ZenithUzu/XeFork360/releases/latest)
 
-Emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew: BadUpdate, RGH o JTAG). Basado en VisualBoyAdvance-M, con el núcleo **Gambatte** para Game Boy / Color, **marcos de Super Game Boy**, menú propio y opciones por juego.
+**XeFork360** (antes *VBA360 enhanced-ai*) es un emulador de **Game Boy Advance, Game Boy y Game Boy Color para Xbox 360** (homebrew: BadUpdate, RGH o JTAG). Basado en VisualBoyAdvance-M, con el núcleo **Gambatte** para Game Boy / Color, **marcos de Super Game Boy**, menú propio y opciones por juego.
 
-Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced) · **[⬇️ Descargar la última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest)**
+Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced) · **[⬇️ Descargar la última versión](https://github.com/ZenithUzu/XeFork360/releases/latest)**
 
 | | |
 |---|---|
@@ -126,8 +126,8 @@ Estas muestran los **temas**: Predeterminado, Rojo, Game Boy Advance y **Frutige
 
 # Instalación
 
-1. Descarga el `.zip` de la [última versión](https://github.com/ZenithUzu/vba360-enhanced-ai/releases/latest).
-2. Copia la carpeta `VBA360` a tu consola (por ejemplo `Hdd1:\Emulators\VBA360\`) por FTP o USB.
+1. Descarga el `.zip` de la [última versión](https://github.com/ZenithUzu/XeFork360/releases/latest).
+2. Copia la carpeta `XeFork360` a tu consola (por ejemplo `Hdd1:\Emulators\XeFork360\`) por FTP o USB.
 3. Ábrela desde Aurora (`default.xex`). Las demás carpetas se crean solas.
 4. Pon tus ROMs donde quieras (disco duro o USB) y búscalas desde el emulador. También abre `.zip` y `.7z`.
 
@@ -198,10 +198,12 @@ Pon imágenes (PNG, JPG, BMP, TGA o DDS; ideal 1280×720) en `borders\` y elíge
 
 ## Menú: temas, fondo y portadas
 
-- **Tema y fondo del menú:** en *Ajustes → Interfaz e idioma*. Las imágenes para el menú van en `backgrounds\`.
-- **Biblioteca** (la pantalla de inicio): primero eliges la consola, cada una con su cartucho (GBA, GBC, Game Boy/Pocket y los .zip/.7z aparte), separadas por la extensión del archivo. Dentro ves sólo los ROMs con su portada, sin carpetas: **Carrusel** (una portada al frente, sus vecinas a los lados y el resto de canto) o **Estante** (dos repisas); **START** cambia entre las dos. Lee la carpeta de juegos y sus subcarpetas; para escogerla, en el explorador pulsa **Y** sobre la carpeta.
+- **Tema y fondo del menú:** en *Ajustes → Interfaz e idioma*. Las imágenes para el menú van en `backgrounds\`. Ahí mismo: **Visibilidad de la imagen** (cuánto se ve tu imagen), **Transparencia de los paneles** y **Tono de resaltado** (el color de la selección sobre cualquier tema).
+- **Biblioteca** (la pantalla de inicio): primero eliges la consola, cada una con su cartucho (GBA, GBC, Game Boy/Pocket y los .zip/.7z aparte), separadas por la extensión del archivo. Dentro ves sólo los ROMs con su portada, sin carpetas: **Carrusel** (una portada al frente, sus vecinas a los lados y el resto de canto) o **Estante** (dos repisas); **START** cambia entre las dos.
+- **Carpeta de juegos:** por defecto lee la carpeta **`Roms`** de cada unidad (por ejemplo `Hdd1:\Roms\` o `Usb0:\Roms\`) y sus subcarpetas. Para usar otra, en el explorador (BACK) pulsa **Y** sobre ella. Los archivos de BIOS no salen como juegos.
 - **BACK** abre el menú de siempre (explorador de archivos, Recientes, Favoritos y Ajustes); **B** en la lista de unidades vuelve a la Biblioteca. En *Interfaz e idioma* → **Pantalla de inicio** puedes arrancar en el explorador en vez de la Biblioteca.
-- **Efecto animado del fondo** (*Interfaz e idioma*): **Burbujas** que suben, **Agua** (rayos de luz que se mecen y olas abajo), **Burbujas y agua**, o **Ninguno**. Sólo con el tema **Frutiger Aero**; también encima de tu propia imagen de fondo.
+- **Efecto animado del fondo** (*Interfaz e idioma*): **Burbujas** que suben, **Agua** (la red de luz que el agua en movimiento dibuja en el fondo de una alberca), **Burbujas y agua**, o **Ninguno**. Sólo con el tema **Frutiger Aero**; también encima de tu propia imagen de fondo. Según lo que elijas aparecen **Cantidad de burbujas** y **Luz del agua**.
+- **Música del menú** (*Interfaz e idioma*): pon archivos **`.wav`** (PCM de 16 bits; Audacity los exporta así) en la carpeta `music\` junto a `default.xex`. Suenan sólo en el menú principal, **en orden** o **aleatoria**, con su propio volumen; nunca durante un juego.
 - **Vista previa de la lista** (*Interfaz e idioma*): *Portada o última partida*, *Sólo portada* o *Sólo última partida* (la imagen del último momento que jugaste).
 - **Portadas automáticas:** con la consola conectada a internet, en *Opciones del juego* (Y sobre un juego) → **Portada** → *Descargar portada* (ese juego) o *Descargar portadas de esta carpeta* (todos los que no tienen). Se bajan de [thumbnails.libretro.com](https://thumbnails.libretro.com) (las mismas de RetroArch) para GBA, GB y GBC. Se encuentran mejor si la ROM tiene su **nombre oficial** (No-Intro), por ejemplo `Pokemon - Emerald Version (USA, Europe).gba`; nombres cortos como `Pokemon Emerald` también suelen funcionar, pero hacks o nombres en español no. Si ese servidor dejara de funcionar, se puede poner otro en `vba360.ini` con `cover_server=`.
 - **Portadas a mano:** pon `covers\<nombre de la ROM>.png` (o `.jpg`), por ejemplo `covers\Pokemon Esmeralda.png`. Unos 400×400 px bastan. Las descargas nunca reemplazan una portada que ya tenga el juego, salvo con *Descargar portada* de ese juego.
@@ -218,7 +220,7 @@ En *Ajustes → Video → Super Game Boy (marcos)*: **Apagado**, **Juegos de Gam
 - **Para reportar un error:** manda `vba360.log` y `vba360-anterior.log` (junto a `default.xex`).
 - **BIOS (opcional):** `bios\gba_bios.bin`, `bios\gb_bios.bin` o `bios\gbc_bios.bin`, y activa *Usar BIOS original* (Emulación).
 
-Carpetas que crea junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\` y `bios\`. La configuración está en `vba360.ini`.
+Carpetas que crea junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\`, `music\` y `bios\`. La configuración sigue en `vba360.ini` (no cambió de nombre para conservar tus ajustes).
 
 # Qué emula y qué no
 
@@ -244,7 +246,7 @@ Más detalles técnicos en el [README original](docs/README-original.md).
 
 # Notas y créditos
 
-- **Este fork (vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu): idea, pruebas en consola, compilación y capturas.
+- **XeFork360 (antes vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu): idea, pruebas en consola, compilación y capturas.
 - **Programación con IA:** **Claude** ([Anthropic](https://www.anthropic.com)): cambios de código y documentación.
 - **Fork vba360-enhanced:** [**frankischilling**](https://github.com/frankischilling), que arregló la compilación del port; base de este proyecto.
 - **Port a Xbox 360:** los autores de **VBA360** y **libSDLx360**, con apoyo de **Team Avalaunch** y **Team XeLove**.
@@ -258,6 +260,9 @@ Más detalles técnicos en el [README original](docs/README-original.md).
 - **Pruebas:** [gba-tests](https://github.com/jsmolka/gba-tests) de **jsmolka**, *cpu_instrs* de **Blargg** y [dmg-acid2 / cgb-acid2](https://github.com/mattcurrie/dmg-acid2) de **Matt Currie**.
 - **Sonido de Game Boy y archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de **Shay Green (blargg)**.
 - **Íconos de los botones:** imágenes del control de Xbox 360 del paquete [Xbox 360 Controller Button Images](https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Xbox-360-Controller-Button-Images) de **Microsoft** (XNA Game Studio), licencia Ms-PL ([texto](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt)).
+- **Portadas:** [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails) del equipo y la comunidad de **libretro**, servidas desde [thumbnails.libretro.com](https://thumbnails.libretro.com).
+- **Cartuchos de la Biblioteca:** renders de **[ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/)** (foros de LaunchBox): Pokémon Esmeralda (GBA), Donkey Kong Land (GBC) y Tetris (Game Boy).
+- **Estilo de este README y de las notas de versión:** inspirado en [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) y en las [releases de PokeRogue](https://github.com/pagefaultgames/pokerogue/releases).
 - **Fuente:** [Inter](https://rsms.me/inter/), de **Rasmus Andersson** (SIL OFL). **Librerías:** zlib, libpng y SDL.
 
 Licencia **GPL v2** (como VisualBoyAdvance-M). La lista completa de créditos del proyecto original está en el [README original](docs/README-original.md).

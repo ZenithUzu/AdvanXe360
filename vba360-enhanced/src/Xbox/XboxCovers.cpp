@@ -512,7 +512,7 @@ bool httpGet(const std::string &url0, std::string &body, std::string &err)
       return false;
     }
     std::string req = "GET " + path + " HTTP/1.0\r\nHost: " + host +
-                      "\r\nUser-Agent: VBA360\r\nConnection: close\r\n\r\n";
+                      "\r\nUser-Agent: XeFork360\r\nConnection: close\r\n\r\n";
     if (send(s, req.c_str(), (int)req.size(), 0) != (int)req.size()) {
       closeSock(s);
       err = "send";

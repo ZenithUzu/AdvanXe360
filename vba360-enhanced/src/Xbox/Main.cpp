@@ -1,4 +1,4 @@
-// VBA360 entry point: sets up Direct3D and runs the menu UI. When the player
+// XeFork360 entry point: sets up Direct3D and runs the menu UI. When the player
 // picks a game, gba_main() (sdl/SDL.cpp) runs it until they quit.
 #include <xtl.h>
 #include <stdio.h>
@@ -9,6 +9,7 @@
 #include "GeneralFunctions.h"
 #include "Storage.h"
 #include "XboxHost.h"
+#include "XboxMusic.h"
 #define XBOX_LOG_NO_REDIRECT
 #include "XboxLog.h"
 
@@ -58,7 +59,7 @@ VOID __cdecl main()
   XMountUtilityDriveEx(XMOUNTUTILITYDRIVE_FORMAT0, 8192, 0);
 
   if (FAILED(InitD3D(&pDevice, &d3dpp))) {
-    OutputDebugString("VBA360: failed to create the Direct3D device\n");
+    OutputDebugString("XeFork360: failed to create the Direct3D device\n");
     return;
   }
   D3D_Device = (LPDIRECT3DDEVICE9)pDevice;
@@ -82,6 +83,7 @@ VOID __cdecl main()
   waitForRelease(canvas, ui);
 
   for (;;) {
+    xboxMusicUpdate(g_cfg.menuMusic, uiMusicVolumePercent[g_cfg.musicVolume]);
     ui.update(xboxReadPads(true));
     bool redraw = ui.needsRedraw();
     if (redraw)
@@ -100,6 +102,7 @@ VOID __cdecl main()
     strncpy(fileBuf, file.c_str(), MAX_PATH - 1);
     dirBuf[MAX_PATH - 1] = fileBuf[MAX_PATH - 1] = 0;
 
+    xboxMusicStop();   // the menu music never plays over a game
     gba_main(dirBuf, fileBuf);
 
     ui.openHome(rom);

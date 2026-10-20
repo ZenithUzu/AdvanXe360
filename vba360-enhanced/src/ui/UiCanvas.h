@@ -52,6 +52,11 @@ public:
   void copyFrom(const UiColor *src);
   // Draws a w x h image 1:1 at (x, y) using each pixel's own alpha.
   void blitAlpha(const UiColor *src, int w, int h, int x, int y);
+  // The same scaled to dw x dh (bilinear), its brightness times bright/256.
+  void blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int dy, int dw, int dh, int bright = 256);
+  // Adds light: an 8-bit map, each value lighting a scale x scale block
+  // (tint * value / 255, added and clamped). For the water caustics.
+  void addLight(const unsigned char *map, int mw, int mh, int scale, UiColor tint);
 
 private:
   UiColor *m_px;

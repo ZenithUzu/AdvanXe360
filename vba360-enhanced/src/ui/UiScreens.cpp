@@ -30,13 +30,16 @@ const UiTheme uiThemes[UI_THEME_COUNT] = {
 };
 int UI_THEME_STYLE = THEME_FLAT;
 
-void uiApplyTheme(int index)
+int UI_PANEL_OPACITY = 100;
+
+void uiApplyTheme(int index, UiColor accent, int panelOpacity)
 {
   if (index < 0 || index >= UI_THEME_COUNT)
     index = 0;
   const UiTheme &t = uiThemes[index];
-  UI_COL_ACCENT = t.accent;
-  UI_COL_ROW_SEL = uiWithAlpha(t.accent, 0x40);
+  UI_COL_ACCENT = accent ? accent : t.accent;
+  UI_COL_ROW_SEL = uiWithAlpha(UI_COL_ACCENT, 0x40);
+  UI_PANEL_OPACITY = panelOpacity;
   UI_COL_BG_TOP = t.bgTop;
   UI_COL_BG_BOTTOM = t.bgBottom;
   UI_COL_PANEL = t.panel;
@@ -88,6 +91,8 @@ void uiDrawSelection(UiCanvas &c, int x, int y, int w, int h, int radius, bool s
 
 void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
 {
+  alpha = alpha * UI_PANEL_OPACITY / 100;   // Interface -> Panel transparency
+  if (alpha > 0xFF) alpha = 0xFF;
   if (UI_THEME_STYLE != THEME_AERO) {
     c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, alpha));
     return;
@@ -139,44 +144,100 @@ void drawBubble(UiCanvas &c, int x, int y, int r)
 
 } // namespace
 
-void uiDrawEffects(UiCanvas &c, int effects, int frame)
+// Water caustics: the bright net of light that moving water casts on the
+// bottom of a pool. A tileable 256x256 net (distance between the two
+// nearest of a few random points, small = on an edge = bright) is drawn
+// twice, drifting in different directions and wobbling; where both nets are
+// bright the light gathers, like in a real pool.
+static const unsigned char *causticTile()
+{
+  static unsigned char tile[256 * 256];
+  static bool made = false;
+  if (made)
+    return tile;
+  enum { N = 22 };
+  int px[N], py[N];
+  unsigned int seed = 12345;
+  for (int i = 0; i < N; i++) {
+    seed = seed * 1103515245u + 12345u; px[i] = (int)((seed >> 8) & 255);
+    seed = seed * 1103515245u + 12345u; py[i] = (int)((seed >> 8) & 255);
+  }
+  for (int y = 0; y < 256; y++)
+    for (int x = 0; x < 256; x++) {
+      float d1 = 1e9f, d2 = 1e9f;
+      for (int i = 0; i < N; i++) {
+        int dx = x - px[i], dy = y - py[i];
+        if (dx > 128) dx -= 256; else if (dx < -128) dx += 256;   // wrap: the tile repeats
+        if (dy > 128) dy -= 256; else if (dy < -128) dy += 256;
+        float d = sqrtf((float)(dx * dx + dy * dy));
+        if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+      }
+      float e = (d2 - d1) / 14.0f;            // 0 on an edge, 1 well inside a cell
+      float v = e < 1.0f ? (1.0f - e) : 0.0f;
+      v = v * v * v;
+      tile[y * 256 + x] = (unsigned char)(v * 255.0f);
+    }
+  made = true;
+  return tile;
+}
+
+static void drawCaustics(UiCanvas &c, int frame, int strength)
+{
+  enum { SCALE = 2, MAXW = 640, MAXH = 360 };
+  static unsigned char light[MAXW * MAXH];
+  static int wx1[MAXW], wx2[MAXW], wy1[MAXH], wy2[MAXH];
+  const int mw = c.width() / SCALE < MAXW ? c.width() / SCALE : MAXW;
+  const int mh = c.height() / SCALE < MAXH ? c.height() / SCALE : MAXH;
+  const unsigned char *t = causticTile();
+  const float ft = (float)frame;
+  const int gain = strength == 0 ? 100 : strength == 1 ? 155 : 240;   // /256
+  // The surface ripples: rows and columns shift a little, over time
+  // (8.8 fixed point, as are the drifts below).
+  for (int x = 0; x < mw; x++) {
+    wx1[x] = (int)(256.0f * 6.0f * sinf(x * 0.043f + ft * 0.050f));
+    wx2[x] = (int)(256.0f * 5.0f * sinf(x * 0.061f - ft * 0.043f + 1.7f));
+  }
+  for (int y = 0; y < mh; y++) {
+    wy1[y] = (int)(256.0f * 6.0f * sinf(y * 0.051f + ft * 0.047f + 0.6f));
+    wy2[y] = (int)(256.0f * 5.0f * sinf(y * 0.037f - ft * 0.055f + 2.9f));
+  }
+  // Net A drifts right / down, net B (finer) left / down.
+  const int ax = (int)(ft * 0.55f * 256), ay = (int)(ft * 0.30f * 256);
+  const int bx = (int)(-ft * 0.40f * 256), by = (int)(ft * 0.45f * 256);
+  for (int y = 0; y < mh; y++) {
+    unsigned char *out = light + y * mw;
+    for (int x = 0; x < mw; x++) {
+      int ua = (x * 192 + ax + wy1[y]) >> 8, va = (y * 192 + ay + wx1[x]) >> 8;
+      int ub = (x * 256 + bx + wy2[y]) >> 8, vb = (y * 256 + by + wx2[x]) >> 8;
+      int a = t[((va & 255) << 8) | (ua & 255)], b = t[((vb & 255) << 8) | (ub & 255)];
+      int v = (a < b ? a : b) + ((a + b) >> 3);    // where both nets meet, plus a little of each
+      v = v * gain >> 8;
+      out[x] = (unsigned char)(v > 255 ? 255 : v < 16 ? 0 : v);   // faint light: skipped (most of the screen)
+    }
+  }
+  c.addLight(light, mw, mh, SCALE, 0xFFB8F2FF);
+}
+
+void uiDrawEffects(UiCanvas &c, const UiConfig &cfg, int frame)
 {
   if (UI_THEME_STYLE != THEME_AERO)
     return;   // the moving effects belong to the Frutiger Aero theme
   const int W = c.width(), H = c.height();
   const float t = (float)frame;
-  if (effects & UI_EFFECT_WATER) {
-    // Light from the surface: wide rays that sway slowly and fade with depth.
-    for (int i = 0; i < 5; i++) {
-      float x0 = W * (0.10f + 0.20f * i) + 70.0f * sinf(t * 0.011f + i * 1.7f);
-      int depth = H * 3 / 4;
-      for (int y = 0; y < depth; y += 8) {   // 8-pixel strips: half the work, same look
-        float k = (float)y / depth;
-        int w = (int)(60 + 110 * k);
-        int a = (int)(26 * (1.0f - k));
-        if (a <= 0)
-          break;
-        c.fillRect((int)(x0 + y * 0.35f) - w / 2, y, w, 8, uiWithAlpha(0xBFEFFF, a));
-      }
-    }
-    // The water surface along the bottom: two swells moving apart.
-    for (int x = 0; x < W; x += 6) {
-      float y1 = H - 96 + 10 * sinf(x * 0.012f + t * 0.045f) + 5 * sinf(x * 0.031f - t * 0.03f);
-      float y2 = H - 70 + 8 * sinf(x * 0.017f - t * 0.05f + 1.3f);
-      c.fillRect(x, (int)y1, 6, H - (int)y1, 0x1E3FA9E8);
-      c.fillRect(x, (int)y1, 6, 2, 0x58FFFFFF);
-      c.fillRect(x, (int)y2, 6, H - (int)y2, 0x18206FB0);
-      c.fillRect(x, (int)y2, 6, 1, 0x40CFF4FF);
-    }
-  }
-  if (effects & UI_EFFECT_BUBBLES) {
+  if (cfg.bgEffect & UI_EFFECT_WATER)
+    drawCaustics(c, frame, cfg.waterStrength);
+  if (cfg.bgEffect & UI_EFFECT_BUBBLES) {
     // Bubbles rise at their own speed, sway a little and start over below.
     static const short bub[][4] = {   // x, radius, speed (1/10 px per frame), phase
-      { 90, 18, 9, 0 }, { 210, 9, 14, 3 }, { 330, 26, 7, 5 }, { 470, 12, 12, 1 },
-      { 600, 7, 16, 4 }, { 720, 20, 8, 2 }, { 830, 10, 13, 6 }, { 950, 30, 6, 7 },
-      { 1060, 14, 11, 8 }, { 1170, 22, 8, 9 }, { 1240, 8, 15, 10 }, { 40, 11, 12, 11 },
-      { 520, 16, 10, 12 }, { 1110, 6, 17, 13 } };
-    for (size_t i = 0; i < sizeof(bub) / sizeof(bub[0]); i++) {
+      { 90, 18, 9, 0 }, { 600, 7, 16, 4 }, { 950, 30, 6, 7 }, { 330, 26, 7, 5 },
+      { 1170, 22, 8, 9 }, { 210, 9, 14, 3 }, { 720, 20, 8, 2 }, { 470, 12, 12, 1 },
+      { 1060, 14, 11, 8 }, { 830, 10, 13, 6 }, { 1240, 8, 15, 10 }, { 40, 11, 12, 11 },
+      { 520, 16, 10, 12 }, { 1110, 6, 17, 13 }, { 160, 13, 11, 14 }, { 400, 7, 16, 15 },
+      { 660, 24, 7, 16 }, { 890, 9, 14, 17 }, { 1010, 17, 9, 18 }, { 280, 15, 10, 19 },
+      { 760, 6, 18, 20 } };
+    const int total = (int)(sizeof(bub) / sizeof(bub[0]));
+    const int count = cfg.bubbleAmount == 0 ? 7 : cfg.bubbleAmount == 1 ? 14 : total;
+    for (int i = 0; i < count; i++) {
       int r = bub[i][1];
       int span = H + r * 4;
       int y = H + r * 2 - (int)((t * bub[i][2] / 10 + bub[i][3] * 97) ) % span;
@@ -247,7 +308,8 @@ const char *romKind(const std::string &name)
 {
   std::string e = uiExtension(name);
   if (e == ".gba" || e == ".agb" || e == ".bin" || e == ".mb") return "GBA";
-  if (e == ".gb" || e == ".gbc" || e == ".cgb" || e == ".dmg" || e == ".sgb") return "GB";
+  if (e == ".gbc" || e == ".cgb") return "GBC";
+  if (e == ".gb" || e == ".dmg" || e == ".sgb") return "GB";
   if (e == ".zip") return "ZIP";
   if (e == ".7z") return "7Z";
   return "";
@@ -800,8 +862,8 @@ void UiHomeScreen::drawInfo(UiApp &app, UiCanvas &c, int x, int y, int w, int h)
   int ty = y + pad;
 
   if (m_tab == TAB_SETTINGS) {
-    c.drawTextFit(UI_FONT_TITLE, x + pad, ty, tw, "VBA360", UI_COL_TEXT);
-    c.drawTextFit(UI_FONT_SMALL, x + pad, ty + 46, tw, "enhanced-ai", UI_COL_ACCENT);
+    c.drawTextFit(UI_FONT_TITLE, x + pad, ty, tw, UI_APP_NAME, UI_COL_TEXT);
+    c.drawTextFit(UI_FONT_SMALL, x + pad, ty + 46, tw, app.tr("basado en VBA360", "based on VBA360"), UI_COL_ACCENT);
     if (valid) {
       c.drawTextFit(UI_FONT_BODY, x + pad, ty + 100, tw, m_rows[ls.sel].title.c_str(), UI_COL_TEXT);
       c.drawTextFit(UI_FONT_SMALL, x + pad, ty + 134, tw, m_rows[ls.sel].detail.c_str(), UI_COL_TEXT_DIM);
@@ -925,7 +987,7 @@ void drawLabelArt(UiCanvas &c, const UiApp::Cover *cv, int x, int y, int w, int 
   int left = cv->w * skipLeft / 100, aw = cv->w - left;
   int sx = left, sy = 0, sw = aw, sh = cv->h;
   if (aw * h > cv->h * w) { sw = cv->h * w / h; sx = left + (aw - sw) / 2; }
-  else { sh = aw * h / w; sy = (cv->h - sh) / 4; }
+  else { sh = aw * h / w; sy = (cv->h - sh) / 2; }
   if (sw > 0 && sh > 0)
     c.blitScaled(&cv->px[sy * cv->w + sx], sw, sh, cv->w, x, y, w, h, bright);
 }
@@ -970,29 +1032,21 @@ void drawCart(UiCanvas &c, int sys, int x, int y, int w, const UiApp::Cover *cv,
   }
 }
 
-// A box drawn at most maxW x maxH with its own proportions (a plain one
-// with the console and name when there is no art).
-void boxSize(const UiApp::Cover *cv, int maxW, int maxH, int &w, int &h)
-{
-  if (!cv) { h = maxH; w = maxH * 9 / 10; return; }
-  w = maxW; h = cv->h * maxW / cv->w;
-  if (h > maxH) { h = maxH; w = cv->w * maxH / cv->h; }
-  if (w < 1) w = 1;
-  if (h < 1) h = 1;
-}
-
+// A game's box: its art filling the whole box (cropped to fit, never
+// letterboxed), or a plain one with the console and the name.
 void drawBox(UiCanvas &c, const UiApp::Cover *cv, int x, int y, int w, int h, int bright,
              const std::string &name, const char *kind)
 {
   c.fillRoundRect(x + 6, y + 10, w, h, 6, 0x60000000);      // shadow
   if (cv) {
-    c.blitScaled(&cv->px[0], cv->w, cv->h, cv->w, x, y, w, h, bright);
+    drawLabelArt(c, cv, x, y, w, h, bright, 0);
     return;
   }
-  c.fillRoundRect(x, y, w, h, 6, uiWithAlpha(UI_COL_PANEL, 0xF0));
-  c.fillRoundRect(x + 10, y + 10, w - 20, h * 3 / 5, 4, 0x24FFFFFF);
-  c.drawTextFit(UI_FONT_TITLE, x + 10, y + h * 3 / 10 - 20, w - 20, kind, 0x70FFFFFF, UI_ALIGN_CENTER);
-  c.drawTextFit(UI_FONT_SMALL, x + 10, y + h * 3 / 5 + 24, w - 20, name.c_str(), UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
+  c.fillGradient(x, y, w, h, dim(UI_COL_ACCENT, bright * 3 / 4), dim(UI_COL_PANEL, bright));
+  c.fillRect(x, y, w, 2, 0x30FFFFFF);
+  c.drawTextFit(UI_FONT_TITLE, x + 10, y + h / 4 - 20, w - 20, kind, 0x90FFFFFF, UI_ALIGN_CENTER);
+  c.drawTextFit(w > 220 ? UI_FONT_BODY : UI_FONT_SMALL, x + 12, y + h / 2, w - 24, name.c_str(),
+                uiWithAlpha(UI_COL_TEXT, bright > 255 ? 255 : bright), UI_ALIGN_CENTER);
 }
 
 // The box art, read when the list stops (and drawn again until it is).
@@ -1041,16 +1095,13 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
     if (idx < 0 || idx >= count)
       continue;
     const UiApp::Cover *cv = boxArt(app, roms[idx]);
-    int bw, bh;
-    boxSize(cv, 190, 230, bw, bh);
+    const int bw = 200, bh = 200;
     drawBox(c, cv, cx + side * 265 - bw / 2, floor - bh, bw, bh, 170, romTitle(roms[idx]), romKind(roms[idx]));
   }
   const std::string &cur = roms[ls.sel];
   const UiApp::Cover *cv = boxArt(app, cur);
-  int bw, bh;
-  boxSize(cv, 300, 320, bw, bh);
+  const int bw = 310, bh = 310;
   int bx = cx - bw / 2, by = floor - bh - 14;
-  uiDrawSelection(c, bx - 8, by - 8, bw + 16, bh + 16, 12, false);
   drawBox(c, cv, bx, by, bw, bh, 256, romTitle(cur), romKind(cur));
   if (app.favorites().contains(cur))
     c.fillCircle(bx + bw - 12, by + 12, 7, COL_FAV);
@@ -1083,12 +1134,11 @@ void drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
         break;
       bool sel = idx == ls.sel;
       const UiApp::Cover *cv = boxArt(app, roms[idx]);
-      int aw, ah;
-      boxSize(cv, tileW, maxH, aw, ah);
+      int aw = tileW < maxH ? tileW : maxH, ah = aw;
       int ax = x + col * (tileW + gap) + (tileW - aw) / 2;
       int ay = base - ah - (sel ? lift : 0);
-      if (sel)
-        uiDrawSelection(c, ax - 7, ay - 7, aw + 14, ah + 14, 12, false);
+      if (sel)   // a light on the plank under the chosen one
+        c.fillRoundRect(ax + aw / 6, base - 3, aw * 2 / 3, 4, 2, UI_COL_ACCENT);
       drawBox(c, cv, ax, ay, aw, ah, sel ? 256 : 190, romTitle(roms[idx]), romKind(roms[idx]));
       if (app.favorites().contains(roms[idx]))
         c.fillCircle(ax + aw - 10, ay + 10, 6, COL_FAV);
@@ -1132,7 +1182,7 @@ void UiLibraryScreen::scanDir(UiApp &app, const std::string &dir, int depth, int
     if (e[i].isDir) {
       if (depth < 3)
         scanDir(app, e[i].path, depth + 1, budget);
-    } else if (uiIsRomFile(e[i].name)) {
+    } else if (uiIsRomFile(e[i].name) && lowerAscii(e[i].name).find("bios") == std::string::npos) {
       m_games[romSystem(e[i].path)].push_back(e[i].path);
     }
   }
@@ -1142,10 +1192,20 @@ void UiLibraryScreen::scan(UiApp &app)
 {
   for (int s = 0; s < SYS_COUNT; s++)
     m_games[s].clear();
-  m_root = app.cfg().libraryDir.empty() ? app.cfg().lastDir : app.cfg().libraryDir;
+  // The chosen folder, or else the Roms folder of every drive.
+  m_root = app.cfg().libraryDir;
+  std::vector<std::string> roots;
+  if (!m_root.empty()) {
+    roots.push_back(m_root);
+  } else {
+    std::vector<UiDirEntry> drives;
+    app.host().listDrives(drives);
+    for (size_t i = 0; i < drives.size(); i++)
+      roots.push_back(uiJoinPath(drives[i].path, "Roms") + "\\");
+  }
   int budget = 20000;   // shortcut: stops after 20000 files/folders; a whole drive as the library could miss some
-  if (!m_root.empty())
-    scanDir(app, m_root, 0, budget);
+  for (size_t i = 0; i < roots.size(); i++)
+    scanDir(app, roots[i], 0, budget);
   m_systems.clear();
   for (int s = 0; s < SYS_COUNT; s++) {
     std::sort(m_games[s].begin(), m_games[s].end(), nameLess);
@@ -1229,13 +1289,13 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
   app.drawBackground(c);
   const int x = UI_MARGIN_X, w = UI_W - UI_MARGIN_X * 2;
   if (m_systems.empty()) {
-    c.drawText(UI_FONT_TITLE, x, 30, "VBA360", UI_COL_TEXT);
-    std::string where = m_root.empty() ? std::string(app.tr("Todav\xed""a no hay carpeta de juegos.", "No games folder yet."))
+    c.drawText(UI_FONT_TITLE, x, 30, UI_APP_NAME, UI_COL_TEXT);
+    std::string where = m_root.empty() ? std::string(app.tr("No hay juegos en las carpetas Roms.", "No games in the Roms folders."))
                                        : std::string(app.tr("No hay juegos en ", "No games in ")) + m_root;
-    c.drawTextFit(UI_FONT_BODY, x, 300, w, where.c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
-    c.drawTextFit(UI_FONT_SMALL, x, 350, w,
-                  app.tr("Pulsa BACK, entra a la carpeta de tus juegos en el explorador y pulsa Y sobre ella.",
-                         "Press BACK, find your games folder in the browser and press Y on it."),
+    c.drawTextFit(UI_FONT_BODY, x, 290, w, where.c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
+    c.drawTextFit(UI_FONT_SMALL, x, 340, w,
+                  app.tr("Pon tus juegos en una carpeta Roms (disco duro o USB), o pulsa BACK y Y sobre otra carpeta.",
+                         "Put your games in a Roms folder (hard drive or USB), or press BACK and Y on another folder."),
                   UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
     const char *hints[] = { app.tr("BACK:Explorador y ajustes", "BACK:Browser and settings") };
     app.drawHints(c, hints, 1);
@@ -1244,8 +1304,9 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
   int sys = m_systems[m_sys];
   if (!m_inSystem) {
     // The consoles, each as its cartridge, side by side.
-    c.drawText(UI_FONT_TITLE, x, 30, "VBA360", UI_COL_TEXT);
-    c.drawTextFit(UI_FONT_SMALL, x, 86, w, m_root.c_str(), UI_COL_TEXT_DIM);
+    c.drawText(UI_FONT_TITLE, x, 30, UI_APP_NAME, UI_COL_TEXT);
+    c.drawTextFit(UI_FONT_SMALL, x, 86, w,
+                  m_root.empty() ? app.tr("Carpetas Roms", "Roms folders") : m_root.c_str(), UI_COL_TEXT_DIM);
     const int cx = UI_W / 2, floor = 470;
     int n = (int)m_systems.size();
     for (int pass = 2; pass >= 0; pass--)
@@ -1257,17 +1318,17 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
         if (i < 0 || i >= n)
           continue;
         int s = m_systems[i];
-        bool tall = s == SYS_GB || s == SYS_GBC;
-        int cw = (tall ? 250 : 420) * (pass == 0 ? 100 : pass == 1 ? 55 : 40) / 100;
-        int ch = cartHeight(s, cw);
-        int cxk = cx + k * (pass == 1 ? 330 : 250);
-        const std::vector<std::string> &g = m_games[s];
-        int pick = m_list[s].sel >= 0 && m_list[s].sel < (int)g.size() ? m_list[s].sel : 0;
-        const UiApp::Cover *art = pass == 0 ? boxArt(app, g[pick]) : app.cover(g[pick], false);
-        const char *label = s == SYS_OTHER ? "ZIP / 7Z" : kSysName[s];
-        if (pass == 0)
-          uiDrawSelection(c, cxk - cw / 2 - 10, floor - ch - 10, cw + 20, ch + 20, 14, false);
-        drawCart(c, s, cxk - cw / 2, floor - ch, cw, art, label, pass == 0 ? 256 : pass == 1 ? 170 : 110);
+        int pct = pass == 0 ? 100 : pass == 1 ? 55 : 40, bright = pass == 0 ? 256 : pass == 1 ? 170 : 110;
+        int cxk = cx + side * (pass == 0 ? 0 : pass == 1 ? 320 : 530);
+        const UiGlyph *img = uiCartImage(s == SYS_GBA ? "GBA" : s == SYS_GBC ? "GBC" : s == SYS_GB ? "GB" : "");
+        if (img) {   // the console's own cartridge picture
+          int cw = img->w * pct / 100, ch = img->h * pct / 100;
+          c.fillRoundRect(cxk - cw / 2 + 8, floor - ch + 14, cw - 4, ch - 6, 14, 0x50000000);   // shadow
+          c.blitAlphaScaled(img->px, img->w, img->h, cxk - cw / 2, floor - ch, cw, ch, bright);
+        } else {     // zip / 7z: a plain cartridge
+          int cw = 420 * pct / 100;
+          drawCart(c, s, cxk - cw / 2, floor - cartHeight(s, cw), cw, 0, "ZIP / 7Z", bright);
+        }
       }
     const char *name = sys == SYS_OTHER ? app.tr("Comprimidos (.zip / .7z)", "Archives (.zip / .7z)") : kSysName[sys];
     c.drawTextFit(UI_FONT_TITLE, x, floor + 34, w, name, UI_COL_TEXT, UI_ALIGN_CENTER);
@@ -1326,7 +1387,7 @@ void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
   // Tabs in the header
   static const char *es[TAB_COUNT] = { "Juegos", "Recientes", "Favoritos", "Ajustes" };
   static const char *en[TAB_COUNT] = { "Games", "Recent", "Favorites", "Settings" };
-  c.drawText(UI_FONT_TITLE, UI_MARGIN_X, 30, "VBA360", UI_COL_TEXT);
+  c.drawText(UI_FONT_TITLE, UI_MARGIN_X, 30, UI_APP_NAME, UI_COL_TEXT);
   int tx = 320;
   const UiGlyph *lb = uiGlyph("LB"), *rb = uiGlyph("RB");
   c.blitAlpha(lb->px, lb->w, lb->h, tx, 53 - lb->h / 2);

@@ -278,7 +278,8 @@ struct UiTheme
 };
 enum { UI_THEME_COUNT = 7 };
 extern const UiTheme uiThemes[UI_THEME_COUNT];
-void uiApplyTheme(int index);
+// accent: 0 = the theme's own; panelOpacity: percent applied to panels.
+void uiApplyTheme(int index, UiColor accent = 0, int panelOpacity = 100);
 
 // Flat: plain tinted shapes. Aero (Frutiger Aero): glossy, glassy pills and
 // panels over a sky background with bubbles.
@@ -293,7 +294,10 @@ void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
 // Theme decorations over the background gradient (bubbles, glow...).
 // Moving effects over the menu background (Interface -> Background effect),
 // UI_EFFECT_* bits; frame drives the motion. Frutiger Aero theme only.
-void uiDrawEffects(UiCanvas &c, int effects, int frame);
+void uiDrawEffects(UiCanvas &c, const UiConfig &cfg, int frame);
+
+// The emulator's name as the menus show it.
+#define UI_APP_NAME "XeFork360"
 
 // Layout (1280x720, inside the TV safe area).
 enum

@@ -59,6 +59,21 @@ IXAudio2* g_sound;
 static IXAudio2* s_engine = NULL;
 static IXAudio2MasteringVoice* s_master = NULL;
 
+/* VBA360: the same engine for the menu music (src/Xbox/XboxMusic.cpp), so
+   there is only ever one; made here if no game has opened the audio yet. */
+IXAudio2 *XboxSDL_AudioEngine(void)
+{
+	if ( s_engine == NULL ) {
+		if ( XAudio2Create(&s_engine, 0, XAUDIO2_DEFAULT_PROCESSOR) != S_OK ) {
+			s_engine = NULL;
+			return NULL;
+		}
+		if ( IXAudio2_CreateMasteringVoice(s_engine, &s_master, XAUDIO2_DEFAULT_CHANNELS, XAUDIO2_DEFAULT_SAMPLERATE, 0, 0, NULL) != S_OK )
+			s_master = NULL;
+	}
+	return s_master ? s_engine : NULL;
+}
+
 static int Audio_Available(void)
 {
 	// Audio is always available on Xbox

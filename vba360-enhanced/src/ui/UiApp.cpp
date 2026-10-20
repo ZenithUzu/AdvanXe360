@@ -26,6 +26,7 @@ enum
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_EFFECT,
+  U_BG_VIS, U_PANELS, U_ACCENT, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
@@ -137,7 +138,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_listMatches(0), m_coverLoadsLeft(1)
+    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
 
@@ -359,7 +360,7 @@ void UiApp::updateStickCapture()
 
 void UiApp::draw(UiCanvas &c)
 {
-  uiApplyTheme(m_cfg.menuTheme);
+  uiApplyTheme(m_cfg.menuTheme, uiAccentTints[m_cfg.accentTint], uiPanelOpacityPercent[m_cfg.panelOpacity]);
   if (m_stack.empty()) {
     drawBackground(c);
     return;
@@ -428,12 +429,12 @@ void UiApp::invalidateThumb(const std::string &path)
 
 void UiApp::drawBackground(UiCanvas &c)
 {
-  uiApplyTheme(m_cfg.menuTheme);
-  bool fresh = m_bgCache.size() == (size_t)(UI_W * UI_H) &&
+  uiApplyTheme(m_cfg.menuTheme, uiAccentTints[m_cfg.accentTint], uiPanelOpacityPercent[m_cfg.panelOpacity]);
+  bool fresh = m_bgCache.size() == (size_t)(UI_W * UI_H) && m_bgCacheVeil == m_cfg.bgVisibility &&
                m_bgCacheTheme == m_cfg.menuTheme && m_bgCacheName == m_cfg.menuBackground;
   if (fresh && c.width() == UI_W && c.height() == UI_H) {
     c.copyFrom(&m_bgCache[0]);
-    uiDrawEffects(c, m_cfg.bgEffect, m_frame);
+    uiDrawEffects(c, m_cfg, m_frame);
     return;
   }
   // Optional image from backgrounds\, under a veil of the theme's colors so
@@ -448,7 +449,8 @@ void UiApp::drawBackground(UiCanvas &c)
   }
   if (m_bgPixels.size() == (size_t)(UI_W * UI_H)) {
     c.blitScaled(&m_bgPixels[0], UI_W, UI_H, UI_W, 0, 0, UI_W, UI_H);
-    c.fillGradient(0, 0, UI_W, UI_H, uiWithAlpha(UI_COL_BG_TOP, 0xC8), uiWithAlpha(UI_COL_BG_BOTTOM, 0xB4));
+    int veil = uiBgVeilAlpha[m_cfg.bgVisibility];
+    c.fillGradient(0, 0, UI_W, UI_H, uiWithAlpha(UI_COL_BG_TOP, veil), uiWithAlpha(UI_COL_BG_BOTTOM, veil * 9 / 10));
   } else {
     c.fillGradient(0, 0, UI_W, UI_H, UI_COL_BG_TOP, UI_COL_BG_BOTTOM);
   }
@@ -456,11 +458,12 @@ void UiApp::drawBackground(UiCanvas &c)
     m_bgCache.assign(c.pixels(), c.pixels() + UI_W * UI_H);
     m_bgCacheTheme = m_cfg.menuTheme;
     m_bgCacheName = m_cfg.menuBackground;
+    m_bgCacheVeil = m_cfg.bgVisibility;
     // The image itself isn't needed any more (4 MB).
     std::vector<UiColor>().swap(m_bgPixels);
     m_bgName = "\x01";   // reload it if the cache is ever rebuilt
   }
-  uiDrawEffects(c, m_cfg.bgEffect, m_frame);
+  uiDrawEffects(c, m_cfg, m_frame);
 }
 
 void UiApp::drawHeader(UiCanvas &c, const char *title, const char *subtitle)
@@ -754,10 +757,31 @@ void UiApp::buildMenu(UiMenuScreen &m)
             choice ? images[choice - 1] : std::string(tr("Ninguna", "None")),
             tr("Una imagen de la carpeta backgrounds\\ (ideal 1280x720), oscurecida.",
                "An image from the backgrounds\\ folder (1280x720 is best), darkened."))).choice = choice;
+      if (choice) {   // only matters with an image
+        const char *vis[BG_VIS_COUNT] = { tr("Tenue", "Faint"), tr("Normal", "Normal"),
+                                          tr("Visible", "Visible"), tr("Muy visible", "Very visible") };
+        (m.add(U_BG_VIS, ITEM_OPTION, tr("Visibilidad de la imagen", "Image visibility"), vis[m_cfg.bgVisibility],
+               tr("Cu\xe1nto se ve tu imagen bajo los colores del tema.",
+                  "How much of your image shows under the theme's colors."))).choice = m_cfg.bgVisibility;
+      }
+    }
+    {
+      const char *op[PANEL_OPACITY_COUNT] = { tr("Opacos", "Solid"), tr("Normal", "Normal"),
+                                              tr("Transparentes", "See-through"), tr("Muy transparentes", "Very see-through") };
+      (m.add(U_PANELS, ITEM_OPTION, tr("Transparencia de los paneles", "Panel transparency"), op[m_cfg.panelOpacity],
+             tr("Cu\xe1nto fondo se ve a trav\xe9s de los paneles y men\xfas.",
+                "How much background shows through panels and menus."))).choice = m_cfg.panelOpacity;
+      const char *tint[ACCENT_TINT_COUNT] = { tr("La del tema", "The theme's"), tr("Azul cielo", "Sky blue"),
+                                              tr("Turquesa", "Turquoise"), tr("Verde", "Green"), tr("Dorado", "Gold"),
+                                              tr("Naranja", "Orange"), tr("Rojo", "Red"), tr("Rosa", "Pink"),
+                                              tr("Morado", "Purple") };
+      (m.add(U_ACCENT, ITEM_OPTION, tr("Tono de resaltado", "Highlight color"), tint[m_cfg.accentTint],
+             tr("El color de la selecci\xf3n y los detalles, sobre cualquier tema.",
+                "The color of the selection and details, over any theme."))).choice = m_cfg.accentTint;
     }
     {
       const char *st[2] = { tr("Biblioteca", "Library"), tr("Explorador", "File browser") };
-      std::string lib = m_cfg.libraryDir.empty() ? std::string(tr("la \xfaltima carpeta abierta", "the last folder opened")) : m_cfg.libraryDir;
+      std::string lib = m_cfg.libraryDir.empty() ? std::string(tr("la carpeta Roms de cada unidad", "the Roms folder of every drive")) : m_cfg.libraryDir;
       (m.add(U_START, ITEM_OPTION, tr("Pantalla de inicio", "Start screen"), st[m_cfg.startScreen],
              std::string(tr("Biblioteca: consolas y portadas, sin carpetas (BACK abre el explorador). Juegos de: ",
                             "Library: consoles and box art, no folders (BACK opens the browser). Games from: ")) + lib +
@@ -777,6 +801,23 @@ void UiApp::buildMenu(UiMenuScreen &m)
       (m.add(U_EFFECT, ITEM_OPTION, tr("Efecto animado del fondo", "Moving background effect"), fx[m_cfg.bgEffect],
              tr("Burbujas que suben y agua en movimiento sobre el fondo (o tu imagen). S\xf3lo con Frutiger Aero.",
                 "Rising bubbles and moving water over the background (or your image). Frutiger Aero only."))).choice = m_cfg.bgEffect;
+      const char *lv[EFFECT_LEVEL_COUNT] = { tr("Pocas", "Few"), tr("Normal", "Normal"), tr("Muchas", "Many") };
+      const char *wv[EFFECT_LEVEL_COUNT] = { tr("Suave", "Soft"), tr("Normal", "Normal"), tr("Intensa", "Strong") };
+      if (m_cfg.bgEffect & UI_EFFECT_BUBBLES)
+        (m.add(U_BUBBLES, ITEM_OPTION, tr("Cantidad de burbujas", "Number of bubbles"), lv[m_cfg.bubbleAmount])).choice = m_cfg.bubbleAmount;
+      if (m_cfg.bgEffect & UI_EFFECT_WATER)
+        (m.add(U_WATER, ITEM_OPTION, tr("Luz del agua", "Water light"), wv[m_cfg.waterStrength],
+               tr("La luz que el agua en movimiento dibuja sobre el fondo.",
+                  "The light moving water casts over the background."))).choice = m_cfg.waterStrength;
+    }
+    {
+      const char *mm[MUSIC_MODE_COUNT] = { tr("Apagada", "Off"), tr("En orden", "In order"), tr("Aleatoria", "Shuffle") };
+      (m.add(U_MUSIC, ITEM_OPTION, tr("M\xfasica del men\xfa", "Menu music"), mm[m_cfg.menuMusic],
+             tr("Suena s\xf3lo en el men\xfa principal. Pon archivos .wav en la carpeta music\\ del emulador.",
+                "Plays only in the main menu. Put .wav files in the emulator's music\\ folder."))).choice = m_cfg.menuMusic;
+      if (m_cfg.menuMusic != MUSIC_OFF)
+        (m.add(U_MUSIC_VOL, ITEM_OPTION, tr("Volumen de la m\xfasica", "Music volume"),
+               intStr(uiMusicVolumePercent[m_cfg.musicVolume]) + "%")).choice = m_cfg.musicVolume;
     }
     m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
           tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
@@ -801,7 +842,7 @@ void UiApp::buildMenu(UiMenuScreen &m)
 
   case MENU_ABOUT:
     m.title = tr("Acerca de", "About");
-    m.subtitle = "VBA360 enhanced-ai";
+    m.subtitle = tr(UI_APP_NAME " (antes VBA360 enhanced-ai)", UI_APP_NAME " (formerly VBA360 enhanced-ai)");
     m.addInfo(tr("Emulador de Game Boy Advance, Game Boy y Game Boy Color para Xbox 360.",
                  "Game Boy Advance, Game Boy and Game Boy Color emulator for the Xbox 360."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA. Licencia GPL.",
@@ -903,6 +944,11 @@ void UiApp::buildMenu(UiMenuScreen &m)
           "DMG, Pocket, Light, Super Game Boy and the GBC's automatic palettes." },
         { "Botones del control", "Controller buttons", "Microsoft (XNA Game Studio)",
           "Im\xe1genes de los botones de Xbox 360, licencia Ms-PL.", "Xbox 360 button images, Ms-PL license." },
+        { "Portadas", "Box art", "libretro-thumbnails (libretro)",
+          "Las descarga de thumbnails.libretro.com; hechas por la comunidad de libretro.",
+          "Downloaded from thumbnails.libretro.com; made by the libretro community." },
+        { "Cartuchos de la Biblioteca", "Library cartridges", "ABeezy13 (foros de LaunchBox)",
+          "Renders de los cartuchos de GBA, GBC y Game Boy.", "GBA, GBC and Game Boy cartridge renders." },
         { "Fuente", "Typeface", "Inter (Rasmus Andersson)",
           "SIL Open Font License.", "SIL Open Font License." },
         { "Librer\xed""as", "Libraries", "zlib, libpng, SDL",
@@ -1426,6 +1472,13 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_PREVIEW) m_cfg.previewMode = wrapIndex(m_cfg.previewMode, delta, PREVIEW_COUNT);
     else if (id == U_START) m_cfg.startScreen = wrapIndex(m_cfg.startScreen, delta, 2);
     else if (id == U_EFFECT) m_cfg.bgEffect = wrapIndex(m_cfg.bgEffect, delta, UI_EFFECT_COUNT);
+    else if (id == U_BG_VIS) m_cfg.bgVisibility = wrapIndex(m_cfg.bgVisibility, delta, BG_VIS_COUNT);
+    else if (id == U_PANELS) m_cfg.panelOpacity = wrapIndex(m_cfg.panelOpacity, delta, PANEL_OPACITY_COUNT);
+    else if (id == U_ACCENT) m_cfg.accentTint = wrapIndex(m_cfg.accentTint, delta, ACCENT_TINT_COUNT);
+    else if (id == U_BUBBLES) m_cfg.bubbleAmount = wrapIndex(m_cfg.bubbleAmount, delta, EFFECT_LEVEL_COUNT);
+    else if (id == U_WATER) m_cfg.waterStrength = wrapIndex(m_cfg.waterStrength, delta, EFFECT_LEVEL_COUNT);
+    else if (id == U_MUSIC) m_cfg.menuMusic = wrapIndex(m_cfg.menuMusic, delta, MUSIC_MODE_COUNT);
+    else if (id == U_MUSIC_VOL) m_cfg.musicVolume = wrapIndex(m_cfg.musicVolume, delta, MUSIC_VOLUME_COUNT);
     else if (id == U_BACKGROUND) {
       std::vector<std::string> images = cachedImages("backgrounds");
       int choice = wrapIndex(menuImageChoice(m_cfg, images), delta, (int)images.size() + 1);

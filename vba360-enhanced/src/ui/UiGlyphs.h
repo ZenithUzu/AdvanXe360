@@ -14,5 +14,7 @@ struct UiGlyph
 
 // The image for a button name, or 0.
 const UiGlyph *uiGlyph(const char *name);
+// A console's cartridge picture ("GBA", "GBC", "GB"; UiCartArt.cpp), or 0.
+const UiGlyph *uiCartImage(const char *name);
 
 #endif

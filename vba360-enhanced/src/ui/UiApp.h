@@ -202,6 +202,7 @@ private:
   // copied every frame.
   std::vector<UiColor> m_bgCache;
   int m_bgCacheTheme;
+  int m_bgCacheVeil;
   std::string m_bgCacheName;
 
   std::vector<std::string> m_thumbKeys;

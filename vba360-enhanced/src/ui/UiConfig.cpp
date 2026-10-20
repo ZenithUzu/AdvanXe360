@@ -7,6 +7,11 @@
 
 const int uiFastForwardSpeeds[] = { 2, 3, 4, 6, 8, 0 };
 const int uiFastForwardSpeedCount = sizeof(uiFastForwardSpeeds) / sizeof(uiFastForwardSpeeds[0]);
+const int uiBgVeilAlpha[BG_VIS_COUNT] = { 0xE6, 0xC8, 0x90, 0x50 };
+const int uiPanelOpacityPercent[PANEL_OPACITY_COUNT] = { 130, 100, 70, 45 };
+const unsigned int uiAccentTints[ACCENT_TINT_COUNT] = {
+  0, 0xFF27A7E8, 0xFF1FC8B4, 0xFF4CC26A, 0xFFE3B341, 0xFFF08A24, 0xFFE5534B, 0xFFE0457B, 0xFF7B6CFF };
+const int uiMusicVolumePercent[MUSIC_VOLUME_COUNT] = { 25, 50, 75, 100 };
 const int uiVolumeLevels[] = { 25, 50, 75, 100, 125, 150, 200 };
 const int uiVolumeLevelCount = sizeof(uiVolumeLevels) / sizeof(uiVolumeLevels[0]);
 const int uiAudioLatencyMs[] = { 100, 60, 40 };
@@ -83,6 +88,13 @@ struct ConfigReader
     else if (k == "bg_effect") c.bgEffect = clampInt(v, 0, UI_EFFECT_COUNT - 1, c.bgEffect);
     else if (k == "start_screen") c.startScreen = clampInt(v, 0, 1, c.startScreen);
     else if (k == "library_dir") c.libraryDir = v;
+    else if (k == "bg_visibility") c.bgVisibility = clampInt(v, 0, BG_VIS_COUNT - 1, c.bgVisibility);
+    else if (k == "panel_opacity") c.panelOpacity = clampInt(v, 0, PANEL_OPACITY_COUNT - 1, c.panelOpacity);
+    else if (k == "accent_tint") c.accentTint = clampInt(v, 0, ACCENT_TINT_COUNT - 1, c.accentTint);
+    else if (k == "bubble_amount") c.bubbleAmount = clampInt(v, 0, EFFECT_LEVEL_COUNT - 1, c.bubbleAmount);
+    else if (k == "water_strength") c.waterStrength = clampInt(v, 0, EFFECT_LEVEL_COUNT - 1, c.waterStrength);
+    else if (k == "menu_music") c.menuMusic = clampInt(v, 0, MUSIC_MODE_COUNT - 1, c.menuMusic);
+    else if (k == "music_volume") c.musicVolume = clampInt(v, 0, MUSIC_VOLUME_COUNT - 1, c.musicVolume);
     else if (k == "filter") c.filter = clampInt(v, 0, FILTER_COUNT - 1, c.filter);
     else if (k == "stretch") c.stretch = clampInt(v, 0, SIZE_COUNT - 1, c.stretch);
     else if (k == "border") c.border = clampInt(v, 0, 1, c.border);
@@ -171,6 +183,13 @@ UiConfig::UiConfig()
   listView = LIST_VIEW_CAROUSEL;
   bgEffect = UI_EFFECT_BUBBLES;
   startScreen = 0;
+  bgVisibility = 1;
+  panelOpacity = 1;
+  accentTint = 0;
+  bubbleAmount = 1;
+  waterStrength = 1;
+  menuMusic = MUSIC_IN_ORDER;
+  musicVolume = 2;
   resetControls();
 }
 
@@ -223,6 +242,9 @@ bool UiConfig::save(const std::string &path) const
           menuTheme, menuBackground.c_str(), optionStyle, listSort);
   fprintf(f, "cover_server=%s\npreview_mode=%d\nlist_view=%d\nbg_effect=%d\n", coverServer.c_str(), previewMode, listView, bgEffect);
   fprintf(f, "start_screen=%d\nlibrary_dir=%s\n", startScreen, libraryDir.c_str());
+  fprintf(f, "bg_visibility=%d\npanel_opacity=%d\naccent_tint=%d\nbubble_amount=%d\nwater_strength=%d\n",
+          bgVisibility, panelOpacity, accentTint, bubbleAmount, waterStrength);
+  fprintf(f, "menu_music=%d\nmusic_volume=%d\n", menuMusic, musicVolume);
   fprintf(f, "filter=%d\nstretch=%d\nborder=%d\nborder_image=%s\nborder_fit=%d\n",
           filter, stretch, border, borderImage.c_str(), borderFit);
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",
