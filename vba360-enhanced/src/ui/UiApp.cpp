@@ -315,7 +315,9 @@ void UiApp::update(unsigned int held)
     m_dirtyFrames = m_dirtyFrames > 1 ? m_dirtyFrames : 1;
   // Moving background: 30 frames a second is enough (the menu is drawn in
   // software). In game the menus float over the game, without it.
-  if (m_cfg.bgEffect && !m_inGame && (m_frame & 1) == 0 &&
+  // Only when something on screen does move (water needs a background image).
+  bool moving = (m_cfg.bgEffect & UI_EFFECT_BUBBLES) || ((m_cfg.bgEffect & UI_EFFECT_WATER) && !m_cfg.menuBackground.empty());
+  if (moving && !m_inGame && (m_frame & 1) == 0 &&
       m_cfg.menuTheme >= 0 && m_cfg.menuTheme < UI_THEME_COUNT && uiThemes[m_cfg.menuTheme].style == THEME_AERO)
     m_dirtyFrames = m_dirtyFrames > 1 ? m_dirtyFrames : 1;
 }
@@ -432,7 +434,9 @@ void UiApp::drawBackground(UiCanvas &c)
   uiApplyTheme(m_cfg.menuTheme, uiAccentTints[m_cfg.accentTint], uiPanelOpacityPercent[m_cfg.panelOpacity]);
   bool fresh = m_bgCache.size() == (size_t)(UI_W * UI_H) && m_bgCacheVeil == m_cfg.bgVisibility &&
                m_bgCacheTheme == m_cfg.menuTheme && m_bgCacheName == m_cfg.menuBackground;
-  const bool water = UI_THEME_STYLE == THEME_AERO && (m_cfg.bgEffect & UI_EFFECT_WATER);   // Frutiger Aero only
+  // Frutiger Aero only, and only over an image: moving a plain gradient
+  // changes nothing on screen but still costs the whole screen every frame.
+  const bool water = UI_THEME_STYLE == THEME_AERO && (m_cfg.bgEffect & UI_EFFECT_WATER) && !m_cfg.menuBackground.empty();
   if (fresh && c.width() == UI_W && c.height() == UI_H) {
     if (water)
       uiDrawWater(c, &m_bgCache[0], m_frame, m_cfg.waterStrength);

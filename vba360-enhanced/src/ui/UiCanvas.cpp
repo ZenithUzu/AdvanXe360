@@ -375,21 +375,16 @@ void UiCanvas::blitAlpha(const UiColor *src, int w, int h, int x, int y)
   }
 }
 
-void UiCanvas::blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int dy, int dw, int dh, int bright)
+void uiScaleImage(const UiColor *src, int sw, int sh, int dw, int dh, int bright, std::vector<UiColor> &out)
 {
+  out.assign(dw > 0 && dh > 0 ? dw * dh : 0, 0);
   if (dw <= 0 || dh <= 0 || sw <= 0 || sh <= 0)
     return;
   for (int j = 0; j < dh; j++) {
-    int py = dy + j;
-    if (py < m_cy0 || py >= m_cy1)
-      continue;
     int fy = (int)(((long long)j * 2 + 1) * sh * 128 / dh) - 128;   // 8.8 source row
     if (fy < 0) fy = 0;
     int y0 = fy >> 8, ty = fy & 255, y1 = y0 + 1 < sh ? y0 + 1 : y0;
     for (int i = 0; i < dw; i++) {
-      int px = dx + i;
-      if (px < m_cx0 || px >= m_cx1)
-        continue;
       int fx = (int)(((long long)i * 2 + 1) * sw * 128 / dw) - 128;
       if (fx < 0) fx = 0;
       int x0 = fx >> 8, tx = fx & 255, x1 = x0 + 1 < sw ? x0 + 1 : x0;
@@ -404,15 +399,14 @@ void UiCanvas::blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int d
         g += ((p[k] >> 8) & 0xFF) * (pa >> 8);
         b += (p[k] & 0xFF) * (pa >> 8);
       }
-      int al = a >> 8;
-      if (al <= 0)
-        continue;
       int div = a >> 8;
+      if (div <= 0)
+        continue;
       r = r / div * bright >> 8; g = g / div * bright >> 8; b = b / div * bright >> 8;
       if (r > 255) r = 255;
       if (g > 255) g = 255;
       if (b > 255) b = 255;
-      blendPixel(m_px + py * m_w + px, 0xFF000000 | (r << 16) | (g << 8) | b, al > 255 ? 255 : al);
+      out[j * dw + i] = ((UiColor)(div > 255 ? 255 : div) << 24) | (r << 16) | (g << 8) | b;
     }
   }
 }

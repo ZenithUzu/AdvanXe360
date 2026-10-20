@@ -215,9 +215,13 @@ void uiDrawWater(UiCanvas &c, const UiColor *bg, int frame, int strength)
       oy[j][i] = n * maxY * 256 / 127;
     }
   UiColor *dst = c.pixelsRW();
-  for (int y = 0; y < H; y++) {
+  // Two rows at a time: the second reuses the first one's shift (one row
+  // down in the picture), so the shift is worked out once per 2x2 pixels.
+  for (int y = 0; y < H; y += 2) {
     int j = y / G, fy = (y % G) * 256 / G;
     UiColor *out = dst + y * W;
+    UiColor *out2 = y + 1 < H ? out + W : out;
+    const bool rowSafe = y - maxY - 2 >= 0 && y + maxY + 3 < H;
     for (int i = 0; i * G < W; i++) {
       // offsets at this cell's two left corners' rows, blended down to y, then across
       int ax = (ox[j][i] * (256 - fy) + ox[j + 1][i] * fy) >> 8;
@@ -227,11 +231,24 @@ void uiDrawWater(UiCanvas &c, const UiColor *bg, int frame, int strength)
       const int dx = (bx - ax) / G, dy = (by - ay) / G;
       const int x0 = i * G, x1 = x0 + G < W ? x0 + G : W;
       int fx = ax + (x0 << 8), fy2 = ay + (y << 8);   // 8.8 source position
+      if (rowSafe && x0 - maxX - 2 >= 0 && x1 + maxX + 2 < W && ((x1 - x0) & 1) == 0) {
+        // Away from the edges: no clamping, two pixels per step (the shift
+        // changes far less than a pixel between them).
+        for (int x = x0; x < x1; x += 2, fx += 2 * (dx + 256), fy2 += 2 * dy) {
+          const UiColor *sp = bg + (fy2 >> 8) * W + (fx >> 8);
+          out[x] = sp[0];
+          out[x + 1] = sp[1];
+          out2[x] = sp[W];
+          out2[x + 1] = sp[W + 1];
+        }
+        continue;
+      }
       for (int x = x0; x < x1; x++, fx += dx + 256, fy2 += dy) {
         int sx = fx >> 8, sy = fy2 >> 8;
         sx = sx < 0 ? 0 : sx >= W ? W - 1 : sx;
         sy = sy < 0 ? 0 : sy >= H ? H - 1 : sy;
         out[x] = bg[sy * W + sx];
+        out2[x] = bg[(sy + 1 < H ? sy + 1 : sy) * W + sx];
       }
     }
   }
@@ -1376,7 +1393,13 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
         if (img) {   // the console's own cartridge picture
           int cw = img->w * pct / 100, ch = img->h * pct / 100;
           c.fillRoundRect(cxk - cw / 2 + 8, floor - ch + 14, cw - 4, ch - 6, 14, 0x50000000);   // shadow
-          c.blitAlphaScaled(img->px, img->w, img->h, cxk - cw / 2, floor - ch, cw, ch, bright);
+          // Scaled once per console and size, then only copied: rescaling every
+          // frame cost as much as the rest of the screen.
+          static std::vector<UiColor> scaled[SYS_COUNT][3];
+          std::vector<UiColor> &sc = scaled[s][pass];
+          if (sc.size() != (size_t)(cw * ch))
+            uiScaleImage(img->px, img->w, img->h, cw, ch, bright, sc);
+          c.blitAlpha(&sc[0], cw, ch, cxk - cw / 2, floor - ch);
         } else {     // zip / 7z: a plain cartridge
           int cw = 420 * pct / 100;
           drawCart(c, s, cxk - cw / 2, floor - cartHeight(s, cw), cw, 0, "ZIP / 7Z", bright);

@@ -6,6 +6,8 @@
 #ifndef UI_CANVAS_H
 #define UI_CANVAS_H
 
+#include <vector>
+
 typedef unsigned int UiColor;
 
 enum UiFontId { UI_FONT_SMALL = 0, UI_FONT_BODY = 1, UI_FONT_TITLE = 2, UI_FONT_COUNT = 3 };
@@ -57,14 +59,12 @@ public:
   void copyFrom(const UiColor *src);
   // Draws a w x h image 1:1 at (x, y) using each pixel's own alpha.
   void blitAlpha(const UiColor *src, int w, int h, int x, int y);
-  // The same scaled to dw x dh (bilinear), its brightness times bright/256.
   // A picture drawn as a card turned in depth (cover flow): column by
   // column from dx to dx + dw, its left edge topL..topL+hL tall and its right
   // edge topR..topR+hR, in between a straight line. reflect: percent of the
   // height mirrored under it, fading out (0 = none).
   void blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, int dw,
                 int topL, int hL, int topR, int hR, int bright, int reflect);
-  void blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int dy, int dw, int dh, int bright = 256);
 
 private:
   UiColor *m_px;
@@ -87,5 +87,9 @@ inline UiColor uiWithAlpha(UiColor c, int a)
 {
   return (c & 0x00FFFFFF) | ((UiColor)a << 24);
 }
+
+// An image (0xAARRGGBB) scaled to dw x dh (bilinear), its brightness times
+// bright/256. Slow: make it once and keep it, then draw it with blitAlpha.
+void uiScaleImage(const UiColor *src, int sw, int sh, int dw, int dh, int bright, std::vector<UiColor> &out);
 
 #endif // UI_CANVAS_H

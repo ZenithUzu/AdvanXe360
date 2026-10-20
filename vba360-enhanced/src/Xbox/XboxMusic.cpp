@@ -71,6 +71,7 @@ std::vector<std::string> g_songs;
 int g_song = -1;
 int g_lastMode = -1;
 int g_failures = 0;                    // songs in a row that wouldn't play
+int g_volume = -1;                     // volume last given to the voice
 
 void closeSong()
 {
@@ -80,6 +81,7 @@ void closeSong()
     g_voice->DestroyVoice();
     g_voice = 0;
   }
+  g_volume = -1;
   if (g_file) {
     fclose(g_file);
     g_file = 0;
@@ -197,7 +199,10 @@ void xboxMusicUpdate(int mode, int volumePercent)
     }
     g_failures = 0;
   }
-  g_voice->SetVolume(volumePercent / 100.0f);
+  if (volumePercent != g_volume) {   // only when it changes, not every frame
+    g_voice->SetVolume(volumePercent / 100.0f);
+    g_volume = volumePercent;
+  }
   if (!feed())
     closeSong();   // the next frame starts the next song
 }
