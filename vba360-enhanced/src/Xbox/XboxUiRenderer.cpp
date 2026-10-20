@@ -263,8 +263,10 @@ bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &o
   if (!pDevice || w <= 0 || h <= 0)
     return false;
   IDirect3DTexture9 *tex = 0;
+  // Triangle (box) filter: shrinking a big picture with plain linear
+  // filtering skips pixels and looks rough (covers, backgrounds, carts\).
   if (FAILED(D3DXCreateTextureFromFileExA(pDevice, path, w, h, 1, 0, D3DFMT_LIN_A8R8G8B8,
-                                          D3DPOOL_DEFAULT, D3DX_FILTER_LINEAR, D3DX_DEFAULT,
+                                          D3DPOOL_DEFAULT, D3DX_FILTER_TRIANGLE, D3DX_DEFAULT,
                                           0, NULL, NULL, &tex)) || !tex)
     return false;
   bool ok = false;
