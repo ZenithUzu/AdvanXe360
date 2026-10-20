@@ -1,15 +1,15 @@
-# XeFork360
+# AdvanXe360
 
 🌐 **English** · [Español](README.md)
 
 [![Platform](https://img.shields.io/badge/platform-Xbox%20360-107C10)](#installation)
 [![Consoles](https://img.shields.io/badge/emulates-GBA%20%C2%B7%20GB%20%C2%B7%20GBC-6F64F0)](#what-it-emulates-and-what-it-doesnt)
 [![License](https://img.shields.io/badge/license-GPL%20v2-blue)](#notes--credits)
-[![Download](https://img.shields.io/github/v/release/ZenithUzu/XeFork360?label=download)](https://github.com/ZenithUzu/XeFork360/releases/latest)
+[![Download](https://img.shields.io/github/v/release/ZenithUzu/AdvanXe360?label=download)](https://github.com/ZenithUzu/AdvanXe360/releases/latest)
 
-**XeFork360** (formerly *VBA360 enhanced-ai*) is a **Game Boy Advance, Game Boy and Game Boy Color emulator for the Xbox 360** (homebrew: BadUpdate, RGH or JTAG). Based on VisualBoyAdvance-M, with the **Gambatte** core for Game Boy / Color, **Super Game Boy borders**, its own menu and per-game options.
+**AdvanXe360** (*Advance* + *Xe* from **Xenon**, the Xbox 360's processor; formerly *VBA360 enhanced-ai*) is a **Game Boy Advance, Game Boy and Game Boy Color emulator for the Xbox 360** (homebrew: BadUpdate, RGH or JTAG). Based on VisualBoyAdvance-M, with the **Gambatte** core for Game Boy / Color, **Super Game Boy borders**, its own menu and per-game options.
 
-Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced) · **[⬇️ Download the latest release](https://github.com/ZenithUzu/XeFork360/releases/latest)**
+Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba360-enhanced) · **[⬇️ Download the latest release](https://github.com/ZenithUzu/AdvanXe360/releases/latest)**
 
 | | |
 |---|---|
@@ -126,8 +126,8 @@ These show the **themes**: Default, Red, Game Boy Advance and **Frutiger Aero** 
 
 # Installation
 
-1. Download the `.zip` from the [latest release](https://github.com/ZenithUzu/XeFork360/releases/latest).
-2. Copy the `XeFork360` folder to your console (for example `Hdd1:\Emulators\XeFork360\`) over FTP or USB.
+1. Download the `.zip` from the [latest release](https://github.com/ZenithUzu/AdvanXe360/releases/latest).
+2. Copy the `AdvanXe360` folder to your console (for example `Hdd1:\Emulators\AdvanXe360\`) over FTP or USB.
 3. Open it from Aurora (`default.xex`). The other folders are created on their own.
 4. Put your ROMs anywhere (hard drive or USB) and browse to them from the emulator. `.zip` and `.7z` work too.
 
@@ -246,7 +246,7 @@ More technical details in the [original README](docs/README-original.md).
 
 # Notes & Credits
 
-- **XeFork360 (formerly vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu): idea, console testing, builds and screenshots.
+- **AdvanXe360 (formerly vba360-enhanced-ai):** [**ZenithUzu** (ZenithARC)](https://github.com/ZenithUzu): idea, console testing, builds and screenshots.
 - **AI programming:** **Claude** ([Anthropic](https://www.anthropic.com)): code changes and documentation.
 - **vba360-enhanced fork:** [**frankischilling**](https://github.com/frankischilling), who fixed the port's build; the base of this project.
 - **Xbox 360 port:** the authors of **VBA360** and **libSDLx360**, with support from **Team Avalaunch** and **Team XeLove**.

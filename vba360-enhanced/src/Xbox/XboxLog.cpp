@@ -46,7 +46,7 @@ void xboxLogOpen(const char *path)
   if (!g_log)
     g_log = fopen(path, "w");
   if (g_log)
-    xboxLog("XeFork360 log (built " __DATE__ " " __TIME__ ")");
+    xboxLog("AdvanXe360 log (built " __DATE__ " " __TIME__ ")");
 }
 
 void xboxLogV(const char *format, va_list args)

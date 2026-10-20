@@ -301,7 +301,7 @@ void uiDrawEffects(UiCanvas &c, const UiConfig &cfg, int frame);
 void uiDrawWater(UiCanvas &c, const UiColor *bg, int frame, int strength);
 
 // The emulator's name as the menus show it.
-#define UI_APP_NAME "XeFork360"
+#define UI_APP_NAME "AdvanXe360"
 
 // Layout (1280x720, inside the TV safe area).
 enum

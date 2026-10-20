@@ -1,4 +1,4 @@
-// XeFork360 entry point: sets up Direct3D and runs the menu UI. When the player
+// AdvanXe360 entry point: sets up Direct3D and runs the menu UI. When the player
 // picks a game, gba_main() (sdl/SDL.cpp) runs it until they quit.
 #include <xtl.h>
 #include <stdio.h>
@@ -59,7 +59,7 @@ VOID __cdecl main()
   XMountUtilityDriveEx(XMOUNTUTILITYDRIVE_FORMAT0, 8192, 0);
 
   if (FAILED(InitD3D(&pDevice, &d3dpp))) {
-    OutputDebugString("XeFork360: failed to create the Direct3D device\n");
+    OutputDebugString("AdvanXe360: failed to create the Direct3D device\n");
     return;
   }
   D3D_Device = (LPDIRECT3DDEVICE9)pDevice;
