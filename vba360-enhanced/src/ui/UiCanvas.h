@@ -32,6 +32,10 @@ public:
   // Alpha-blended fills (alpha taken from the color's top byte).
   void fillRect(int x, int y, int w, int h, UiColor c);
   void fillRoundRect(int x, int y, int w, int h, int radius, UiColor c);
+  // The same with a vertical gradient (alpha too).
+  void fillRoundGradient(int x, int y, int w, int h, int radius, UiColor top, UiColor bottom);
+  // 1-pixel outline of the same rounded rectangle.
+  void strokeRoundRect(int x, int y, int w, int h, int radius, UiColor c);
   void fillCircle(int cx, int cy, int radius, UiColor c);
   // Vertical gradient between two colors.
   void fillGradient(int x, int y, int w, int h, UiColor top, UiColor bottom);
@@ -54,6 +58,12 @@ public:
   // Draws a w x h image 1:1 at (x, y) using each pixel's own alpha.
   void blitAlpha(const UiColor *src, int w, int h, int x, int y);
   // The same scaled to dw x dh (bilinear), its brightness times bright/256.
+  // A picture drawn as a card turned in depth (cover flow): column by
+  // column from dx to dx + dw, its left edge topL..topL+hL tall and its right
+  // edge topR..topR+hR, in between a straight line. reflect: percent of the
+  // height mirrored under it, fading out (0 = none).
+  void blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, int dw,
+                int topL, int hL, int topR, int hR, int bright, int reflect);
   void blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int dy, int dw, int dh, int bright = 256);
 
 private:

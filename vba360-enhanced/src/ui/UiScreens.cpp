@@ -99,17 +99,15 @@ void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
     c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, alpha));
     return;
   }
-  // Glass: tinted, lighter at the top, a reflection over the upper part and
-  // a bright edge.
+  // Glass: tinted, a soft reflection over the upper part (below the round
+  // corners, so it never pokes out of them) and a thin bright outline. No
+  // drop shadow: through see-through glass it shows as a second, offset box.
   int a = alpha >= 0xE0 ? alpha : alpha * 3 / 4;   // dialogs stay solid enough to read
-  c.fillRoundRect(x + 4, y + 10, w, h, radius, 0x30001432);                      // shadow
+  int r = radius < h / 2 ? radius : h / 2;
   c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, a));
-  c.fillGradient(x + radius / 2, y + 1, w - radius, h - 2, 0x20FFFFFF, 0x04FFFFFF);
-  c.fillGradient(x + radius / 2, y + 1, w - radius, h * 45 / 100, 0x30FFFFFF, 0x00FFFFFF);
-  c.fillRect(x + radius, y, w - 2 * radius, 1, 0xCCFFFFFF);
-  c.fillRect(x, y + radius, 1, h - 2 * radius, 0x70FFFFFF);
-  c.fillRect(x + w - 1, y + radius, 1, h - 2 * radius, 0x70FFFFFF);
-  c.fillRect(x + radius, y + h - 1, w - 2 * radius, 1, 0x40FFFFFF);
+  c.fillRoundGradient(x, y, w, h, radius, 0x1EFFFFFF, 0x00FFFFFF);   // lighter at the top
+  c.strokeRoundRect(x, y, w, h, radius, 0x80FFFFFF);
+  c.fillRect(x + r, y + 1, w - 2 * r, 1, 0x40FFFFFF);
 }
 
 namespace {
@@ -618,12 +616,13 @@ void UiHomeScreen::buildRows(UiApp &app)
     struct Cat { int id; const char *es, *en, *des, *den; };
     static const Cat cats[] = {
       { MENU_SETTINGS_VIDEO, "Video", "Video", "Filtros, pantalla y FPS", "Filters, screen and FPS" },
-      { MENU_SETTINGS_AUDIO, "Audio", "Audio", "Sonido y avance r\xe1pido", "Sound and fast forward" },
+      { MENU_SETTINGS_AUDIO, "Audio", "Audio", "Sonido de los juegos y m\xfasica del men\xfa", "Game sound and menu music" },
       { MENU_SETTINGS_EMU, "Emulaci\xf3n", "Emulation", "Velocidad, BIOS y trucos", "Speed, BIOS and cheats" },
       { MENU_SETTINGS_SAVES, "Guardado", "Saving", "Carpetas y guardado autom\xe1tico", "Folders and auto save" },
       { MENU_CONTROLS, "Controles", "Controls", "Botones y sensores (stick derecho)", "Buttons and sensors (right stick)" },
       { MENU_CLOCK, "Reloj de los juegos", "Game clock", "Hora de la consola o personalizada", "Console time or a custom one" },
-      { MENU_SETTINGS_UI, "Interfaz e idioma", "Interface & language", "Idioma y lista de juegos", "Language and game list" },
+      { MENU_SETTINGS_UI, "Interfaz e idioma", "Interface & language", "Idioma, pantalla de inicio y lista", "Language, start screen and list" },
+      { MENU_SETTINGS_LOOK, "Apariencia", "Appearance", "Tema, fondo, transparencia y efectos", "Theme, background, transparency and effects" },
       { MENU_ABOUT, "Acerca de", "About", "Versi\xf3n y cr\xe9""ditos", "Version and credits" },
       { -1, "Salir al Dashboard", "Exit to Dashboard", "Cierra el emulador", "Close the emulator" }
     };
@@ -1051,21 +1050,40 @@ void drawCart(UiCanvas &c, int sys, int x, int y, int w, const UiApp::Cover *cv,
   }
 }
 
-// A game's box: its art filling the whole box (cropped to fit, never
-// letterboxed), or a plain one with the console and the name.
-void drawBox(UiCanvas &c, const UiApp::Cover *cv, int x, int y, int w, int h, int bright,
-             const std::string &name, const char *kind)
+// The square of a picture a box shows: the middle of the box art, or, for a
+// game without one, the console's plain box (made once per console and
+// theme color, so the cover flow and shelves can treat both the same).
+struct BoxPic { const UiColor *px; int w, h, pitch; };
+
+BoxPic boxPic(const UiApp::Cover *cv, const std::string &rom)
 {
-  c.fillRoundRect(x + 6, y + 10, w, h, 6, 0x60000000);      // shadow
+  BoxPic b;
   if (cv) {
-    drawLabelArt(c, cv, x, y, w, h, bright, 0);
-    return;
+    int side = cv->w < cv->h ? cv->w : cv->h;
+    b.px = &cv->px[((cv->h - side) / 2) * cv->w + (cv->w - side) / 2];
+    b.w = b.h = side;
+    b.pitch = cv->w;
+    return b;
   }
-  c.fillGradient(x, y, w, h, dim(UI_COL_ACCENT, bright * 3 / 4), dim(UI_COL_PANEL, bright));
-  c.fillRect(x, y, w, 2, 0x30FFFFFF);
-  c.drawTextFit(UI_FONT_TITLE, x + 10, y + h / 4 - 20, w - 20, kind, 0x90FFFFFF, UI_ALIGN_CENTER);
-  c.drawTextFit(w > 220 ? UI_FONT_BODY : UI_FONT_SMALL, x + 12, y + h / 2, w - 24, name.c_str(),
-                uiWithAlpha(UI_COL_TEXT, bright > 255 ? 255 : bright), UI_ALIGN_CENTER);
+  enum { S = 200 };
+  static UiCanvas plain[4];
+  static UiColor made[4] = { 0, 0, 0, 0 };
+  const char *kind = romKind(rom);
+  int k = !strcmp(kind, "GBC") ? 1 : !strcmp(kind, "GB") ? 2 : !strcmp(kind, "GBA") ? 0 : 3;
+  UiColor key = UI_COL_ACCENT ^ (UI_COL_PANEL << 1);
+  if (made[k] != key || !plain[k].pixels()) {
+    if (!plain[k].pixels())
+      plain[k].create(S, S);
+    UiCanvas &c = plain[k];
+    c.fillGradient(0, 0, S, S, dim(UI_COL_ACCENT, 150), dim(UI_COL_PANEL, 230));
+    c.fillGradient(0, 0, S, S / 2, 0x26FFFFFF, 0x00FFFFFF);      // a sheen on the upper half
+    c.fillRect(0, 0, S, 2, 0x50FFFFFF);
+    c.drawTextFit(UI_FONT_TITLE, 0, S / 2 - 26, S, kind[0] ? kind : "?", 0xB0FFFFFF, UI_ALIGN_CENTER);
+    made[k] = key;
+  }
+  b.px = plain[k].pixels();
+  b.w = b.h = b.pitch = S;
+  return b;
 }
 
 // The box art, read when the list stops (and drawn again until it is).
@@ -1077,54 +1095,63 @@ const UiApp::Cover *boxArt(UiApp &app, const std::string &rom)
   return cv;
 }
 
-// A box seen edge-on: the left strip of its art is the spine.
-void drawSpine(UiCanvas &c, const UiApp::Cover *cv, int x, int y, int w, int h, int bright)
-{
-  if (cv) {
-    int sw = cv->w / 9 > 0 ? cv->w / 9 : 1;
-    c.blitScaled(&cv->px[0], sw, cv->h, cv->w, x, y, w, h, bright);
-  } else {
-    c.fillRect(x, y, w, h, uiWithAlpha(UI_COL_PANEL, 0xF0));
-  }
-  c.fillRect(x, y, 1, h, 0x50FFFFFF);                        // lit edge
-  c.fillRect(x, y, w, h, uiWithAlpha(0, (256 - bright) / 2));
-}
-
-// The chosen box faces you; its neighbours stand beside it and the rest
-// show only their spines.
+// Cover flow (as in iTunes / the Xbox 360 game library and the usual open
+// source versions of it): the chosen box faces you; the others stand turned
+// in depth on both sides, overlapping, each mirrored on a glossy floor. pos
+// glides toward the selection, so moving slides the whole row.
 void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
-                  const std::vector<std::string> &roms, const UiListState &ls, int sys)
+                  const std::vector<std::string> &roms, const UiListState &ls, float &pos, int sys)
 {
   const int count = (int)roms.size();
   if (ls.sel < 0 || ls.sel >= count)
     return;
+  // Glide: a third of the way each frame, then snap.
+  float target = (float)ls.sel;
+  if (pos < 0 || pos > count || fabsf(target - pos) > 12.0f)
+    pos = target;
+  pos += (target - pos) * 0.3f;
+  if (fabsf(target - pos) < 0.01f)
+    pos = target;
+  else
+    app.drawAgain();
+
   const int cx = x + w / 2;
-  const int floor = y + h * 70 / 100;
-  for (int side = -1; side <= 1; side += 2)
-    for (int d = 8; d >= 2; d--) {
-      int idx = ls.sel + side * d;
-      if (idx < 0 || idx >= count)
-        continue;
-      int sh = 230 - d * 10, sw = 20;
-      drawSpine(c, app.cover(roms[idx], false), cx + side * (385 + (d - 2) * 26) - sw / 2, floor - sh, sw, sh,
-                220 - d * 15);
+  const int S = 290;                         // the front box
+  const int floor = y + S + 16;
+  const int SIDE_W = 104, GAP = 232, STEP = 66;
+  const int NEAR_H = S * 88 / 100, FAR_H = S * 74 / 100;
+  int first = (int)pos - 8, last = (int)pos + 9;
+  if (first < 0) first = 0;
+  if (last > count - 1) last = count - 1;
+  // Farthest first, so the nearer boxes cover them.
+  for (int ring = 9; ring >= 0; ring--) {
+    for (int side = -1; side <= 1; side += 2) {
+      for (int idx = first; idx <= last; idx++) {
+        float d = (float)idx - pos;
+        float ad = fabsf(d);
+        int r = (int)(ad + 0.5f);
+        if (r != ring || (ring == 0 ? side > 0 : (d < 0 ? -1 : 1) != side))
+          continue;
+        float t = ad < 1.0f ? ad : 1.0f;     // 0 = facing you, 1 = turned
+        int sgn = d < 0 ? -1 : 1;
+        float center = ad < 1.0f ? sgn * GAP * ad : sgn * (GAP + (ad - 1.0f) * STEP);
+        int cw = (int)(S + (SIDE_W - S) * t);
+        int hn = (int)(S + (NEAR_H - S) * t), hf = (int)(S + (FAR_H - S) * t);
+        int bright = ad < 1.0f ? (int)(256 - 100 * ad) : 156 - (int)((ad - 1.0f) * 14);
+        if (bright < 60) bright = 60;
+        const UiApp::Cover *cv = ad < 1.5f ? boxArt(app, roms[idx]) : app.cover(roms[idx], false);
+        BoxPic b = boxPic(cv, roms[idx]);
+        int left = cx + (int)center - cw / 2;
+        // The edge nearer the middle is the taller one.
+        int hL = sgn > 0 ? hn : hf, hR = sgn > 0 ? hf : hn;
+        c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, 30);
+      }
     }
-  for (int side = -1; side <= 1; side += 2) {
-    int idx = ls.sel + side;
-    if (idx < 0 || idx >= count)
-      continue;
-    const UiApp::Cover *cv = boxArt(app, roms[idx]);
-    const int bw = 200, bh = 200;
-    drawBox(c, cv, cx + side * 265 - bw / 2, floor - bh, bw, bh, 170, romTitle(roms[idx]), romKind(roms[idx]));
   }
   const std::string &cur = roms[ls.sel];
-  const UiApp::Cover *cv = boxArt(app, cur);
-  const int bw = 310, bh = 310;
-  int bx = cx - bw / 2, by = floor - bh - 14;
-  drawBox(c, cv, bx, by, bw, bh, 256, romTitle(cur), romKind(cur));
   if (app.favorites().contains(cur))
-    c.fillCircle(bx + bw - 12, by + 12, 7, COL_FAV);
-  int ty = floor + 20;
+    c.fillCircle(cx + S / 2 - 14, floor - S + 14, 7, COL_FAV);
+  int ty = floor + S * 30 / 100 - 8;
   c.drawTextFit(UI_FONT_TITLE, x + 40, ty, w - 80, romTitle(cur).c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
   c.drawTextFit(UI_FONT_SMALL, x + 40, ty + 48, w - 80, romMeta(app, cur, sys).c_str(), UI_COL_TEXT_DIM,
                 UI_ALIGN_CENTER);
@@ -1143,22 +1170,26 @@ void drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
   const int shelfH = (h - stripH) / SHELF_ROWS;
   const int lift = 10, maxH = shelfH - 34 - lift;
   for (int r = 0; r < SHELF_ROWS; r++) {
+    int firstIdx = (ls.scroll + r) * SHELF_COLS;
+    if (firstIdx >= count)
+      break;                                 // no empty planks
     int base = y + (r + 1) * shelfH - 18;
     c.fillGradient(x - 16, base - 3, w + 32, 6, 0xFFB98552, 0xFF8E5C33);
     c.fillGradient(x - 16, base + 3, w + 32, 10, 0xFF6E4426, 0xFF4A2C17);
     c.fillGradient(x - 16, base + 13, w + 32, 14, 0x60000000, 0x00000000);
     for (int col = 0; col < SHELF_COLS; col++) {
-      int idx = (ls.scroll + r) * SHELF_COLS + col;
+      int idx = firstIdx + col;
       if (idx >= count)
         break;
       bool sel = idx == ls.sel;
       const UiApp::Cover *cv = boxArt(app, roms[idx]);
-      int aw = tileW < maxH ? tileW : maxH, ah = aw;
+      int aw = tileW < maxH ? tileW : maxH;
       int ax = x + col * (tileW + gap) + (tileW - aw) / 2;
-      int ay = base - ah - (sel ? lift : 0);
+      int ay = base - 3 - aw - (sel ? lift : 0);
+      BoxPic b = boxPic(cv, roms[idx]);
+      c.blitCard(b.px, b.w, b.h, b.pitch, ax, aw, ay, aw, ay, aw, sel ? 256 : 175, 0);
       if (sel)   // a light on the plank under the chosen one
         c.fillRoundRect(ax + aw / 6, base - 3, aw * 2 / 3, 4, 2, UI_COL_ACCENT);
-      drawBox(c, cv, ax, ay, aw, ah, sel ? 256 : 190, romTitle(roms[idx]), romKind(roms[idx]));
       if (app.favorites().contains(roms[idx]))
         c.fillCircle(ax + aw - 10, ay + 10, 6, COL_FAV);
     }
@@ -1178,6 +1209,8 @@ void drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
 UiLibraryScreen::UiLibraryScreen(UiApp &app, const std::string &selectRom)
   : m_sys(0), m_inSystem(false), m_rescan(false)
 {
+  for (int i = 0; i < SYSTEMS; i++)
+    m_pos[i] = -1.0f;   // first drawing: start on the selection
   scan(app);
   if (selectRom.empty())
     return;
@@ -1384,7 +1417,7 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
   if (app.cfg().listView == LIST_VIEW_COVERS)
     drawShelf(app, c, x, top, w, h, g, ls, sys);
   else
-    drawCarousel(app, c, x, top, w, h, g, ls, sys);
+    drawCarousel(app, c, x, top, w, h, g, ls, m_pos[sys], sys);
   const char *hints[] = {
     app.tr("A:Jugar", "A:Play"), app.tr("B:Consolas", "B:Consoles"),
     app.favorites().contains(g[ls.sel]) ? app.tr("X:Quitar favorito", "X:Unfavorite") : app.tr("X:Favorito", "X:Favorite"),

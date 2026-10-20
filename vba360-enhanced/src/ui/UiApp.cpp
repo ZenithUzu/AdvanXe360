@@ -585,6 +585,7 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_CONTROLS, ITEM_SUBMENU, tr("Controles", "Controls"));
     m.add(MENU_CLOCK, ITEM_SUBMENU, tr("Reloj de los juegos", "Game clock"));
     m.add(MENU_SETTINGS_UI, ITEM_SUBMENU, tr("Interfaz e idioma", "Interface & language"));
+    m.add(MENU_SETTINGS_LOOK, ITEM_SUBMENU, tr("Apariencia", "Appearance"));
     break;
 
   case MENU_CLOCK: {
@@ -695,6 +696,16 @@ void UiApp::buildMenu(UiMenuScreen &m)
              tr("Menos retraso: el sonido va m\xe1s pegado a la imagen. Si oyes cortes, vuelve a Normal.",
                 "Less delay keeps the sound closer to the picture. If it crackles, go back to Normal."))).choice = m_cfg.audioLatency;
     }
+    m.addHeader(tr("M\xfasica del men\xfa", "Menu music"));
+    {
+      const char *mm[MUSIC_MODE_COUNT] = { tr("Apagada", "Off"), tr("En orden", "In order"), tr("Aleatoria", "Shuffle") };
+      (m.add(U_MUSIC, ITEM_OPTION, tr("M\xfasica del men\xfa", "Menu music"), mm[m_cfg.menuMusic],
+             tr("Suena s\xf3lo en el men\xfa principal. Pon archivos .wav en la carpeta music\\ del emulador.",
+                "Plays only in the main menu. Put .wav files in the emulator's music\\ folder."))).choice = m_cfg.menuMusic;
+      if (m_cfg.menuMusic != MUSIC_OFF)
+        (m.add(U_MUSIC_VOL, ITEM_OPTION, tr("Volumen de la m\xfasica", "Music volume"),
+               intStr(uiMusicVolumePercent[m_cfg.musicVolume]) + "%")).choice = m_cfg.musicVolume;
+    }
     break;
 
   case MENU_SETTINGS_EMU: {
@@ -753,6 +764,33 @@ void UiApp::buildMenu(UiMenuScreen &m)
     (m.add(U_OPTION_STYLE, ITEM_OPTION, tr("Al cambiar una opci\xf3n", "Changing an option"), styles[m_cfg.optionStyle],
           tr("A abre los valores en un panel o una lista; izquierda/derecha siempre funcionan.",
              "A opens the values in a panel or a list; left/right always work."))).choice = m_cfg.optionStyle;
+    {
+      const char *st[2] = { tr("Biblioteca", "Library"), tr("Explorador", "File browser") };
+      std::string lib = m_cfg.libraryDir.empty() ? std::string(tr("la carpeta Roms de cada unidad", "the Roms folder of every drive")) : m_cfg.libraryDir;
+      (m.add(U_START, ITEM_OPTION, tr("Pantalla de inicio", "Start screen"), st[m_cfg.startScreen],
+             std::string(tr("Biblioteca: consolas y portadas, sin carpetas (BACK abre el explorador). Juegos de: ",
+                            "Library: consoles and box art, no folders (BACK opens the browser). Games from: ")) + lib +
+             tr(" (Y sobre una carpeta en el explorador la cambia).", " (Y on a folder in the browser changes it)."))).choice = m_cfg.startScreen;
+    }
+    {
+      const char *pv[PREVIEW_COUNT] = { tr("Portada o \xfaltima partida", "Box art or last played"),
+                                        tr("S\xf3lo portada", "Box art only"),
+                                        tr("S\xf3lo \xfaltima partida", "Last played only") };
+      (m.add(U_PREVIEW, ITEM_OPTION, tr("Vista previa de la lista", "Game list preview"), pv[m_cfg.previewMode],
+             tr("Qu\xe9 se ve junto a la lista: la portada o la imagen de la \xfaltima vez que jugaste.",
+                "What shows next to the list: the box art or a picture of the last time you played."))).choice = m_cfg.previewMode;
+    }
+    m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
+          tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
+    m.addHeader(tr("Soluci\xf3n de problemas", "Troubleshooting"));
+    m.add(U_RESET_ALL, ITEM_ACTION, tr("Restablecer toda la configuraci\xf3n", "Reset all settings"), "",
+          tr("Ajustes y opciones de cada juego vuelven a lo de f\xe1""brica. Partidas, estados, trucos y recientes se quedan.",
+             "Settings and every game's options go back to defaults. Saves, states, cheats and recents stay."));
+    break;
+  }
+  case MENU_SETTINGS_LOOK: {
+    m.title = tr("Apariencia", "Appearance");
+    m.subtitle = tr("Tema, fondo y efectos del men\xfa", "Menu theme, background and effects");
     (m.add(U_THEME, ITEM_OPTION, tr("Tema de colores", "Color theme"),
           uiThemes[m_cfg.menuTheme].name[m_cfg.language ? 1 : 0],
           tr("Colores del men\xfa, inspirados en las consolas.", "Menu colors, inspired by the consoles."))).choice = m_cfg.menuTheme;
@@ -785,23 +823,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
              tr("El color de la selecci\xf3n y los detalles, sobre cualquier tema.",
                 "The color of the selection and details, over any theme."))).choice = m_cfg.accentTint;
     }
-    {
-      const char *st[2] = { tr("Biblioteca", "Library"), tr("Explorador", "File browser") };
-      std::string lib = m_cfg.libraryDir.empty() ? std::string(tr("la carpeta Roms de cada unidad", "the Roms folder of every drive")) : m_cfg.libraryDir;
-      (m.add(U_START, ITEM_OPTION, tr("Pantalla de inicio", "Start screen"), st[m_cfg.startScreen],
-             std::string(tr("Biblioteca: consolas y portadas, sin carpetas (BACK abre el explorador). Juegos de: ",
-                            "Library: consoles and box art, no folders (BACK opens the browser). Games from: ")) + lib +
-             tr(" (Y sobre una carpeta en el explorador la cambia).", " (Y on a folder in the browser changes it)."))).choice = m_cfg.startScreen;
-    }
-    {
-      const char *pv[PREVIEW_COUNT] = { tr("Portada o \xfaltima partida", "Box art or last played"),
-                                        tr("S\xf3lo portada", "Box art only"),
-                                        tr("S\xf3lo \xfaltima partida", "Last played only") };
-      (m.add(U_PREVIEW, ITEM_OPTION, tr("Vista previa de la lista", "Game list preview"), pv[m_cfg.previewMode],
-             tr("Qu\xe9 se ve junto a la lista: la portada o la imagen de la \xfaltima vez que jugaste.",
-                "What shows next to the list: the box art or a picture of the last time you played."))).choice = m_cfg.previewMode;
-    }
     if (uiThemes[m_cfg.menuTheme].style == THEME_AERO) {   // Frutiger Aero only
+      m.addHeader(tr("Efectos de Frutiger Aero", "Frutiger Aero effects"));
       const char *fx[UI_EFFECT_COUNT] = { tr("Ninguno", "None"), tr("Burbujas", "Bubbles"),
                                           tr("Agua", "Water"), tr("Burbujas y agua", "Bubbles and water") };
       (m.add(U_EFFECT, ITEM_OPTION, tr("Efecto animado del fondo", "Moving background effect"), fx[m_cfg.bgEffect],
@@ -816,23 +839,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
                tr("Cu\xe1nto ondula el fondo. Se nota sobre una imagen de fondo (backgrounds\\).",
                   "How much the background ripples. It shows over a background image (backgrounds\\)."))).choice = m_cfg.waterStrength;
     }
-    {
-      const char *mm[MUSIC_MODE_COUNT] = { tr("Apagada", "Off"), tr("En orden", "In order"), tr("Aleatoria", "Shuffle") };
-      (m.add(U_MUSIC, ITEM_OPTION, tr("M\xfasica del men\xfa", "Menu music"), mm[m_cfg.menuMusic],
-             tr("Suena s\xf3lo en el men\xfa principal. Pon archivos .wav en la carpeta music\\ del emulador.",
-                "Plays only in the main menu. Put .wav files in the emulator's music\\ folder."))).choice = m_cfg.menuMusic;
-      if (m_cfg.menuMusic != MUSIC_OFF)
-        (m.add(U_MUSIC_VOL, ITEM_OPTION, tr("Volumen de la m\xfasica", "Music volume"),
-               intStr(uiMusicVolumePercent[m_cfg.musicVolume]) + "%")).choice = m_cfg.musicVolume;
-    }
-    m.add(U_HOME_DIR, ITEM_ACTION, tr("Volver a la lista de unidades", "Go back to the drive list"), "",
-          tr("El explorador abrir\xe1 la lista de unidades.", "The browser will open the drive list."));
-    m.addHeader(tr("Soluci\xf3n de problemas", "Troubleshooting"));
-    m.add(U_RESET_ALL, ITEM_ACTION, tr("Restablecer toda la configuraci\xf3n", "Reset all settings"), "",
-          tr("Ajustes y opciones de cada juego vuelven a lo de f\xe1""brica. Partidas, estados, trucos y recientes se quedan.",
-             "Settings and every game's options go back to defaults. Saves, states, cheats and recents stay."));
     break;
   }
+
 
   case MENU_CONTROLS:
     buildControlsMenu(m);
@@ -1458,6 +1467,8 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == A_MUTE_FF) m_cfg.muteFastForward ^= 1;
     else if (id == A_VOLUME) m_cfg.volume = wrapIndex(m_cfg.volume, delta, uiVolumeLevelCount);
     else if (id == A_LATENCY) m_cfg.audioLatency = wrapIndex(m_cfg.audioLatency, delta, uiAudioLatencyCount);
+    else if (id == U_MUSIC) m_cfg.menuMusic = wrapIndex(m_cfg.menuMusic, delta, MUSIC_MODE_COUNT);
+    else if (id == U_MUSIC_VOL) m_cfg.musicVolume = wrapIndex(m_cfg.musicVolume, delta, MUSIC_VOLUME_COUNT);
     break;
   case MENU_SETTINGS_EMU:
     if (id == E_FF_SPEED) m_cfg.ffSpeed = wrapIndex(m_cfg.ffSpeed, delta, uiFastForwardSpeedCount);
@@ -1474,6 +1485,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == S_BACKUPS) m_cfg.saveBackups ^= 1;
     break;
   case MENU_SETTINGS_UI:
+  case MENU_SETTINGS_LOOK:
     if (id == U_LANGUAGE) m_cfg.language ^= 1;
     else if (id == U_HIDE) m_cfg.hideNonGames ^= 1;
     else if (id == U_THEME) m_cfg.menuTheme = wrapIndex(m_cfg.menuTheme, delta, UI_THEME_COUNT);
@@ -1486,8 +1498,6 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_ACCENT) m_cfg.accentTint = wrapIndex(m_cfg.accentTint, delta, ACCENT_TINT_COUNT);
     else if (id == U_BUBBLES) m_cfg.bubbleAmount = wrapIndex(m_cfg.bubbleAmount, delta, EFFECT_LEVEL_COUNT);
     else if (id == U_WATER) m_cfg.waterStrength = wrapIndex(m_cfg.waterStrength, delta, EFFECT_LEVEL_COUNT);
-    else if (id == U_MUSIC) m_cfg.menuMusic = wrapIndex(m_cfg.menuMusic, delta, MUSIC_MODE_COUNT);
-    else if (id == U_MUSIC_VOL) m_cfg.musicVolume = wrapIndex(m_cfg.musicVolume, delta, MUSIC_VOLUME_COUNT);
     else if (id == U_BACKGROUND) {
       std::vector<std::string> images = cachedImages("backgrounds");
       int choice = wrapIndex(menuImageChoice(m_cfg, images), delta, (int)images.size() + 1);

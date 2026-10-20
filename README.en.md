@@ -198,12 +198,12 @@ Put images (PNG, JPG, BMP, TGA or DDS; 1280×720 is best) in `borders\` and pick
 
 ## Menu: themes, background and covers
 
-- **Menu theme and background:** in *Settings → Interface & language*. Menu images go in `backgrounds\`. Also there: **Image visibility** (how much of your image shows), **Panel transparency** and **Highlight color** (the selection color, over any theme).
-- **Library** (the start screen): first pick the console, each shown as its cartridge (GBA, GBC, Game Boy/Pocket, and .zip/.7z apart), sorted by file extension. Inside you see only the ROMs with their box art, no folders: **Carousel** (one box up front, its neighbours beside it, the rest edge-on) or **Shelf** (two shelves); **START** switches between them.
+- **Menu theme and background:** menu images go in `backgrounds\`. In *Settings → Appearance*: theme, background image, **Image visibility** (how much of your image shows), **Panel transparency** and **Highlight color** (the selection color, over any theme).
+- **Library** (the start screen): first pick the console, each shown as its cartridge (GBA, GBC, Game Boy/Pocket, and .zip/.7z apart), sorted by file extension. Inside you see only the ROMs with their box art, no folders: **Carousel** (cover-flow style: one box facing you, the rest turned on both sides, with a reflection and a sliding move) or **Shelf** (two shelves); **START** switches between them.
 - **Games folder:** by default it reads the **`Roms`** folder of every drive (for example `Hdd1:\Roms\` or `Usb0:\Roms\`) and its subfolders. To use another one, press **Y** on it in the browser (BACK). BIOS files don't show up as games.
 - **BACK** opens the usual menu (file browser, Recent, Favorites and Settings); **B** on the drive list goes back to the Library. *Interface & language* → **Start screen** lets you start in the browser instead.
-- **Moving background effect** (*Interface & language*): rising **Bubbles**, **Water** (your background image seen through moving water, like the [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) menus; it shows over an image), **Bubbles and water**, or **None**. **Frutiger Aero** theme only; it also works over your own background image. Depending on the choice, **Number of bubbles** and **Water ripples** show up.
-- **Menu music** (*Interface & language*): put **`.wav`** files (16-bit PCM; Audacity exports them like that) in the `music\` folder next to `default.xex`. They play only in the main menu, **in order** or **shuffled**, with their own volume; never during a game.
+- **Moving background effect** (*Appearance*): rising **Bubbles**, **Water** (your background image seen through moving water, like the [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) menus; it shows over an image), **Bubbles and water**, or **None**. **Frutiger Aero** theme only; it also works over your own background image. Depending on the choice, **Number of bubbles** and **Water ripples** show up.
+- **Menu music** (*Audio*): put **`.wav`** files (16-bit PCM; Audacity exports them like that) in the `music\` folder next to `default.xex`. They play only in the main menu, **in order** or **shuffled**, with their own volume; never during a game.
 - **Game list preview** (*Interface & language*): *Box art or last played*, *Box art only* or *Last played only* (the picture of the last moment you played).
 - **Automatic box art:** with the console online, go to *Game options* (Y on a game) → **Box art** → *Download box art* (that game) or *Download box art for this folder* (every game without one). They come from [thumbnails.libretro.com](https://thumbnails.libretro.com) (the same as RetroArch) for GBA, GB and GBC. They're found best when the ROM has its **official name** (No-Intro), e.g. `Pokemon - Emerald Version (USA, Europe).gba`; short names like `Pokemon Emerald` usually work too, but hacks or translated names don't. If that server ever stops working, another one can be set in `vba360.ini` with `cover_server=`.
 - **Covers by hand:** put `covers\<ROM name>.png` (or `.jpg`), for example `covers\Pokemon Emerald.png`. About 400×400 px is enough. Downloads never replace a game's existing cover, except *Download box art* for that game.
@@ -266,4 +266,20 @@ More technical details in the [original README](docs/README-original.md).
 - **Style of this README and the release notes:** inspired by [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) and the [PokeRogue releases](https://github.com/pagefaultgames/pokerogue/releases).
 - **Typeface:** [Inter](https://rsms.me/inter/), by **Rasmus Andersson** (SIL OFL). **Libraries:** zlib, libpng and SDL.
 
-Licensed under **GPL v2** (like VisualBoyAdvance-M). The original project's full credits are in the [original README](docs/README-original.md).
+## Licenses
+
+The emulator is released under the **GPL v2** ([LICENSE](LICENSE)). It has to be v2 because the **Gambatte** core and **VBA-Next** are "GPL v2 only"; VisualBoyAdvance-M is "GPL v2 or later", so it fits too. The pieces under other licenses are compatible and keep their own:
+
+| Piece | License |
+|---|---|
+| VisualBoyAdvance-M, VBA-Next, Gambatte, *zfast_crt* effect | GPL v2 (or later for VBA-M and zfast_crt) |
+| Super Game Boy and MBC7 (from SameBoy) | MIT |
+| *lcd3x* | Public domain |
+| Inter typeface | SIL Open Font License |
+| zlib, libpng, SDL 1.2 | zlib, libpng, LGPL |
+| Button icons (XNA) | Ms-PL, in their own file (`UiGlyphs.cpp`) with their [license text](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
+| Water effect | Our own code; only the idea comes from snes360-enhanced (none of its code or texture was copied) |
+| Box art | Not shipped with the emulator: each console downloads it from libretro |
+| Library cartridges (ABeezy13) | No published license: used with credit; a public release needs his permission |
+
+The original project's full credits are in the [original README](docs/README-original.md).

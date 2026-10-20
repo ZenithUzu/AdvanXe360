@@ -1,6 +1,7 @@
 #include "UiCanvas.h"
 #include "UiFontData.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -176,17 +177,36 @@ void UiCanvas::fillGradient(int x, int y, int w, int h, UiColor top, UiColor bot
 
 void UiCanvas::fillRoundRect(int x, int y, int w, int h, int radius, UiColor c)
 {
+  fillRoundGradient(x, y, w, h, radius, c, c);
+}
+
+static UiColor lerpColor(UiColor a, UiColor b, int t, int n)
+{
+  if (a == b || n <= 0)
+    return a;
+  UiColor out = 0;
+  for (int s = 0; s < 32; s += 8) {
+    int ca = (a >> s) & 0xFF, cb = (b >> s) & 0xFF;
+    out |= (UiColor)(ca + (cb - ca) * t / n) << s;
+  }
+  return out;
+}
+
+void UiCanvas::fillRoundGradient(int x, int y, int w, int h, int radius, UiColor top, UiColor bottom)
+{
   if (radius * 2 > h) radius = h / 2;
   if (radius * 2 > w) radius = w / 2;
   if (radius <= 0) {
-    fillRect(x, y, w, h, c);
+    if (top == bottom) fillRect(x, y, w, h, top);
+    else fillGradient(x, y, w, h, top, bottom);
     return;
   }
-  int baseA = c >> 24;
   for (int i = 0; i < h; i++) {
     int py = y + i;
     if (py < m_cy0 || py >= m_cy1)
       continue;
+    UiColor c = lerpColor(top, bottom, i, h - 1);
+    int baseA = c >> 24;
     // distance into the corner band
     int dy = 0;
     if (i < radius) dy = radius - i;
@@ -393,6 +413,78 @@ void UiCanvas::blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int d
       if (g > 255) g = 255;
       if (b > 255) b = 255;
       blendPixel(m_px + py * m_w + px, 0xFF000000 | (r << 16) | (g << 8) | b, al > 255 ? 255 : al);
+    }
+  }
+}
+
+void UiCanvas::strokeRoundRect(int x, int y, int w, int h, int radius, UiColor c)
+{
+  if (w <= 0 || h <= 0)
+    return;
+  if (radius * 2 > h) radius = h / 2;
+  if (radius * 2 > w) radius = w / 2;
+  // inset(i): how far in from the side row i starts
+  int prev = w / 2;
+  for (int i = 0; i < h; i++) {
+    int dy = i < radius ? radius - i : i >= h - radius ? i - (h - radius - 1) : 0;
+    int in = 0;
+    if (dy) {
+      float fy = (float)dy - 0.5f, r = (float)radius;
+      in = radius - (int)(sqrtf(r * r - fy * fy > 0 ? r * r - fy * fy : 0) + 0.5f);
+    }
+    int ndy = i + 1 < radius ? radius - i - 1 : i + 1 >= h - radius ? i + 1 - (h - radius - 1) : 0;
+    int next = 0;
+    if (ndy && i + 1 < h) {
+      float fy = (float)ndy - 0.5f, r = (float)radius;
+      next = radius - (int)(sqrtf(r * r - fy * fy > 0 ? r * r - fy * fy : 0) + 0.5f);
+    } else if (i + 1 >= h) {
+      next = w / 2;
+    }
+    int py = y + i;
+    if (i == 0 || i == h - 1) {
+      hspan(x + in, x + w - in, py, c);
+    } else {
+      int toward = i < h / 2 ? prev : next;    // the row nearer the top / bottom edge
+      int e = toward > in + 1 ? toward : in + 1;
+      hspan(x + in, x + e, py, c);
+      hspan(x + w - e, x + w - in, py, c);
+    }
+    prev = in;
+  }
+}
+
+void UiCanvas::blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, int dw,
+                        int topL, int hL, int topR, int hR, int bright, int reflect)
+{
+  if (dw <= 0 || sw <= 0 || sh <= 0)
+    return;
+  for (int i = 0; i < dw; i++) {
+    int px = dx + i;
+    if (px < m_cx0 || px >= m_cx1)
+      continue;
+    int top = topL + (topR - topL) * i / dw;
+    int hh = hL + (hR - hL) * i / dw;
+    if (hh <= 0)
+      continue;
+    const UiColor *col = src + (i * sw + sw / 2) / dw;
+    const int vstep = (sh << 16) / hh;   // 16.16 source rows per screen row (no divide per pixel)
+    int v = 0;
+    for (int j = 0; j < hh; j++, v += vstep) {
+      int py = top + j;
+      if (py < m_cy0 || py >= m_cy1)
+        continue;
+      UiColor p = col[(v >> 16) * pitch];
+      int r = (((p >> 16) & 0xFF) * bright) >> 8, g = (((p >> 8) & 0xFF) * bright) >> 8, b = ((p & 0xFF) * bright) >> 8;
+      m_px[py * m_w + px] = 0xFF000000 | ((r > 255 ? 255 : r) << 16) | ((g > 255 ? 255 : g) << 8) | (b > 255 ? 255 : b);
+    }
+    int rh = hh * reflect / 100;
+    for (int j = 0; j < rh; j++) {   // the mirror image, fading out
+      int py = top + hh + 1 + j;
+      if (py < m_cy0 || py >= m_cy1)
+        continue;
+      UiColor p = col[(((hh - 1 - j) * vstep) >> 16) * pitch];
+      int a = 0x58 * (rh - j) / rh * bright >> 8;
+      blendPixel(m_px + py * m_w + px, p | 0xFF000000, a);
     }
   }
 }

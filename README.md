@@ -198,12 +198,12 @@ Pon imágenes (PNG, JPG, BMP, TGA o DDS; ideal 1280×720) en `borders\` y elíge
 
 ## Menú: temas, fondo y portadas
 
-- **Tema y fondo del menú:** en *Ajustes → Interfaz e idioma*. Las imágenes para el menú van en `backgrounds\`. Ahí mismo: **Visibilidad de la imagen** (cuánto se ve tu imagen), **Transparencia de los paneles** y **Tono de resaltado** (el color de la selección sobre cualquier tema).
-- **Biblioteca** (la pantalla de inicio): primero eliges la consola, cada una con su cartucho (GBA, GBC, Game Boy/Pocket y los .zip/.7z aparte), separadas por la extensión del archivo. Dentro ves sólo los ROMs con su portada, sin carpetas: **Carrusel** (una portada al frente, sus vecinas a los lados y el resto de canto) o **Estante** (dos repisas); **START** cambia entre las dos.
+- **Tema y fondo del menú:** las imágenes para el menú van en `backgrounds\`. En *Ajustes → Apariencia*: tema, imagen de fondo, **Visibilidad de la imagen** (cuánto se ve tu imagen), **Transparencia de los paneles** y **Tono de resaltado** (el color de la selección sobre cualquier tema).
+- **Biblioteca** (la pantalla de inicio): primero eliges la consola, cada una con su cartucho (GBA, GBC, Game Boy/Pocket y los .zip/.7z aparte), separadas por la extensión del archivo. Dentro ves sólo los ROMs con su portada, sin carpetas: **Carrusel** (estilo *cover flow*: una portada de frente y las demás giradas a los lados, con reflejo y deslizamiento) o **Estante** (dos repisas); **START** cambia entre las dos.
 - **Carpeta de juegos:** por defecto lee la carpeta **`Roms`** de cada unidad (por ejemplo `Hdd1:\Roms\` o `Usb0:\Roms\`) y sus subcarpetas. Para usar otra, en el explorador (BACK) pulsa **Y** sobre ella. Los archivos de BIOS no salen como juegos.
 - **BACK** abre el menú de siempre (explorador de archivos, Recientes, Favoritos y Ajustes); **B** en la lista de unidades vuelve a la Biblioteca. En *Interfaz e idioma* → **Pantalla de inicio** puedes arrancar en el explorador en vez de la Biblioteca.
-- **Efecto animado del fondo** (*Interfaz e idioma*): **Burbujas** que suben, **Agua** (tu imagen de fondo se ve a través de agua en movimiento, como en los menús de [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced); se nota sobre una imagen), **Burbujas y agua**, o **Ninguno**. Sólo con el tema **Frutiger Aero**; también encima de tu propia imagen de fondo. Según lo que elijas aparecen **Cantidad de burbujas** y **Ondas del agua**.
-- **Música del menú** (*Interfaz e idioma*): pon archivos **`.wav`** (PCM de 16 bits; Audacity los exporta así) en la carpeta `music\` junto a `default.xex`. Suenan sólo en el menú principal, **en orden** o **aleatoria**, con su propio volumen; nunca durante un juego.
+- **Efecto animado del fondo** (*Apariencia*): **Burbujas** que suben, **Agua** (tu imagen de fondo se ve a través de agua en movimiento, como en los menús de [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced); se nota sobre una imagen), **Burbujas y agua**, o **Ninguno**. Sólo con el tema **Frutiger Aero**; también encima de tu propia imagen de fondo. Según lo que elijas aparecen **Cantidad de burbujas** y **Ondas del agua**.
+- **Música del menú** (*Audio*): pon archivos **`.wav`** (PCM de 16 bits; Audacity los exporta así) en la carpeta `music\` junto a `default.xex`. Suenan sólo en el menú principal, **en orden** o **aleatoria**, con su propio volumen; nunca durante un juego.
 - **Vista previa de la lista** (*Interfaz e idioma*): *Portada o última partida*, *Sólo portada* o *Sólo última partida* (la imagen del último momento que jugaste).
 - **Portadas automáticas:** con la consola conectada a internet, en *Opciones del juego* (Y sobre un juego) → **Portada** → *Descargar portada* (ese juego) o *Descargar portadas de esta carpeta* (todos los que no tienen). Se bajan de [thumbnails.libretro.com](https://thumbnails.libretro.com) (las mismas de RetroArch) para GBA, GB y GBC. Se encuentran mejor si la ROM tiene su **nombre oficial** (No-Intro), por ejemplo `Pokemon - Emerald Version (USA, Europe).gba`; nombres cortos como `Pokemon Emerald` también suelen funcionar, pero hacks o nombres en español no. Si ese servidor dejara de funcionar, se puede poner otro en `vba360.ini` con `cover_server=`.
 - **Portadas a mano:** pon `covers\<nombre de la ROM>.png` (o `.jpg`), por ejemplo `covers\Pokemon Esmeralda.png`. Unos 400×400 px bastan. Las descargas nunca reemplazan una portada que ya tenga el juego, salvo con *Descargar portada* de ese juego.
@@ -266,4 +266,20 @@ Más detalles técnicos en el [README original](docs/README-original.md).
 - **Estilo de este README y de las notas de versión:** inspirado en [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) y en las [releases de PokeRogue](https://github.com/pagefaultgames/pokerogue/releases).
 - **Fuente:** [Inter](https://rsms.me/inter/), de **Rasmus Andersson** (SIL OFL). **Librerías:** zlib, libpng y SDL.
 
-Licencia **GPL v2** (como VisualBoyAdvance-M). La lista completa de créditos del proyecto original está en el [README original](docs/README-original.md).
+## Licencias
+
+El emulador se distribuye bajo **GPL v2** ([LICENSE](LICENSE)). Tiene que ser la v2 porque el núcleo **Gambatte** y **VBA-Next** son "sólo GPL v2"; VisualBoyAdvance-M es "GPL v2 o posterior", así que también encaja. Las piezas con otra licencia son compatibles y conservan la suya:
+
+| Pieza | Licencia |
+|---|---|
+| VisualBoyAdvance-M, VBA-Next, Gambatte, efectos *zfast_crt* | GPL v2 (o posterior en VBA-M y zfast_crt) |
+| Super Game Boy y MBC7 (de SameBoy) | MIT |
+| *lcd3x* | Dominio público |
+| Fuente Inter | SIL Open Font License |
+| zlib, libpng, SDL 1.2 | zlib, libpng, LGPL |
+| Íconos de los botones (XNA) | Ms-PL, en su propio archivo (`UiGlyphs.cpp`) con su [texto de licencia](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
+| Efecto de agua | Código propio; sólo la idea viene de snes360-enhanced (no se copió su código ni su textura) |
+| Portadas | No vienen con el emulador: cada consola las descarga de libretro |
+| Cartuchos de la Biblioteca (ABeezy13) | Sin licencia publicada: se usan con crédito; para un release público hay que pedirle permiso |
+
+La lista completa de créditos del proyecto original está en el [README original](docs/README-original.md).

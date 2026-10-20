@@ -95,6 +95,7 @@ private:
   void scanDir(UiApp &app, const std::string &dir, int depth, int &budget);
   std::vector<std::string> m_games[SYSTEMS];
   UiListState m_list[SYSTEMS];
+  float m_pos[SYSTEMS];                 // cover flow position, gliding to the selection
   std::vector<int> m_systems;           // consoles with games, in order
   int m_sys;                            // index into m_systems
   bool m_inSystem;                      // showing that console's games
