@@ -467,9 +467,8 @@ void UiApp::drawBackground(UiCanvas &c)
     m_bgCacheTheme = m_cfg.menuTheme;
     m_bgCacheName = m_cfg.menuBackground;
     m_bgCacheVeil = m_cfg.bgVisibility;
-    // The image itself isn't needed any more (4 MB).
-    std::vector<UiColor>().swap(m_bgPixels);
-    m_bgName = "\x01";   // reload it if the cache is ever rebuilt
+    // The decoded image stays (3.6 MB): changing the theme or the veil then
+    // redraws it at once instead of reading and resizing the file again.
     if (water)
       uiDrawWater(c, &m_bgCache[0], m_frame, m_cfg.waterStrength);
   }

@@ -1228,7 +1228,7 @@ UiLibraryScreen::UiLibraryScreen(UiApp &app, const std::string &selectRom)
 {
   for (int i = 0; i < SYSTEMS; i++)
     m_pos[i] = -1.0f;   // first drawing: start on the selection
-  scan(app);
+  scan(app, false);
   if (selectRom.empty())
     return;
   for (size_t s = 0; s < m_systems.size(); s++) {
@@ -1257,12 +1257,54 @@ void UiLibraryScreen::scanDir(UiApp &app, const std::string &dir, int depth, int
   }
 }
 
-void UiLibraryScreen::scan(UiApp &app)
+namespace {
+// What the last look through the folders found, kept between Library screens:
+// coming back from a game or the browser rebuilt it by walking every Roms
+// folder and reading carts\ again, which was slow on the console. Read again
+// when the emulator starts or the library folder changes.
+// shortcut: ROMs copied over FTP while the emulator runs show up after a restart.
+struct LibraryCache
+{
+  bool valid;
+  std::string root;
+  std::vector<std::string> games[SYS_COUNT];
+  std::vector<UiColor> cartPx[SYS_COUNT];   // carts\<gba|gbc|gb|zip>.png (empty: built-in)
+  int cartW[SYS_COUNT], cartH[SYS_COUNT];
+  LibraryCache() : valid(false) {}
+};
+LibraryCache g_library;
+}
+
+void UiLibraryScreen::scan(UiApp &app, bool fromDisk)
+{
+  m_root = app.cfg().libraryDir;
+  if (!fromDisk && g_library.valid && g_library.root == m_root) {
+    for (int s = 0; s < SYS_COUNT; s++)
+      m_games[s] = g_library.games[s];
+  } else {
+    readFolders(app);
+    for (int s = 0; s < SYS_COUNT; s++)
+      g_library.games[s] = m_games[s];
+    g_library.root = m_root;
+    g_library.valid = true;
+  }
+  m_systems.clear();
+  for (int s = 0; s < SYS_COUNT; s++) {
+    m_list[s].clamp((int)m_games[s].size());
+    if (!m_games[s].empty())
+      m_systems.push_back(s);
+  }
+  if (m_sys >= (int)m_systems.size())
+    m_sys = 0;
+  if (m_systems.empty())
+    m_inSystem = false;
+}
+
+void UiLibraryScreen::readFolders(UiApp &app)
 {
   for (int s = 0; s < SYS_COUNT; s++)
     m_games[s].clear();
   // The chosen folder, or else the Roms folder of every drive.
-  m_root = app.cfg().libraryDir;
   std::vector<std::string> roots;
   if (!m_root.empty()) {
     roots.push_back(m_root);
@@ -1280,30 +1322,22 @@ void UiLibraryScreen::scan(UiApp &app)
   std::string carts = uiJoinPath(app.host().emulatorDir(), "carts");
   for (int s = 0; s < SYS_COUNT; s++) {
     bool wide = s == SYS_GBA || s == SYS_OTHER;
-    m_cartPx[s].clear();
-    m_cartW[s] = m_cartH[s] = 0;
+    std::vector<UiColor> &px = g_library.cartPx[s];
+    px.clear();
+    g_library.cartW[s] = g_library.cartH[s] = 0;
     if (!app.host().loadImageFit(uiJoinPath(carts, cartFile[s]), wide ? 440 : 260, wide ? 300 : 320,
-                                 m_cartPx[s], m_cartW[s], m_cartH[s]))
-      m_cartPx[s].clear();
+                                 px, g_library.cartW[s], g_library.cartH[s]))
+      px.clear();
   }
-  m_systems.clear();
-  for (int s = 0; s < SYS_COUNT; s++) {
+  for (int s = 0; s < SYS_COUNT; s++)
     std::sort(m_games[s].begin(), m_games[s].end(), nameLess);
-    m_list[s].clamp((int)m_games[s].size());
-    if (!m_games[s].empty())
-      m_systems.push_back(s);
-  }
-  if (m_sys >= (int)m_systems.size())
-    m_sys = 0;
-  if (m_systems.empty())
-    m_inSystem = false;
 }
 
 void UiLibraryScreen::onResume(UiApp &app)
 {
   if (m_rescan) {
     m_rescan = false;
-    scan(app);
+    scan(app, false);   // read again only if the library folder changed (Y in the browser)
   }
 }
 
@@ -1401,7 +1435,8 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
         int pct = pass == 0 ? 100 : pass == 1 ? 55 : 40, bright = pass == 0 ? 256 : pass == 1 ? 170 : 110;
         int cxk = cx + side * (pass == 0 ? 0 : pass == 1 ? 320 : 530);
         // The player's picture from carts\, else the built-in generic one.
-        UiGlyph own = { "", m_cartW[s], m_cartH[s], m_cartPx[s].empty() ? 0 : &m_cartPx[s][0] };
+        UiGlyph own = { "", g_library.cartW[s], g_library.cartH[s],
+                        g_library.cartPx[s].empty() ? 0 : &g_library.cartPx[s][0] };
         const UiGlyph *img = own.px ? &own : uiCartImage(s == SYS_GBA ? "GBA" : s == SYS_GBC ? "GBC" : s == SYS_GB ? "GB" : "");
         if (img) {
           int cw = img->w * pct / 100, ch = img->h * pct / 100;
