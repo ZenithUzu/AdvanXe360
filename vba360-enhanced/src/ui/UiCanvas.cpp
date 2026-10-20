@@ -447,38 +447,54 @@ void UiCanvas::strokeRoundRect(int x, int y, int w, int h, int radius, UiColor c
   }
 }
 
+static inline UiColor dimColor(UiColor p, int bright)
+{
+  if (bright >= 256)
+    return p | 0xFF000000;
+  UiColor rb = ((p & 0xFF00FF) * (UiColor)bright >> 8) & 0xFF00FF;
+  UiColor g = ((p & 0x00FF00) * (UiColor)bright >> 8) & 0x00FF00;
+  return 0xFF000000 | rb | g;
+}
+
 void UiCanvas::blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, int dw,
                         int topL, int hL, int topR, int hR, int bright, int reflect)
 {
   if (dw <= 0 || sw <= 0 || sh <= 0)
     return;
-  for (int i = 0; i < dw; i++) {
-    int px = dx + i;
-    if (px < m_cx0 || px >= m_cx1)
-      continue;
-    int top = topL + (topR - topL) * i / dw;
-    int hh = hL + (hR - hL) * i / dw;
-    if (hh <= 0)
-      continue;
-    const UiColor *col = src + (i * sw + sw / 2) / dw;
-    const int vstep = (sh << 16) / hh;   // 16.16 source rows per screen row (no divide per pixel)
-    int v = 0;
-    for (int j = 0; j < hh; j++, v += vstep) {
-      int py = top + j;
-      if (py < m_cy0 || py >= m_cy1)
-        continue;
-      UiColor p = col[(v >> 16) * pitch];
-      int r = (((p >> 16) & 0xFF) * bright) >> 8, g = (((p >> 8) & 0xFF) * bright) >> 8, b = ((p & 0xFF) * bright) >> 8;
-      m_px[py * m_w + px] = 0xFF000000 | ((r > 255 ? 255 : r) << 16) | ((g > 255 ? 255 : g) << 8) | (b > 255 ? 255 : b);
-    }
-    int rh = hh * reflect / 100;
-    for (int j = 0; j < rh; j++) {   // the mirror image, fading out
-      int py = top + hh + 1 + j;
-      if (py < m_cy0 || py >= m_cy1)
-        continue;
-      UiColor p = col[(((hh - 1 - j) * vstep) >> 16) * pitch];
-      int a = 0x58 * (rh - j) / rh * bright >> 8;
-      blendPixel(m_px + py * m_w + px, p | 0xFF000000, a);
+  // Per column: where it starts, how tall it is and how fast it walks down
+  // the picture. Then drawn row by row: writing down columns of a 1280-wide
+  // canvas misses the cache at every pixel, which the Xbox 360 CPU pays dearly.
+  static std::vector<int> top, hh, vs, rh;
+  static std::vector<const UiColor *> col;
+  top.resize(dw); hh.resize(dw); vs.resize(dw); rh.resize(dw); col.resize(dw);
+  int i0 = dx < m_cx0 ? m_cx0 - dx : 0, i1 = dx + dw > m_cx1 ? m_cx1 - dx : dw;
+  if (i0 >= i1)
+    return;
+  int ymin = 1 << 30, ymax = -(1 << 30);
+  for (int i = i0; i < i1; i++) {
+    top[i] = topL + (topR - topL) * i / dw;
+    hh[i] = hL + (hR - hL) * i / dw;
+    vs[i] = hh[i] > 0 ? (sh << 16) / hh[i] : 0;
+    rh[i] = hh[i] * reflect / 100;
+    col[i] = src + (i * sw + sw / 2) / dw;
+    if (top[i] < ymin) ymin = top[i];
+    if (top[i] + hh[i] + 1 + rh[i] > ymax) ymax = top[i] + hh[i] + 1 + rh[i];
+  }
+  if (ymin < m_cy0) ymin = m_cy0;
+  if (ymax > m_cy1) ymax = m_cy1;
+  for (int y = ymin; y < ymax; y++) {
+    UiColor *row = m_px + y * m_w + dx;
+    for (int i = i0; i < i1; i++) {
+      int j = y - top[i];
+      if ((unsigned)j < (unsigned)hh[i]) {
+        row[i] = dimColor(col[i][((j * vs[i]) >> 16) * pitch], bright);
+      } else if (rh[i] > 0) {   // the mirror image under it, fading out
+        int r = j - hh[i] - 1;
+        if ((unsigned)r < (unsigned)rh[i]) {
+          UiColor p = col[i][(((hh[i] - 1 - r) * vs[i]) >> 16) * pitch];
+          blendPixel(row + i, p | 0xFF000000, (0x58 * (rh[i] - r) / rh[i]) * bright >> 8);
+        }
+      }
     }
   }
 }

@@ -95,7 +95,8 @@ void xboxApplyGameSampler();
 // changed = false: show the last uploaded picture again (nothing new drawn).
 void xboxUiPresent(const UiCanvas &canvas, bool changed = true);
 // Decodes an image (PNG, JPG, BMP, TGA, DDS) scaled to w x h for the menu.
-bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out);
+// smooth: box filter (better when shrinking a lot, slower); else linear.
+bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out, bool smooth = false);
 // The same keeping the proportions, at most maxW x maxH (covers).
 bool xboxLoadImageFit(const char *path, int maxW, int maxH, std::vector<UiColor> &out, int &w, int &h);
 // Mixes the new frame in pix with the last one (Settings > Video).

@@ -258,15 +258,16 @@ void xboxUiPresent(const UiCanvas &canvas, bool changed)
 
 // Menu background: the image scaled to w x h, read back as 0xAARRGGBB pixels
 // for the software menu canvas.
-bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out)
+bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out, bool smooth)
 {
   if (!pDevice || w <= 0 || h <= 0)
     return false;
   IDirect3DTexture9 *tex = 0;
-  // Triangle (box) filter: shrinking a big picture with plain linear
-  // filtering skips pixels and looks rough (covers, backgrounds, carts\).
+  // Box filter for the pictures loaded once (backgrounds): shrinking a big
+  // one with plain linear filtering skips pixels. Covers load while the list
+  // is browsed, so they keep the faster linear one.
   if (FAILED(D3DXCreateTextureFromFileExA(pDevice, path, w, h, 1, 0, D3DFMT_LIN_A8R8G8B8,
-                                          D3DPOOL_DEFAULT, D3DX_FILTER_TRIANGLE, D3DX_DEFAULT,
+                                          D3DPOOL_DEFAULT, smooth ? D3DX_FILTER_TRIANGLE : D3DX_FILTER_LINEAR, D3DX_DEFAULT,
                                           0, NULL, NULL, &tex)) || !tex)
     return false;
   bool ok = false;

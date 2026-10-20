@@ -560,7 +560,7 @@ public:
 
   virtual bool loadImage(const std::string &path, int w, int h, std::vector<UiColor> &out)
   {
-    return xboxLoadImagePixels(path.c_str(), w, h, out);
+    return xboxLoadImagePixels(path.c_str(), w, h, out, true);
   }
 
   virtual bool loadImageFit(const std::string &path, int maxW, int maxH,

@@ -1131,6 +1131,7 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
     pos = target;
   else
     app.drawAgain();
+  const bool settled = pos == target;
 
   const int cx = x + w / 2;
   const int S = 290;                         // the front box
@@ -1156,12 +1157,13 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
         int hn = (int)(S + (NEAR_H - S) * t), hf = (int)(S + (FAR_H - S) * t);
         int bright = ad < 1.0f ? (int)(256 - 100 * ad) : 156 - (int)((ad - 1.0f) * 14);
         if (bright < 60) bright = 60;
-        const UiApp::Cover *cv = ad < 1.5f ? boxArt(app, roms[idx]) : app.cover(roms[idx], false);
+        // Covers are read from disk only once the row stops sliding.
+        const UiApp::Cover *cv = ad < 1.5f && settled ? boxArt(app, roms[idx]) : app.cover(roms[idx], false);
         BoxPic b = boxPic(cv, roms[idx]);
         int left = cx + (int)center - cw / 2;
         // The edge nearer the middle is the taller one.
         int hL = sgn > 0 ? hn : hf, hR = sgn > 0 ? hf : hn;
-        c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, 30);
+        c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, ad < 2.5f ? 24 : 0);
       }
     }
   }
