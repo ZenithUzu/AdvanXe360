@@ -91,8 +91,10 @@ void uiDrawSelection(UiCanvas &c, int x, int y, int w, int h, int radius, bool s
 
 void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
 {
+  int solid = alpha >= 0xC0;                 // dialogs and the in-game menu: keep them readable
   alpha = alpha * UI_PANEL_OPACITY / 100;   // Interface -> Panel transparency
   if (alpha > 0xFF) alpha = 0xFF;
+  if (solid && alpha < 0xB0) alpha = 0xB0;
   if (UI_THEME_STYLE != THEME_AERO) {
     c.fillRoundRect(x, y, w, h, radius, uiWithAlpha(UI_COL_PANEL, alpha));
     return;
