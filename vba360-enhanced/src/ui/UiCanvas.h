@@ -63,8 +63,13 @@ public:
   // column from dx to dx + dw, its left edge topL..topL+hL tall and its right
   // edge topR..topR+hR, in between a straight line. reflect: percent of the
   // height mirrored under it, fading out (0 = none).
+  // sky / under (optional, one int per canvas column): for drawing nearest
+  // first. sky[x] is the highest row already covered above the floor (rows
+  // from there down are skipped, then it is raised); under[x] how many rows of
+  // reflection are already drawn below it.
   void blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, int dw,
-                int topL, int hL, int topR, int hR, int bright, int reflect);
+                int topL, int hL, int topR, int hR, int bright, int reflect,
+                int *sky = 0, int *under = 0);
 
 private:
   UiColor *m_px;

@@ -1122,16 +1122,19 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
   const int count = (int)roms.size();
   if (ls.sel < 0 || ls.sel >= count)
     return;
-  // Glide: a third of the way each frame, then snap.
+  // Glide: almost half the way each frame, then snap (few heavy frames).
   float target = (float)ls.sel;
   if (pos < 0 || pos > count || fabsf(target - pos) > 12.0f)
     pos = target;
-  pos += (target - pos) * 0.3f;
+  pos += (target - pos) * 0.45f;
   if (fabsf(target - pos) < 0.01f)
     pos = target;
   else
     app.drawAgain();
   const bool settled = pos == target;
+  // Neighbours' covers wait a little more, so quick taps only read the front one.
+  static int still = 0;
+  still = settled ? still + 1 : 0;
 
   const int cx = x + w / 2;
   const int S = 290;                         // the front box
@@ -1141,8 +1144,14 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
   int first = (int)pos - 8, last = (int)pos + 9;
   if (first < 0) first = 0;
   if (last > count - 1) last = count - 1;
-  // Farthest first, so the nearer boxes cover them.
-  for (int ring = 9; ring >= 0; ring--) {
+  // Nearest first: each column remembers how high it is already covered, so
+  // the parts of farther boxes hidden behind nearer ones are never drawn.
+  static int sky[UI_W], under[UI_W];
+  for (int i = 0; i < UI_W; i++) {
+    sky[i] = floor;
+    under[i] = 0;
+  }
+  for (int ring = 0; ring <= 9; ring++) {
     for (int side = -1; side <= 1; side += 2) {
       for (int idx = first; idx <= last; idx++) {
         float d = (float)idx - pos;
@@ -1158,12 +1167,16 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
         int bright = ad < 1.0f ? (int)(256 - 100 * ad) : 156 - (int)((ad - 1.0f) * 14);
         if (bright < 60) bright = 60;
         // Covers are read from disk only once the row stops sliding.
-        const UiApp::Cover *cv = ad < 1.5f && settled ? boxArt(app, roms[idx]) : app.cover(roms[idx], false);
+        bool load = settled && (ad < 0.5f || (ad < 1.5f && still > 8));
+        const UiApp::Cover *cv = load ? boxArt(app, roms[idx]) : app.cover(roms[idx], false);
+        if (!cv && ad < 1.5f && settled && !app.coverChecked(roms[idx]))
+          app.drawAgain();   // come back for it
         BoxPic b = boxPic(cv, roms[idx]);
         int left = cx + (int)center - cw / 2;
         // The edge nearer the middle is the taller one.
         int hL = sgn > 0 ? hn : hf, hR = sgn > 0 ? hf : hn;
-        c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, ad < 2.5f ? 24 : 0);
+        c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, ad < 2.5f ? 24 : 0,
+                   c.width() == UI_W ? sky : 0, c.width() == UI_W ? under : 0);
       }
     }
   }
