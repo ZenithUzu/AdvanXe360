@@ -397,34 +397,6 @@ void UiCanvas::blitAlphaScaled(const UiColor *src, int sw, int sh, int dx, int d
   }
 }
 
-void UiCanvas::addLight(const unsigned char *map, int mw, int mh, int scale, UiColor tint)
-{
-  int tr = (tint >> 16) & 0xFF, tg = (tint >> 8) & 0xFF, tb = tint & 0xFF;
-  for (int my = 0; my < mh; my++) {
-    for (int sy = 0; sy < scale; sy++) {
-      int py = my * scale + sy;
-      if (py < m_cy0 || py >= m_cy1)
-        continue;
-      UiColor *row = m_px + py * m_w;
-      const unsigned char *src = map + my * mw;
-      for (int mx = 0; mx < mw; mx++) {
-        int v = src[mx];
-        if (!v)
-          continue;
-        int add_r = tr * v >> 8, add_g = tg * v >> 8, add_b = tb * v >> 8;
-        for (int sx = 0; sx < scale; sx++) {
-          int px = mx * scale + sx;
-          if (px < m_cx0 || px >= m_cx1)
-            continue;
-          UiColor d = row[px];
-          int r = ((d >> 16) & 0xFF) + add_r, g = ((d >> 8) & 0xFF) + add_g, b = (d & 0xFF) + add_b;
-          row[px] = (d & 0xFF000000) | ((r > 255 ? 255 : r) << 16) | ((g > 255 ? 255 : g) << 8) | (b > 255 ? 255 : b);
-        }
-      }
-    }
-  }
-}
-
 void UiCanvas::copyFrom(const UiColor *src)
 {
   if (src)

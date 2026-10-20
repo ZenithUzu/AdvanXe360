@@ -146,78 +146,97 @@ void drawBubble(UiCanvas &c, int x, int y, int r)
 
 } // namespace
 
-// Water caustics: the bright net of light that moving water casts on the
-// bottom of a pool. A tileable 256x256 net (distance between the two
-// nearest of a few random points, small = on an edge = bright) is drawn
-// twice, drifting in different directions and wobbling; where both nets are
-// bright the light gathers, like in a real pool.
-static const unsigned char *causticTile()
+// Water: the background seen through moving water. Same idea as the
+// snes360-enhanced menus (the Xbox SDK "XuiEffect" displacement): a soft,
+// tileable cloud of noise slides sideways and each pixel of the background is
+// fetched from a little off its place by the noise's value, so the picture
+// wobbles. Our own noise and software version (the GPU one needs shaders).
+static const signed char *waterNoise()
 {
-  static unsigned char tile[256 * 256];
+  enum { N = 128 };
+  static signed char tex[N * N];
   static bool made = false;
   if (made)
-    return tile;
-  enum { N = 22 };
-  int px[N], py[N];
-  unsigned int seed = 12345;
-  for (int i = 0; i < N; i++) {
-    seed = seed * 1103515245u + 12345u; px[i] = (int)((seed >> 8) & 255);
-    seed = seed * 1103515245u + 12345u; py[i] = (int)((seed >> 8) & 255);
-  }
-  for (int y = 0; y < 256; y++)
-    for (int x = 0; x < 256; x++) {
-      float d1 = 1e9f, d2 = 1e9f;
-      for (int i = 0; i < N; i++) {
-        int dx = x - px[i], dy = y - py[i];
-        if (dx > 128) dx -= 256; else if (dx < -128) dx += 256;   // wrap: the tile repeats
-        if (dy > 128) dy -= 256; else if (dy < -128) dy += 256;
-        float d = sqrtf((float)(dx * dx + dy * dy));
-        if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
-      }
-      float e = (d2 - d1) / 14.0f;            // 0 on an edge, 1 well inside a cell
-      float v = e < 1.0f ? (1.0f - e) : 0.0f;
-      v = v * v * v;
-      tile[y * 256 + x] = (unsigned char)(v * 255.0f);
+    return tex;
+  static float acc[N * N];
+  memset(acc, 0, sizeof(acc));
+  unsigned int seed = 777;
+  float total = 0.0f, weight = 1.0f;
+  for (int cells = 2; cells <= 16; cells *= 2, weight *= 0.5f) {   // octaves: big blobs, then finer
+    float lat[17 * 17];
+    for (int i = 0; i < cells * cells; i++) {
+      seed = seed * 1103515245u + 12345u;
+      lat[i] = (float)((seed >> 9) & 1023) / 1023.0f;
     }
+    int step = N / cells;
+    for (int y = 0; y < N; y++)
+      for (int x = 0; x < N; x++) {
+        int cx = x / step, cy = y / step;
+        float fx = (float)(x % step) / step, fy = (float)(y % step) / step;
+        fx = fx * fx * (3 - 2 * fx);
+        fy = fy * fy * (3 - 2 * fy);
+        float a = lat[cy * cells + cx], b = lat[cy * cells + (cx + 1) % cells];
+        float c = lat[((cy + 1) % cells) * cells + cx], d = lat[((cy + 1) % cells) * cells + (cx + 1) % cells];
+        acc[y * N + x] += weight * ((a + (b - a) * fx) * (1 - fy) + (c + (d - c) * fx) * fy);
+      }
+    total += weight;
+  }
+  for (int i = 0; i < N * N; i++) {
+    int v = (int)((acc[i] / total - 0.5f) * 2.0f * 127.0f * 1.6f);   // spread to about -127..127
+    tex[i] = (signed char)(v > 127 ? 127 : v < -127 ? -127 : v);
+  }
   made = true;
-  return tile;
+  return tex;
 }
 
-static void drawCaustics(UiCanvas &c, int frame, int strength)
+void uiDrawWater(UiCanvas &c, const UiColor *bg, int frame, int strength)
 {
-  enum { SCALE = 2, MAXW = 640, MAXH = 360 };
-  static unsigned char light[MAXW * MAXH];
-  static int wx1[MAXW], wx2[MAXW], wy1[MAXH], wy2[MAXH];
-  const int mw = c.width() / SCALE < MAXW ? c.width() / SCALE : MAXW;
-  const int mh = c.height() / SCALE < MAXH ? c.height() / SCALE : MAXH;
-  const unsigned char *t = causticTile();
-  const float ft = (float)frame;
-  const int gain = strength == 0 ? 100 : strength == 1 ? 155 : 240;   // /256
-  // The surface ripples: rows and columns shift a little, over time
-  // (8.8 fixed point, as are the drifts below).
-  for (int x = 0; x < mw; x++) {
-    wx1[x] = (int)(256.0f * 6.0f * sinf(x * 0.043f + ft * 0.050f));
-    wx2[x] = (int)(256.0f * 5.0f * sinf(x * 0.061f - ft * 0.043f + 1.7f));
+  enum { N = 128, G = 8, MAXGX = 1280 / G + 2, MAXGY = 720 / G + 2 };
+  const int W = c.width(), H = c.height();
+  if (W > 1280 || H > 720) {
+    c.copyFrom(bg);
+    return;
   }
-  for (int y = 0; y < mh; y++) {
-    wy1[y] = (int)(256.0f * 6.0f * sinf(y * 0.051f + ft * 0.047f + 0.6f));
-    wy2[y] = (int)(256.0f * 5.0f * sinf(y * 0.037f - ft * 0.055f + 2.9f));
-  }
-  // Net A drifts right / down, net B (finer) left / down.
-  const int ax = (int)(ft * 0.55f * 256), ay = (int)(ft * 0.30f * 256);
-  const int bx = (int)(-ft * 0.40f * 256), by = (int)(ft * 0.45f * 256);
-  for (int y = 0; y < mh; y++) {
-    unsigned char *out = light + y * mw;
-    for (int x = 0; x < mw; x++) {
-      int ua = (x * 192 + ax + wy1[y]) >> 8, va = (y * 192 + ay + wx1[x]) >> 8;
-      int ub = (x * 256 + bx + wy2[y]) >> 8, vb = (y * 256 + by + wx2[x]) >> 8;
-      int a = t[((va & 255) << 8) | (ua & 255)], b = t[((vb & 255) << 8) | (ub & 255)];
-      int v = (a < b ? a : b) + ((a + b) >> 3);    // where both nets meet, plus a little of each
-      v = v * gain >> 8;
-      out[x] = (unsigned char)(v > 255 ? 255 : v < 16 ? 0 : v);   // faint light: skipped (most of the screen)
+  const signed char *t = waterNoise();
+  // snes360-enhanced: shift = noise * 0.4 of the picture (here up to ~4% of
+  // it each way), the noise sliding 1/1000 of its width per frame.
+  const int amount = strength == 0 ? 22 : strength == 1 ? 40 : 60;   // 1/1000 of the screen
+  const int maxX = W * amount / 1000 * 95 / 100, maxY = H * amount / 1000 * 95 / 100;
+  const int scroll = frame * N * 256 / 1000;                         // 8.8 texels
+  static int ox[MAXGY][MAXGX], oy[MAXGY][MAXGX];                       // 8.8 pixels, every G pixels
+  const int gx = W / G + 2, gy = H / G + 2;
+  for (int j = 0; j < gy; j++)
+    for (int i = 0; i < gx; i++) {
+      int u = i * G * N * 256 / W + scroll, v = j * G * N * 256 / H;   // 8.8 texels
+      int u0 = (u >> 8) & (N - 1), v0 = (v >> 8) & (N - 1), fu = u & 255, fv = v & 255;
+      int u1 = (u0 + 1) & (N - 1), v1 = (v0 + 1) & (N - 1);
+      int top = t[v0 * N + u0] * (256 - fu) + t[v0 * N + u1] * fu;
+      int bot = t[v1 * N + u0] * (256 - fu) + t[v1 * N + u1] * fu;
+      int n = (top * (256 - fv) + bot * fv) >> 16;                     // -127..127
+      ox[j][i] = n * maxX * 256 / 127;
+      oy[j][i] = n * maxY * 256 / 127;
+    }
+  UiColor *dst = c.pixelsRW();
+  for (int y = 0; y < H; y++) {
+    int j = y / G, fy = (y % G) * 256 / G;
+    UiColor *out = dst + y * W;
+    for (int i = 0; i * G < W; i++) {
+      // offsets at this cell's two left corners' rows, blended down to y, then across
+      int ax = (ox[j][i] * (256 - fy) + ox[j + 1][i] * fy) >> 8;
+      int ay = (oy[j][i] * (256 - fy) + oy[j + 1][i] * fy) >> 8;
+      int bx = (ox[j][i + 1] * (256 - fy) + ox[j + 1][i + 1] * fy) >> 8;
+      int by = (oy[j][i + 1] * (256 - fy) + oy[j + 1][i + 1] * fy) >> 8;
+      const int dx = (bx - ax) / G, dy = (by - ay) / G;
+      const int x0 = i * G, x1 = x0 + G < W ? x0 + G : W;
+      int fx = ax + (x0 << 8), fy2 = ay + (y << 8);   // 8.8 source position
+      for (int x = x0; x < x1; x++, fx += dx + 256, fy2 += dy) {
+        int sx = fx >> 8, sy = fy2 >> 8;
+        sx = sx < 0 ? 0 : sx >= W ? W - 1 : sx;
+        sy = sy < 0 ? 0 : sy >= H ? H - 1 : sy;
+        out[x] = bg[sy * W + sx];
+      }
     }
   }
-  c.addLight(light, mw, mh, SCALE, 0xFFB8F2FF);
 }
 
 void uiDrawEffects(UiCanvas &c, const UiConfig &cfg, int frame)
@@ -226,8 +245,6 @@ void uiDrawEffects(UiCanvas &c, const UiConfig &cfg, int frame)
     return;   // the moving effects belong to the Frutiger Aero theme
   const int W = c.width(), H = c.height();
   const float t = (float)frame;
-  if (cfg.bgEffect & UI_EFFECT_WATER)
-    drawCaustics(c, frame, cfg.waterStrength);
   if (cfg.bgEffect & UI_EFFECT_BUBBLES) {
     // Bubbles rise at their own speed, sway a little and start over below.
     static const short bub[][4] = {   // x, radius, speed (1/10 px per frame), phase

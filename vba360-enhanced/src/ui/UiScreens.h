@@ -295,6 +295,9 @@ void uiDrawPanel(UiCanvas &c, int x, int y, int w, int h, int radius, int alpha)
 // Moving effects over the menu background (Interface -> Background effect),
 // UI_EFFECT_* bits; frame drives the motion. Frutiger Aero theme only.
 void uiDrawEffects(UiCanvas &c, const UiConfig &cfg, int frame);
+// Water (UI_EFFECT_WATER): the canvas becomes bg (the plain background, same
+// size) seen through moving water. Draw it instead of copying bg.
+void uiDrawWater(UiCanvas &c, const UiColor *bg, int frame, int strength);
 
 // The emulator's name as the menus show it.
 #define UI_APP_NAME "XeFork360"

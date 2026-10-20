@@ -432,8 +432,12 @@ void UiApp::drawBackground(UiCanvas &c)
   uiApplyTheme(m_cfg.menuTheme, uiAccentTints[m_cfg.accentTint], uiPanelOpacityPercent[m_cfg.panelOpacity]);
   bool fresh = m_bgCache.size() == (size_t)(UI_W * UI_H) && m_bgCacheVeil == m_cfg.bgVisibility &&
                m_bgCacheTheme == m_cfg.menuTheme && m_bgCacheName == m_cfg.menuBackground;
+  const bool water = UI_THEME_STYLE == THEME_AERO && (m_cfg.bgEffect & UI_EFFECT_WATER);   // Frutiger Aero only
   if (fresh && c.width() == UI_W && c.height() == UI_H) {
-    c.copyFrom(&m_bgCache[0]);
+    if (water)
+      uiDrawWater(c, &m_bgCache[0], m_frame, m_cfg.waterStrength);
+    else
+      c.copyFrom(&m_bgCache[0]);
     uiDrawEffects(c, m_cfg, m_frame);
     return;
   }
@@ -462,6 +466,8 @@ void UiApp::drawBackground(UiCanvas &c)
     // The image itself isn't needed any more (4 MB).
     std::vector<UiColor>().swap(m_bgPixels);
     m_bgName = "\x01";   // reload it if the cache is ever rebuilt
+    if (water)
+      uiDrawWater(c, &m_bgCache[0], m_frame, m_cfg.waterStrength);
   }
   uiDrawEffects(c, m_cfg, m_frame);
 }
@@ -802,13 +808,13 @@ void UiApp::buildMenu(UiMenuScreen &m)
              tr("Burbujas que suben y agua en movimiento sobre el fondo (o tu imagen). S\xf3lo con Frutiger Aero.",
                 "Rising bubbles and moving water over the background (or your image). Frutiger Aero only."))).choice = m_cfg.bgEffect;
       const char *lv[EFFECT_LEVEL_COUNT] = { tr("Pocas", "Few"), tr("Normal", "Normal"), tr("Muchas", "Many") };
-      const char *wv[EFFECT_LEVEL_COUNT] = { tr("Suave", "Soft"), tr("Normal", "Normal"), tr("Intensa", "Strong") };
+      const char *wv[EFFECT_LEVEL_COUNT] = { tr("Suaves", "Gentle"), tr("Normales", "Normal"), tr("Fuertes", "Strong") };
       if (m_cfg.bgEffect & UI_EFFECT_BUBBLES)
         (m.add(U_BUBBLES, ITEM_OPTION, tr("Cantidad de burbujas", "Number of bubbles"), lv[m_cfg.bubbleAmount])).choice = m_cfg.bubbleAmount;
       if (m_cfg.bgEffect & UI_EFFECT_WATER)
-        (m.add(U_WATER, ITEM_OPTION, tr("Luz del agua", "Water light"), wv[m_cfg.waterStrength],
-               tr("La luz que el agua en movimiento dibuja sobre el fondo.",
-                  "The light moving water casts over the background."))).choice = m_cfg.waterStrength;
+        (m.add(U_WATER, ITEM_OPTION, tr("Ondas del agua", "Water ripples"), wv[m_cfg.waterStrength],
+               tr("Cu\xe1nto ondula el fondo. Se nota sobre una imagen de fondo (backgrounds\\).",
+                  "How much the background ripples. It shows over a background image (backgrounds\\)."))).choice = m_cfg.waterStrength;
     }
     {
       const char *mm[MUSIC_MODE_COUNT] = { tr("Apagada", "Off"), tr("En orden", "In order"), tr("Aleatoria", "Shuffle") };
@@ -949,6 +955,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
           "Downloaded from thumbnails.libretro.com; made by the libretro community." },
         { "Cartuchos de la Biblioteca", "Library cartridges", "ABeezy13 (foros de LaunchBox)",
           "Renders de los cartuchos de GBA, GBC y Game Boy.", "GBA, GBC and Game Boy cartridge renders." },
+        { "Efecto de agua", "Water effect", "snes360-enhanced (frankischilling)",
+          "La idea del agua que ondula el fondo, adaptada a este men\xfa.",
+          "The idea of water rippling the background, adapted to this menu." },
         { "Fuente", "Typeface", "Inter (Rasmus Andersson)",
           "SIL Open Font License.", "SIL Open Font License." },
         { "Librer\xed""as", "Libraries", "zlib, libpng, SDL",
