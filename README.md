@@ -200,6 +200,7 @@ Pon imágenes (PNG, JPG, BMP, TGA o DDS; ideal 1280×720) en `borders\` y elíge
 
 - **Tema y fondo del menú:** las imágenes para el menú van en `backgrounds\`. En *Ajustes → Apariencia*: tema, imagen de fondo, **Visibilidad de la imagen** (cuánto se ve tu imagen), **Transparencia de los paneles** y **Tono de resaltado** (el color de la selección sobre cualquier tema).
 - **Biblioteca** (la pantalla de inicio): primero eliges la consola, cada una con su cartucho (GBA, GBC, Game Boy/Pocket y los .zip/.7z aparte), separadas por la extensión del archivo. Dentro ves sólo los ROMs con su portada, sin carpetas: **Carrusel** (estilo *cover flow*: una portada de frente y las demás giradas a los lados, con reflejo y deslizamiento) o **Estante** (dos repisas); **START** cambia entre las dos.
+- **Cartuchos personalizados:** pon tus propias imágenes PNG (con fondo transparente) en la carpeta `carts\` junto a `default.xex`: `gba.png`, `gbc.png`, `gb.png` y, para los .zip/.7z, `zip.png`. Las que no estén usan los cartuchos genéricos que trae el emulador.
 - **Carpeta de juegos:** por defecto lee la carpeta **`Roms`** de cada unidad (por ejemplo `Hdd1:\Roms\` o `Usb0:\Roms\`) y sus subcarpetas. Para usar otra, en el explorador (BACK) pulsa **Y** sobre ella. Los archivos de BIOS no salen como juegos.
 - **BACK** abre el menú de siempre (explorador de archivos, Recientes, Favoritos y Ajustes); **B** en la lista de unidades vuelve a la Biblioteca. En *Interfaz e idioma* → **Pantalla de inicio** puedes arrancar en el explorador en vez de la Biblioteca.
 - **Efecto animado del fondo** (*Apariencia*): **Burbujas** que suben, **Agua** (tu imagen de fondo se ve a través de agua en movimiento, como en los menús de [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced); se nota sobre una imagen), **Burbujas y agua**, o **Ninguno**. Sólo con el tema **Frutiger Aero**; también encima de tu propia imagen de fondo. Según lo que elijas aparecen **Cantidad de burbujas** y **Ondas del agua**.
@@ -220,7 +221,7 @@ En *Ajustes → Video → Super Game Boy (marcos)*: **Apagado**, **Juegos de Gam
 - **Para reportar un error:** manda `vba360.log` y `vba360-anterior.log` (junto a `default.xex`).
 - **BIOS (opcional):** `bios\gba_bios.bin`, `bios\gb_bios.bin` o `bios\gbc_bios.bin`, y activa *Usar BIOS original* (Emulación).
 
-Carpetas que crea junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\`, `music\` y `bios\`. La configuración sigue en `vba360.ini` (no cambió de nombre para conservar tus ajustes).
+Carpetas que crea junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\`, `music\`, `carts\` y `bios\`. La configuración sigue en `vba360.ini` (no cambió de nombre para conservar tus ajustes).
 
 # Qué emula y qué no
 
@@ -262,7 +263,7 @@ Más detalles técnicos en el [README original](docs/README-original.md).
 - **Íconos de los botones:** imágenes del control de Xbox 360 del paquete [Xbox 360 Controller Button Images](https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Xbox-360-Controller-Button-Images) de **Microsoft** (XNA Game Studio), licencia Ms-PL ([texto](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt)).
 - **Portadas:** [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails) del equipo y la comunidad de **libretro**, servidas desde [thumbnails.libretro.com](https://thumbnails.libretro.com).
 - **Efecto de agua:** idea de [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) de **frankischilling** (el agua que ondula el fondo), reescrita para este menú.
-- **Cartuchos de la Biblioteca:** renders de **[ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/)** (foros de LaunchBox): Pokémon Esmeralda (GBA), cartucho amarillo con la etiqueta de Pokémon Amarillo (GBC) y Tetris (Game Boy).
+- **Cartuchos de la Biblioteca:** los que trae son genéricos, dibujados para AdvanXe360 (sin logos ni arte de nadie). Si quieres renders realistas, en los foros de LaunchBox hay de autores como [ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/); se descargan y se ponen en `carts\` (no vienen incluidos).
 - **Estilo de este README y de las notas de versión:** inspirado en [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) y en las [releases de PokeRogue](https://github.com/pagefaultgames/pokerogue/releases).
 - **Fuente:** [Inter](https://rsms.me/inter/), de **Rasmus Andersson** (SIL OFL). **Librerías:** zlib, libpng y SDL.
 
@@ -280,6 +281,6 @@ El emulador se distribuye bajo **GPL v2** ([LICENSE](LICENSE)). Tiene que ser la
 | Íconos de los botones (XNA; LB y RB reflejados para que coincidan con el control) | Ms-PL, en su propio archivo (`UiGlyphs.cpp`) con su [texto de licencia](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
 | Efecto de agua | Código propio; sólo la idea viene de snes360-enhanced (no se copió su código ni su textura) |
 | Portadas | No vienen con el emulador: cada consola las descarga de libretro |
-| Cartuchos de la Biblioteca (ABeezy13) | Sin licencia publicada: se usan con crédito; para un release público hay que pedirle permiso |
+| Cartuchos de la Biblioteca | Dibujados para este proyecto, GPL v2. Los de `carts\` los pone cada quien y no se distribuyen |
 
 La lista completa de créditos del proyecto original está en el [README original](docs/README-original.md).

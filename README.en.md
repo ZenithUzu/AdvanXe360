@@ -200,6 +200,7 @@ Put images (PNG, JPG, BMP, TGA or DDS; 1280×720 is best) in `borders\` and pick
 
 - **Menu theme and background:** menu images go in `backgrounds\`. In *Settings → Appearance*: theme, background image, **Image visibility** (how much of your image shows), **Panel transparency** and **Highlight color** (the selection color, over any theme).
 - **Library** (the start screen): first pick the console, each shown as its cartridge (GBA, GBC, Game Boy/Pocket, and .zip/.7z apart), sorted by file extension. Inside you see only the ROMs with their box art, no folders: **Carousel** (cover-flow style: one box facing you, the rest turned on both sides, with a reflection and a sliding move) or **Shelf** (two shelves); **START** switches between them.
+- **Custom cartridges:** put your own PNG pictures (with a transparent background) in the `carts\` folder next to `default.xex`: `gba.png`, `gbc.png`, `gb.png` and, for .zip/.7z, `zip.png`. Any that are missing use the emulator's generic cartridges.
 - **Games folder:** by default it reads the **`Roms`** folder of every drive (for example `Hdd1:\Roms\` or `Usb0:\Roms\`) and its subfolders. To use another one, press **Y** on it in the browser (BACK). BIOS files don't show up as games.
 - **BACK** opens the usual menu (file browser, Recent, Favorites and Settings); **B** on the drive list goes back to the Library. *Interface & language* → **Start screen** lets you start in the browser instead.
 - **Moving background effect** (*Appearance*): rising **Bubbles**, **Water** (your background image seen through moving water, like the [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) menus; it shows over an image), **Bubbles and water**, or **None**. **Frutiger Aero** theme only; it also works over your own background image. Depending on the choice, **Number of bubbles** and **Water ripples** show up.
@@ -220,7 +221,7 @@ In *Settings → Video → Super Game Boy (borders)*: **Off**, **Game Boy games*
 - **To report a bug:** send `vba360.log` and `vba360-anterior.log` (next to `default.xex`).
 - **BIOS (optional):** `bios\gba_bios.bin`, `bios\gb_bios.bin` or `bios\gbc_bios.bin`, then turn on *Use original BIOS* (Emulation).
 
-Folders created next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\`, `music\` and `bios\`. Settings are still in `vba360.ini` (not renamed, so your settings stay).
+Folders created next to `default.xex`: `saves\`, `states\`, `cheats\`, `screenshots\`, `thumbs\`, `config\`, `borders\`, `backgrounds\`, `covers\`, `music\`, `carts\` and `bios\`. Settings are still in `vba360.ini` (not renamed, so your settings stay).
 
 # What it emulates and what it doesn't
 
@@ -262,7 +263,7 @@ More technical details in the [original README](docs/README-original.md).
 - **Button icons:** Xbox 360 controller images from **Microsoft**'s [Xbox 360 Controller Button Images](https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Xbox-360-Controller-Button-Images) pack (XNA Game Studio), Ms-PL license ([text](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt)).
 - **Box art:** [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails) by the **libretro** team and community, served from [thumbnails.libretro.com](https://thumbnails.libretro.com).
 - **Water effect:** idea from [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) by **frankischilling** (water rippling the background), rewritten for this menu.
-- **Library cartridges:** renders by **[ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/)** (LaunchBox forums): Pokémon Emerald (GBA), the yellow cartridge with the Pokémon Yellow label (GBC) and Tetris (Game Boy).
+- **Library cartridges:** the built-in ones are generic, drawn for AdvanXe360 (no logos or anyone's artwork). For realistic renders, the LaunchBox forums have some by authors like [ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/); download them and put them in `carts\` (not included).
 - **Style of this README and the release notes:** inspired by [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) and the [PokeRogue releases](https://github.com/pagefaultgames/pokerogue/releases).
 - **Typeface:** [Inter](https://rsms.me/inter/), by **Rasmus Andersson** (SIL OFL). **Libraries:** zlib, libpng and SDL.
 
@@ -280,6 +281,6 @@ The emulator is released under the **GPL v2** ([LICENSE](LICENSE)). It has to be
 | Button icons (XNA; LB and RB mirrored to match the controller) | Ms-PL, in their own file (`UiGlyphs.cpp`) with their [license text](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
 | Water effect | Our own code; only the idea comes from snes360-enhanced (none of its code or texture was copied) |
 | Box art | Not shipped with the emulator: each console downloads it from libretro |
-| Library cartridges (ABeezy13) | No published license: used with credit; a public release needs his permission |
+| Library cartridges | Drawn for this project, GPL v2. The ones in `carts\` are each player's own and aren't distributed |
 
 The original project's full credits are in the [original README](docs/README-original.md).

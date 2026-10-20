@@ -1275,6 +1275,17 @@ void UiLibraryScreen::scan(UiApp &app)
   int budget = 20000;   // shortcut: stops after 20000 files/folders; a whole drive as the library could miss some
   for (size_t i = 0; i < roots.size(); i++)
     scanDir(app, roots[i], 0, budget);
+  // The player's own cartridge pictures, if any (PNG with transparency).
+  static const char *const cartFile[SYS_COUNT] = { "gba.png", "gbc.png", "gb.png", "zip.png" };
+  std::string carts = uiJoinPath(app.host().emulatorDir(), "carts");
+  for (int s = 0; s < SYS_COUNT; s++) {
+    bool wide = s == SYS_GBA || s == SYS_OTHER;
+    m_cartPx[s].clear();
+    m_cartW[s] = m_cartH[s] = 0;
+    if (!app.host().loadImageFit(uiJoinPath(carts, cartFile[s]), wide ? 440 : 260, wide ? 300 : 320,
+                                 m_cartPx[s], m_cartW[s], m_cartH[s]))
+      m_cartPx[s].clear();
+  }
   m_systems.clear();
   for (int s = 0; s < SYS_COUNT; s++) {
     std::sort(m_games[s].begin(), m_games[s].end(), nameLess);
@@ -1389,16 +1400,21 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
         int s = m_systems[i];
         int pct = pass == 0 ? 100 : pass == 1 ? 55 : 40, bright = pass == 0 ? 256 : pass == 1 ? 170 : 110;
         int cxk = cx + side * (pass == 0 ? 0 : pass == 1 ? 320 : 530);
-        const UiGlyph *img = uiCartImage(s == SYS_GBA ? "GBA" : s == SYS_GBC ? "GBC" : s == SYS_GB ? "GB" : "");
-        if (img) {   // the console's own cartridge picture
+        // The player's picture from carts\, else the built-in generic one.
+        UiGlyph own = { "", m_cartW[s], m_cartH[s], m_cartPx[s].empty() ? 0 : &m_cartPx[s][0] };
+        const UiGlyph *img = own.px ? &own : uiCartImage(s == SYS_GBA ? "GBA" : s == SYS_GBC ? "GBC" : s == SYS_GB ? "GB" : "");
+        if (img) {
           int cw = img->w * pct / 100, ch = img->h * pct / 100;
           c.fillRoundRect(cxk - cw / 2 + 8, floor - ch + 14, cw - 4, ch - 6, 14, 0x50000000);   // shadow
           // Scaled once per console and size, then only copied: rescaling every
           // frame cost as much as the rest of the screen.
           static std::vector<UiColor> scaled[SYS_COUNT][3];
+          static const UiColor *from[SYS_COUNT][3];
           std::vector<UiColor> &sc = scaled[s][pass];
-          if (sc.size() != (size_t)(cw * ch))
+          if (sc.size() != (size_t)(cw * ch) || from[s][pass] != img->px) {
             uiScaleImage(img->px, img->w, img->h, cw, ch, bright, sc);
+            from[s][pass] = img->px;
+          }
           c.blitAlpha(&sc[0], cw, ch, cxk - cw / 2, floor - ch);
         } else {     // zip / 7z: a plain cartridge
           int cw = 420 * pct / 100;

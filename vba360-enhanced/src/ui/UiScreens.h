@@ -101,6 +101,9 @@ private:
   bool m_inSystem;                      // showing that console's games
   bool m_rescan;                        // back from the browser: look again
   std::string m_root;                   // folder the games were read from
+  // carts\<gba|gbc|gb|zip>.png, the player's own cartridge pictures (empty: built-in)
+  std::vector<UiColor> m_cartPx[SYSTEMS];
+  int m_cartW[SYSTEMS], m_cartH[SYSTEMS];
 };
 
 // --- Generic list menu (settings pages, quick menu, cheats, controls) --------
