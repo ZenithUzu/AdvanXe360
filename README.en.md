@@ -262,7 +262,7 @@ More technical details in the [original README](docs/README-original.md).
 - **Button icons:** Xbox 360 controller images from **Microsoft**'s [Xbox 360 Controller Button Images](https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Xbox-360-Controller-Button-Images) pack (XNA Game Studio), Ms-PL license ([text](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt)).
 - **Box art:** [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails) by the **libretro** team and community, served from [thumbnails.libretro.com](https://thumbnails.libretro.com).
 - **Water effect:** idea from [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) by **frankischilling** (water rippling the background), rewritten for this menu.
-- **Library cartridges:** renders by **[ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/)** (LaunchBox forums): Pokémon Emerald (GBA), Donkey Kong Land (GBC) and Tetris (Game Boy).
+- **Library cartridges:** renders by **[ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/)** (LaunchBox forums): Pokémon Emerald (GBA), the yellow cartridge with the Pokémon Yellow label (GBC) and Tetris (Game Boy).
 - **Style of this README and the release notes:** inspired by [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) and the [PokeRogue releases](https://github.com/pagefaultgames/pokerogue/releases).
 - **Typeface:** [Inter](https://rsms.me/inter/), by **Rasmus Andersson** (SIL OFL). **Libraries:** zlib, libpng and SDL.
 

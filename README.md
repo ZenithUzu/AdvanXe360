@@ -262,7 +262,7 @@ Más detalles técnicos en el [README original](docs/README-original.md).
 - **Íconos de los botones:** imágenes del control de Xbox 360 del paquete [Xbox 360 Controller Button Images](https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Xbox-360-Controller-Button-Images) de **Microsoft** (XNA Game Studio), licencia Ms-PL ([texto](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt)).
 - **Portadas:** [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails) del equipo y la comunidad de **libretro**, servidas desde [thumbnails.libretro.com](https://thumbnails.libretro.com).
 - **Efecto de agua:** idea de [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) de **frankischilling** (el agua que ondula el fondo), reescrita para este menú.
-- **Cartuchos de la Biblioteca:** renders de **[ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/)** (foros de LaunchBox): Pokémon Esmeralda (GBA), Donkey Kong Land (GBC) y Tetris (Game Boy).
+- **Cartuchos de la Biblioteca:** renders de **[ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/)** (foros de LaunchBox): Pokémon Esmeralda (GBA), cartucho amarillo con la etiqueta de Pokémon Amarillo (GBC) y Tetris (Game Boy).
 - **Estilo de este README y de las notas de versión:** inspirado en [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) y en las [releases de PokeRogue](https://github.com/pagefaultgames/pokerogue/releases).
 - **Fuente:** [Inter](https://rsms.me/inter/), de **Rasmus Andersson** (SIL OFL). **Librerías:** zlib, libpng y SDL.
 
