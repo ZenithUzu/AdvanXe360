@@ -277,7 +277,7 @@ El emulador se distribuye bajo **GPL v2** ([LICENSE](LICENSE)). Tiene que ser la
 | *lcd3x* | Dominio público |
 | Fuente Inter | SIL Open Font License |
 | zlib, libpng, SDL 1.2 | zlib, libpng, LGPL |
-| Íconos de los botones (XNA) | Ms-PL, en su propio archivo (`UiGlyphs.cpp`) con su [texto de licencia](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
+| Íconos de los botones (XNA; LB y RB reflejados para que coincidan con el control) | Ms-PL, en su propio archivo (`UiGlyphs.cpp`) con su [texto de licencia](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
 | Efecto de agua | Código propio; sólo la idea viene de snes360-enhanced (no se copió su código ni su textura) |
 | Portadas | No vienen con el emulador: cada consola las descarga de libretro |
 | Cartuchos de la Biblioteca (ABeezy13) | Sin licencia publicada: se usan con crédito; para un release público hay que pedirle permiso |

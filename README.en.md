@@ -277,7 +277,7 @@ The emulator is released under the **GPL v2** ([LICENSE](LICENSE)). It has to be
 | *lcd3x* | Public domain |
 | Inter typeface | SIL Open Font License |
 | zlib, libpng, SDL 1.2 | zlib, libpng, LGPL |
-| Button icons (XNA) | Ms-PL, in their own file (`UiGlyphs.cpp`) with their [license text](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
+| Button icons (XNA; LB and RB mirrored to match the controller) | Ms-PL, in their own file (`UiGlyphs.cpp`) with their [license text](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt) |
 | Water effect | Our own code; only the idea comes from snes360-enhanced (none of its code or texture was copied) |
 | Box art | Not shipped with the emulator: each console downloads it from libretro |
 | Library cartridges (ABeezy13) | No published license: used with credit; a public release needs his permission |
