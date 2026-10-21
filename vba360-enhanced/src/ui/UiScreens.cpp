@@ -1149,6 +1149,16 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
   // Nearest first: each column remembers how high it is already covered, so
   // the parts of farther boxes hidden behind nearer ones are never drawn.
   const bool gpu = app.cardsOnGpu();   // else drawn here, in software
+  // Read covers from disk before taking any picture's address: a read can
+  // drop an older cover from the cache, and the GPU uses the addresses after
+  // this function returns (with an old one it read freed memory and crashed).
+  if (settled) {
+    boxArt(app, roms[ls.sel]);
+    if (still > 8)
+      for (int side = -1; side <= 1; side += 2)
+        if (ls.sel + side >= 0 && ls.sel + side < count)
+          boxArt(app, roms[ls.sel + side]);
+  }
   static int sky[UI_W], under[UI_W];
   for (int i = 0; i < UI_W; i++) {
     sky[i] = floor;
@@ -1170,10 +1180,7 @@ void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
         int bright = ad < 1.0f ? (int)(256 - 100 * ad) : 156 - (int)((ad - 1.0f) * 14);
         if (bright < 60) bright = 60;
         // Covers are read from disk only once the row stops sliding.
-        bool load = settled && (ad < 0.5f || (ad < 1.5f && still > 8));
-        const UiApp::Cover *cv = load ? boxArt(app, roms[idx]) : app.cover(roms[idx], false);
-        if (!cv && ad < 1.5f && settled && !app.coverChecked(roms[idx]))
-          app.drawAgain();   // come back for it
+        const UiApp::Cover *cv = app.cover(roms[idx], false);   // never reads here (see above)
         BoxPic b = boxPic(cv, roms[idx]);
         int left = cx + (int)center - cw / 2;
         // The edge nearer the middle is the taller one.

@@ -142,7 +142,8 @@ IDirect3DTexture9 *cardTexture(const UiCard &c)
     g_cardTex.erase(old);
   }
   IDirect3DTexture9 *tex = 0;
-  if (FAILED(pDevice->CreateTexture(c.w, c.h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT, &tex, NULL)) || !tex)
+  if (c.w <= 0 || c.h <= 0 || !c.px ||
+      FAILED(pDevice->CreateTexture(c.w, c.h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT, &tex, NULL)) || !tex)
     return 0;
   D3DLOCKED_RECT lr;
   if (SUCCEEDED(tex->LockRect(0, &lr, NULL, 0))) {
@@ -182,28 +183,34 @@ void drawCards(const std::vector<UiCard> &cards)
     float k[4] = { b, b, b, 1.0f };
     pDevice->SetPixelShaderConstantF(0, k, 1);
     pDevice->SetTexture(0, tex);
-    float wl = 1.0f / c.hL, wr = 1.0f / c.hR;
-    float x0 = c.dx - 0.5f, x1 = c.dx + c.dw - 0.5f;
-    float t0 = c.topL - 0.5f, t1 = c.topR - 0.5f;
-    float b0 = t0 + c.hL, b1 = t1 + c.hR;
-    CardVertex v[4] = {
-      { x0 * wl, t0 * wl, 0, wl, 0, 0, 1, 0 },
-      { x1 * wr, t1 * wr, 0, wr, 1, 0, 1, 0 },
-      { x0 * wl, b0 * wl, 0, wl, 0, 1, 1, 0 },
-      { x1 * wr, b1 * wr, 0, wr, 1, 1, 1, 0 }
-    };
-    pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(CardVertex));
-    if (c.reflect > 0) {   // mirrored below, fading out (as UiCanvas::blitCard)
-      float rl = c.hL * c.reflect / 100.0f, rr = c.hR * c.reflect / 100.0f;
-      float vl = 1.0f - (float)c.reflect / 100.0f;
-      float a = 0.345f * b;
-      CardVertex r[4] = {
-        { x0 * wl, (b0 + 1) * wl, 0, wl, 0, 1, a, 0 },
-        { x1 * wr, (b1 + 1) * wr, 0, wr, 1, 1, a, 0 },
-        { x0 * wl, (b0 + 1 + rl) * wl, 0, wl, 0, vl, 0, 0 },
-        { x1 * wr, (b1 + 1 + rr) * wr, 0, wr, 1, vl, 0, 0 }
+    // In vertical strips, each a plain quad (w = 1, as every other quad here):
+    // close enough to the perspective, and no divide tricks with the
+    // viewport transform off.
+    enum { STRIPS = 8 };
+    float a = 0.345f * b;
+    for (int sIdx = 0; sIdx < STRIPS; sIdx++) {
+      float f0 = (float)sIdx / STRIPS, f1 = (float)(sIdx + 1) / STRIPS;
+      float x0 = c.dx + c.dw * f0 - 0.5f, x1 = c.dx + c.dw * f1 - 0.5f;
+      float t0 = c.topL + (c.topR - c.topL) * f0 - 0.5f, t1 = c.topL + (c.topR - c.topL) * f1 - 0.5f;
+      float h0 = c.hL + (c.hR - c.hL) * f0, h1 = c.hL + (c.hR - c.hL) * f1;
+      CardVertex v[4] = {
+        { x0, t0, 0, 1, f0, 0, 1, 0 },
+        { x1, t1, 0, 1, f1, 0, 1, 0 },
+        { x0, t0 + h0, 0, 1, f0, 1, 1, 0 },
+        { x1, t1 + h1, 0, 1, f1, 1, 1, 0 }
       };
-      pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, r, sizeof(CardVertex));
+      pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(CardVertex));
+      if (c.reflect > 0) {   // mirrored below, fading out (as UiCanvas::blitCard)
+        float vl = 1.0f - (float)c.reflect / 100.0f;
+        float r0 = h0 * c.reflect / 100.0f, r1 = h1 * c.reflect / 100.0f;
+        CardVertex r[4] = {
+          { x0, t0 + h0 + 1, 0, 1, f0, 1, a, 0 },
+          { x1, t1 + h1 + 1, 0, 1, f1, 1, a, 0 },
+          { x0, t0 + h0 + 1 + r0, 0, 1, f0, vl, 0, 0 },
+          { x1, t1 + h1 + 1 + r1, 0, 1, f1, vl, 0, 0 }
+        };
+        pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, r, sizeof(CardVertex));
+      }
     }
   }
   DWORD fence = pDevice->InsertFence();
