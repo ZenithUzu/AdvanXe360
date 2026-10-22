@@ -10,6 +10,8 @@
 
 #include "XboxHost.h"
 #include "XboxCovers.h"
+#define XBOX_LOG_NO_REDIRECT
+#include "XboxLog.h"
 
 #include "../ui/UiApp.h"
 #include "../ui/UiCanvas.h"
@@ -713,6 +715,8 @@ public:
 
   virtual void quitToDashboard()
   {
+    if (!g_rom.empty())
+      sdlWriteBattery();   // leaving from the in-game menu: keep the save
     XLaunchNewImage("", 0);
   }
 
@@ -736,17 +740,25 @@ void runInGameMenu()
 {
   if (!g_ui || !g_menuCanvas)
     return;
+  DWORD t0 = GetTickCount();
   soundPause();
   xboxCartridgeRumble(false);
-  // Write the save now too, so quitting from the dashboard loses nothing.
-  sdlWriteBattery();
+  // The save isn't written here any more (it took time on every opening):
+  // the game writes it soon after it changes, on exit, and quitToDashboard().
+  DWORD t1 = GetTickCount();
   g_ui->openInGameMenu();
+  bool firstFrame = true;
   for (;;) {
     g_ui->update(xboxReadPads(true));
     bool redraw = g_ui->needsRedraw();
     if (redraw)
       g_ui->draw(*g_menuCanvas);
     xboxUiPresent(*g_menuCanvas, redraw);
+    if (firstFrame) {   // where the time goes when the menu is slow to show
+      firstFrame = false;
+      xboxLog("In-game menu: sound pause %u ms, menu shown after %u ms", (unsigned)(t1 - t0),
+              (unsigned)(GetTickCount() - t0));
+    }
     std::string rom;
     UiRequest r = g_ui->takeRequest(rom);
     if (r == UI_REQ_RESUME)
