@@ -103,6 +103,7 @@ VOID __cdecl main()
     dirBuf[MAX_PATH - 1] = fileBuf[MAX_PATH - 1] = 0;
 
     xboxMusicStop();   // the menu music never plays over a game
+    xboxUiReleaseCards();
     gba_main(dirBuf, fileBuf);
 
     ui.openHome(rom);

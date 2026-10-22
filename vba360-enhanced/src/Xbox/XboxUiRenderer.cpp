@@ -99,7 +99,7 @@ IDirect3DVertexDeclaration9 *g_cardDecl = 0;
 struct CardTex { IDirect3DTexture9 *tex; DWORD fence; unsigned used; };
 std::map<unsigned, CardTex> g_cardTex;   // by UiCard::key
 unsigned g_cardFrame = 0;
-enum { MAX_CARD_TEXTURES = 40 };
+enum { MAX_CARD_TEXTURES = 24 };   // a screenful is ~18
 
 bool cardInit()
 {
@@ -220,6 +220,24 @@ void drawCards(const std::vector<UiCard> &cards)
   pDevice->SetTexture(0, NULL);
   pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 }
+
+} // namespace
+
+// Frees the boxes' GPU copies (up to ~8 MB) before a game starts: the game
+// needs that memory (saving states, its own video), and the menu makes them
+// again when it comes back.
+void xboxUiReleaseCards()
+{
+  if (g_cardTex.empty() || !pDevice)
+    return;
+  pDevice->SetTexture(0, NULL);
+  pDevice->BlockUntilIdle();
+  for (std::map<unsigned, CardTex>::iterator it = g_cardTex.begin(); it != g_cardTex.end(); ++it)
+    it->second.tex->Release();
+  g_cardTex.clear();
+}
+
+namespace {
 
 IDirect3DTexture9 *g_border = 0;
 int g_borderW = 0, g_borderH = 0;   // size of the image file

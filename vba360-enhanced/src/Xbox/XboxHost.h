@@ -96,6 +96,7 @@ void xboxApplyGameSampler();
 struct UiCard;
 // cards: cover flow boxes drawn by the GPU over the canvas (nearest first).
 void xboxUiPresent(const UiCanvas &canvas, bool changed = true, const std::vector<UiCard> *cards = 0);
+void xboxUiReleaseCards();
 // Decodes an image (PNG, JPG, BMP, TGA, DDS) scaled to w x h for the menu.
 // smooth: box filter (better when shrinking a lot, slower); else linear.
 bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out, bool smooth = false);
