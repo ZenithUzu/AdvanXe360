@@ -1112,167 +1112,68 @@ const UiApp::Cover *boxArt(UiApp &app, const std::string &rom)
   return cv;
 }
 
-// Cover flow (as in iTunes / the Xbox 360 game library and the usual open
-// source versions of it): the chosen box faces you; the others stand turned
-// in depth on both sides, overlapping, each mirrored on a glossy floor. pos
-// glides toward the selection, so moving slides the whole row.
-void drawCarousel(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
-                  const std::vector<std::string> &roms, const UiListState &ls, float &pos, int sys)
+// A small heart (favorites), centered on (cx, cy).
+void drawHeart(UiCanvas &c, int cx, int cy, int r, UiColor col)
 {
-  const int count = (int)roms.size();
-  if (ls.sel < 0 || ls.sel >= count)
-    return;
-  // Glide: almost half the way each frame, then snap (few heavy frames).
-  float target = (float)ls.sel;
-  if (pos < 0 || pos > count || fabsf(target - pos) > 12.0f)
-    pos = target;
-  pos += (target - pos) * 0.45f;
-  if (fabsf(target - pos) < 0.01f)
-    pos = target;
-  else
-    app.drawAgain();
-  const bool settled = pos == target;
-  // Neighbours' covers wait a little more, so quick taps only read the front one.
-  static int still = 0;
-  still = settled ? still + 1 : 0;
-
-  const int cx = x + w / 2;
-  const int S = 290;                         // the front box
-  const int floor = y + S + 16;
-  const int SIDE_W = 104, GAP = 232, STEP = 66;
-  const int NEAR_H = S * 88 / 100, FAR_H = S * 74 / 100;
-  int first = (int)pos - 8, last = (int)pos + 9;
-  if (first < 0) first = 0;
-  if (last > count - 1) last = count - 1;
-  // Nearest first: each column remembers how high it is already covered, so
-  // the parts of farther boxes hidden behind nearer ones are never drawn.
-  static int sky[UI_W], under[UI_W];
-  for (int i = 0; i < UI_W; i++) {
-    sky[i] = floor;
-    under[i] = 0;
+  c.fillCircle(cx - r / 2, cy - r / 4, r / 2 + 1, col);
+  c.fillCircle(cx + r / 2, cy - r / 4, r / 2 + 1, col);
+  for (int row = 0; row <= r; row++) {   // the point
+    int half = r - row;
+    c.fillRect(cx - half, cy - r / 4 + row, half * 2 + 1, 1, col);
   }
-  for (int ring = 0; ring <= 9; ring++) {
-    for (int side = -1; side <= 1; side += 2) {
-      for (int idx = first; idx <= last; idx++) {
-        float d = (float)idx - pos;
-        float ad = fabsf(d);
-        int r = (int)(ad + 0.5f);
-        if (r != ring || (ring == 0 ? side > 0 : (d < 0 ? -1 : 1) != side))
-          continue;
-        float t = ad < 1.0f ? ad : 1.0f;     // 0 = facing you, 1 = turned
-        int sgn = d < 0 ? -1 : 1;
-        float center = ad < 1.0f ? sgn * GAP * ad : sgn * (GAP + (ad - 1.0f) * STEP);
-        int cw = (int)(S + (SIDE_W - S) * t);
-        int hn = (int)(S + (NEAR_H - S) * t), hf = (int)(S + (FAR_H - S) * t);
-        int bright = ad < 1.0f ? (int)(256 - 100 * ad) : 156 - (int)((ad - 1.0f) * 14);
-        if (bright < 60) bright = 60;
-        // Covers are read from disk only once the row stops sliding.
-        bool load = settled && (ad < 0.5f || (ad < 1.5f && still > 8));
-        const UiApp::Cover *cv = load ? boxArt(app, roms[idx]) : app.cover(roms[idx], false);
-        if (!cv && ad < 1.5f && settled && !app.coverChecked(roms[idx]))
-          app.drawAgain();   // come back for it
-        BoxPic b = boxPic(cv, roms[idx]);
-        int left = cx + (int)center - cw / 2;
-        // The edge nearer the middle is the taller one.
-        int hL = sgn > 0 ? hn : hf, hR = sgn > 0 ? hf : hn;
-        c.blitCard(b.px, b.w, b.h, b.pitch, left, cw, floor - hL, hL, floor - hR, hR, bright, ad < 2.5f ? 24 : 0,
-                   c.width() == UI_W ? sky : 0, c.width() == UI_W ? under : 0);
-      }
-    }
-  }
-  const std::string &cur = roms[ls.sel];
-  if (app.favorites().contains(cur))
-    c.fillCircle(cx + S / 2 - 14, floor - S + 14, 7, COL_FAV);
-  int ty = floor + S * 30 / 100 - 8;
-  c.drawTextFit(UI_FONT_TITLE, x + 40, ty, w - 80, romTitle(cur).c_str(), UI_COL_TEXT, UI_ALIGN_CENTER);
-  c.drawTextFit(UI_FONT_SMALL, x + 40, ty + 48, w - 80, romMeta(app, cur, sys).c_str(), UI_COL_TEXT_DIM,
-                UI_ALIGN_CENTER);
 }
 
-enum { SHELF_COLS = 6, SHELF_ROWS = 2 };
+enum { GRID_COLS = 6, GRID_ROWS = 2 };
 
-// Box art standing on wooden shelves; the chosen one lifts off its plank.
-void drawShelf(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
-               const std::vector<std::string> &roms, const UiListState &ls, int sys)
+// The games as cards: box art on a rounded panel with the name under it.
+// The chosen one rises, gets an accent ring and full brightness.
+void drawGrid(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
+              const std::vector<std::string> &roms, const UiListState &ls, int sys)
 {
   const int count = (int)roms.size();
-  const int gap = 24;
-  const int tileW = (w - gap * (SHELF_COLS - 1)) / SHELF_COLS;
-  const int stripH = 64;
-  const int shelfH = (h - stripH) / SHELF_ROWS;
-  const int lift = 10, maxH = shelfH - 34 - lift;
-  for (int r = 0; r < SHELF_ROWS; r++) {
-    int firstIdx = (ls.scroll + r) * SHELF_COLS;
-    if (firstIdx >= count)
-      break;                                 // no empty planks
-    int base = y + (r + 1) * shelfH - 18;
-    c.fillGradient(x - 16, base - 3, w + 32, 6, 0xFFB98552, 0xFF8E5C33);
-    c.fillGradient(x - 16, base + 3, w + 32, 10, 0xFF6E4426, 0xFF4A2C17);
-    c.fillGradient(x - 16, base + 13, w + 32, 14, 0x60000000, 0x00000000);
-    for (int col = 0; col < SHELF_COLS; col++) {
-      int idx = firstIdx + col;
+  const int gap = 20, pad = 8, nameH = 30, stripH = 58;
+  const int cardW = (w - gap * (GRID_COLS - 1)) / GRID_COLS;
+  const int art = cardW - pad * 2;
+  const int cardH = pad + art + pad + nameH;
+  const int rowH = (h - stripH - cardH * GRID_ROWS) / GRID_ROWS + cardH;
+  for (int r = 0; r < GRID_ROWS; r++) {
+    for (int col = 0; col < GRID_COLS; col++) {
+      int idx = (ls.scroll + r) * GRID_COLS + col;
       if (idx >= count)
         break;
       bool sel = idx == ls.sel;
+      int cx = x + col * (cardW + gap), cy = y + r * rowH + (sel ? 0 : 6);
+      if (sel) {   // a soft glow and a ring in the accent color
+        c.fillRoundRect(cx - 6, cy - 6, cardW + 12, cardH + 12, 20, uiWithAlpha(UI_COL_ACCENT, 0x38));
+        uiDrawPanel(c, cx, cy, cardW, cardH, 14, 0xE8);
+        c.strokeRoundRect(cx - 1, cy - 1, cardW + 2, cardH + 2, 15, UI_COL_ACCENT);
+        c.strokeRoundRect(cx - 2, cy - 2, cardW + 4, cardH + 4, 16, UI_COL_ACCENT);
+      } else {
+        uiDrawPanel(c, cx, cy, cardW, cardH, 14, 0xB8);
+      }
       const UiApp::Cover *cv = boxArt(app, roms[idx]);
-      int aw = tileW < maxH ? tileW : maxH;
-      int ax = x + col * (tileW + gap) + (tileW - aw) / 2;
-      int ay = base - 3 - aw - (sel ? lift : 0);
       BoxPic b = boxPic(cv, roms[idx]);
-      c.blitCard(b.px, b.w, b.h, b.pitch, ax, aw, ay, aw, ay, aw, sel ? 256 : 175, 0);
-      if (sel)   // a light on the plank under the chosen one
-        c.fillRoundRect(ax + aw / 6, base - 3, aw * 2 / 3, 4, 2, UI_COL_ACCENT);
-      if (app.favorites().contains(roms[idx]))
-        c.fillCircle(ax + aw - 10, ay + 10, 6, COL_FAV);
+      c.blitCard(b.px, b.w, b.h, b.pitch, cx + pad, art, cy + pad, art, cy + pad, art, sel ? 256 : 190, 0);
+      if (app.favorites().contains(roms[idx])) {   // heart badge on the art's corner
+        int hx = cx + pad + art - 16, hy = cy + pad + 16;
+        c.fillCircle(hx, hy, 13, uiWithAlpha(UI_COL_ACCENT, 0xF0));
+        drawHeart(c, hx, hy + 1, 7, 0xFFFFFFFF);
+      }
+      c.drawTextFit(UI_FONT_SMALL, cx + 8, cy + pad + art + 6, cardW - 16, romTitle(roms[idx]).c_str(),
+                    sel ? UI_COL_TEXT : UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
     }
   }
-  drawScrollbar(c, x + w + 14, y, SHELF_ROWS * shelfH - 18, ls.scroll, SHELF_ROWS,
-                (count + SHELF_COLS - 1) / SHELF_COLS);
+  drawScrollbar(c, x + w + 14, y, GRID_ROWS * rowH - gap, ls.scroll, GRID_ROWS,
+                (count + GRID_COLS - 1) / GRID_COLS);
   if (ls.sel < 0 || ls.sel >= count)
     return;
-  int sy = y + SHELF_ROWS * shelfH + 6;
-  c.drawTextFit(UI_FONT_BODY, x, sy + 2, w * 6 / 10, romTitle(roms[ls.sel]).c_str(), UI_COL_TEXT);
-  c.drawTextFit(UI_FONT_SMALL, x + w * 6 / 10, sy + 8, w * 4 / 10, romMeta(app, roms[ls.sel], sys).c_str(),
+  int sy = y + h - stripH + 14;
+  c.fillRect(x, sy - 8, w, 1, 0x30FFFFFF);
+  c.drawTextFit(UI_FONT_BODY, x, sy, w * 6 / 10, romTitle(roms[ls.sel]).c_str(), UI_COL_TEXT);
+  c.drawTextFit(UI_FONT_SMALL, x + w * 6 / 10, sy + 6, w * 4 / 10, romMeta(app, roms[ls.sel], sys).c_str(),
                 UI_COL_TEXT_DIM, UI_ALIGN_RIGHT);
 }
 
-} // namespace
-
-UiLibraryScreen::UiLibraryScreen(UiApp &app, const std::string &selectRom)
-  : m_sys(0), m_inSystem(false), m_rescan(false)
-{
-  for (int i = 0; i < SYSTEMS; i++)
-    m_pos[i] = -1.0f;   // first drawing: start on the selection
-  scan(app, false);
-  if (selectRom.empty())
-    return;
-  for (size_t s = 0; s < m_systems.size(); s++) {
-    const std::vector<std::string> &g = m_games[m_systems[s]];
-    for (size_t i = 0; i < g.size(); i++)
-      if (g[i] == selectRom) {
-        m_sys = (int)s;
-        m_inSystem = true;
-        m_list[m_systems[s]].sel = (int)i;
-      }
-  }
-}
-
-void UiLibraryScreen::scanDir(UiApp &app, const std::string &dir, int depth, int &budget)
-{
-  std::vector<UiDirEntry> e;
-  if (budget <= 0 || !app.host().listDir(dir, e))
-    return;
-  for (size_t i = 0; i < e.size() && budget > 0; i++, budget--) {
-    if (e[i].isDir) {
-      if (depth < 3)
-        scanDir(app, e[i].path, depth + 1, budget);
-    } else if (uiIsRomFile(e[i].name) && lowerAscii(e[i].name).find("bios") == std::string::npos) {
-      m_games[romSystem(e[i].path)].push_back(e[i].path);
-    }
-  }
-}
-
-namespace {
 // What the last look through the folders found, kept between Library screens:
 // coming back from a game or the browser rebuilt it by walking every Roms
 // folder and reading carts\ again, which was slow on the console. Read again
@@ -1288,21 +1189,87 @@ struct LibraryCache
   LibraryCache() : valid(false) {}
 };
 LibraryCache g_library;
+
+void scanDir(UiApp &app, const std::string &dir, int depth, int &budget)
+{
+  std::vector<UiDirEntry> e;
+  if (budget <= 0 || !app.host().listDir(dir, e))
+    return;
+  for (size_t i = 0; i < e.size() && budget > 0; i++, budget--) {
+    if (e[i].isDir) {
+      if (depth < 3)
+        scanDir(app, e[i].path, depth + 1, budget);
+    } else if (uiIsRomFile(e[i].name) && lowerAscii(e[i].name).find("bios") == std::string::npos) {
+      g_library.games[romSystem(e[i].path)].push_back(e[i].path);
+    }
+  }
 }
 
-void UiLibraryScreen::scan(UiApp &app, bool fromDisk)
+// Fills g_library: the games of the library folder (or of every drive's
+// Roms folder) by console, and the player's own cartridge pictures.
+void readLibrary(UiApp &app)
 {
-  m_root = app.cfg().libraryDir;
-  if (!fromDisk && g_library.valid && g_library.root == m_root) {
-    for (int s = 0; s < SYS_COUNT; s++)
-      m_games[s] = g_library.games[s];
+  for (int s = 0; s < SYS_COUNT; s++)
+    g_library.games[s].clear();
+  g_library.root = app.cfg().libraryDir;
+  std::vector<std::string> roots;
+  if (!g_library.root.empty()) {
+    roots.push_back(g_library.root);
   } else {
-    readFolders(app);
-    for (int s = 0; s < SYS_COUNT; s++)
-      g_library.games[s] = m_games[s];
-    g_library.root = m_root;
-    g_library.valid = true;
+    std::vector<UiDirEntry> drives;
+    app.host().listDrives(drives);
+    for (size_t i = 0; i < drives.size(); i++)
+      roots.push_back(uiJoinPath(drives[i].path, "Roms") + "\\");
   }
+  int budget = 20000;   // shortcut: stops after 20000 files/folders; a whole drive as the library could miss some
+  for (size_t i = 0; i < roots.size(); i++)
+    scanDir(app, roots[i], 0, budget);
+  static const char *const cartFile[SYS_COUNT] = { "gba.png", "gbc.png", "gb.png", "zip.png" };
+  std::string carts = uiJoinPath(app.host().emulatorDir(), "carts");
+  for (int s = 0; s < SYS_COUNT; s++) {
+    bool wide = s == SYS_GBA || s == SYS_OTHER;
+    std::vector<UiColor> &px = g_library.cartPx[s];
+    px.clear();
+    g_library.cartW[s] = g_library.cartH[s] = 0;
+    if (!app.host().loadImageFit(uiJoinPath(carts, cartFile[s]), wide ? 440 : 260, wide ? 300 : 320,
+                                 px, g_library.cartW[s], g_library.cartH[s]))
+      px.clear();
+    std::sort(g_library.games[s].begin(), g_library.games[s].end(), nameLess);
+  }
+  g_library.valid = true;
+}
+
+void ensureLibrary(UiApp &app)
+{
+  if (!g_library.valid || g_library.root != app.cfg().libraryDir)
+    readLibrary(app);
+}
+
+} // namespace
+
+UiLibraryScreen::UiLibraryScreen(UiApp &app, const std::string &selectRom)
+  : m_sys(0), m_inSystem(false), m_rescan(false)
+{
+  scan(app);
+  if (selectRom.empty())
+    return;
+  for (size_t s = 0; s < m_systems.size(); s++) {
+    const std::vector<std::string> &g = m_games[m_systems[s]];
+    for (size_t i = 0; i < g.size(); i++)
+      if (g[i] == selectRom) {
+        m_sys = (int)s;
+        m_inSystem = true;
+        m_list[m_systems[s]].sel = (int)i;
+      }
+  }
+}
+
+void UiLibraryScreen::scan(UiApp &app)
+{
+  ensureLibrary(app);
+  m_root = g_library.root;
+  for (int s = 0; s < SYS_COUNT; s++)
+    m_games[s] = g_library.games[s];
   m_systems.clear();
   for (int s = 0; s < SYS_COUNT; s++) {
     m_list[s].clamp((int)m_games[s].size());
@@ -1315,44 +1282,19 @@ void UiLibraryScreen::scan(UiApp &app, bool fromDisk)
     m_inSystem = false;
 }
 
-void UiLibraryScreen::readFolders(UiApp &app)
+void uiLibraryRoms(UiApp &app, std::vector<std::string> &out)
 {
+  ensureLibrary(app);
+  out.clear();
   for (int s = 0; s < SYS_COUNT; s++)
-    m_games[s].clear();
-  // The chosen folder, or else the Roms folder of every drive.
-  std::vector<std::string> roots;
-  if (!m_root.empty()) {
-    roots.push_back(m_root);
-  } else {
-    std::vector<UiDirEntry> drives;
-    app.host().listDrives(drives);
-    for (size_t i = 0; i < drives.size(); i++)
-      roots.push_back(uiJoinPath(drives[i].path, "Roms") + "\\");
-  }
-  int budget = 20000;   // shortcut: stops after 20000 files/folders; a whole drive as the library could miss some
-  for (size_t i = 0; i < roots.size(); i++)
-    scanDir(app, roots[i], 0, budget);
-  // The player's own cartridge pictures, if any (PNG with transparency).
-  static const char *const cartFile[SYS_COUNT] = { "gba.png", "gbc.png", "gb.png", "zip.png" };
-  std::string carts = uiJoinPath(app.host().emulatorDir(), "carts");
-  for (int s = 0; s < SYS_COUNT; s++) {
-    bool wide = s == SYS_GBA || s == SYS_OTHER;
-    std::vector<UiColor> &px = g_library.cartPx[s];
-    px.clear();
-    g_library.cartW[s] = g_library.cartH[s] = 0;
-    if (!app.host().loadImageFit(uiJoinPath(carts, cartFile[s]), wide ? 440 : 260, wide ? 300 : 320,
-                                 px, g_library.cartW[s], g_library.cartH[s]))
-      px.clear();
-  }
-  for (int s = 0; s < SYS_COUNT; s++)
-    std::sort(m_games[s].begin(), m_games[s].end(), nameLess);
+    out.insert(out.end(), g_library.games[s].begin(), g_library.games[s].end());
 }
 
 void UiLibraryScreen::onResume(UiApp &app)
 {
   if (m_rescan) {
     m_rescan = false;
-    scan(app, false);   // read again only if the library folder changed (Y in the browser)
+    scan(app);   // read again only if the library folder changed (Y in the browser)
   }
 }
 
@@ -1376,10 +1318,9 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
   const std::vector<std::string> &g = m_games[sys];
   UiListState &ls = m_list[sys];
   int count = (int)g.size();
-  bool shelf = app.cfg().listView == LIST_VIEW_COVERS;
   if ((in.repeat & PAD_BIT(PAD_LEFT)) && ls.sel > 0) ls.sel--;
   if ((in.repeat & PAD_BIT(PAD_RIGHT)) && ls.sel < count - 1) ls.sel++;
-  int step = shelf ? SHELF_COLS : 5;
+  const int step = GRID_COLS;
   if ((in.repeat & PAD_BIT(PAD_UP)) && ls.sel >= step) ls.sel -= step;
   if ((in.repeat & PAD_BIT(PAD_DOWN)) && ls.sel < count - 1) ls.sel = std::min(ls.sel + step, count - 1);
   // LT / RT: previous / next first letter.
@@ -1395,15 +1336,12 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
     }
     ls.sel = i;
   }
-  int row = ls.sel / SHELF_COLS;
+  int row = ls.sel / GRID_COLS;
   if (row < ls.scroll) ls.scroll = row;
-  if (row >= ls.scroll + SHELF_ROWS) ls.scroll = row - SHELF_ROWS + 1;
+  if (row >= ls.scroll + GRID_ROWS) ls.scroll = row - GRID_ROWS + 1;
 
   if (in.pressed & PAD_BIT(PAD_B)) {
     m_inSystem = false;
-  } else if (in.pressed & PAD_BIT(PAD_START)) {
-    app.cfg().listView = shelf ? LIST_VIEW_CAROUSEL : LIST_VIEW_COVERS;
-    app.saveAll();
   } else if (count > 0 && (in.pressed & PAD_BIT(PAD_A))) {
     app.launch(g[ls.sel]);
   } else if (count > 0 && (in.pressed & PAD_BIT(PAD_X))) {
@@ -1503,16 +1441,13 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
   c.drawTextFit(UI_FONT_BODY, x + w - pw - 58, 45, 42, initial, 0xFFFFFFFF, UI_ALIGN_CENTER);
 
   int top = UI_HEADER_H + 20, h = UI_FOOTER_Y - 12 - top;
-  if (app.cfg().listView == LIST_VIEW_COVERS)
-    drawShelf(app, c, x, top, w, h, g, ls, sys);
-  else
-    drawCarousel(app, c, x, top, w, h, g, ls, m_pos[sys], sys);
+  drawGrid(app, c, x, top, w - 20, h, g, ls, sys);
   const char *hints[] = {
     app.tr("A:Jugar", "A:Play"), app.tr("B:Consolas", "B:Consoles"),
     app.favorites().contains(g[ls.sel]) ? app.tr("X:Quitar favorito", "X:Unfavorite") : app.tr("X:Favorito", "X:Favorite"),
-    app.tr("Y:Opciones", "Y:Options"), app.tr("START:Vista", "START:View"),
+    app.tr("Y:Opciones", "Y:Options"),
     app.tr("LT/RT:Letra", "LT/RT:Letter"), app.tr("BACK:Men\xfa", "BACK:Menu") };
-  app.drawHints(c, hints, 7);
+  app.drawHints(c, hints, 6);
 }
 
 void UiHomeScreen::draw(UiApp &app, UiCanvas &c)

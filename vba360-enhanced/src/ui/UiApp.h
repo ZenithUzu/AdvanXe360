@@ -69,7 +69,7 @@ public:
   // Draw the next frame too (covers still loading on screen).
   void drawAgain() { if (m_dirtyFrames < 2) m_dirtyFrames = 2; }
   // Box art download (Game options -> Cover): one game or its whole folder.
-  void startCoverDownload(const std::string &rom, bool wholeFolder);
+  void startCoverDownload();   // the Library's games without box art
   void onCoversClosed();
 
   UiRequest takeRequest(std::string &romPath);

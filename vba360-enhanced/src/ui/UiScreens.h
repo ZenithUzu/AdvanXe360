@@ -77,6 +77,9 @@ private:
   std::string m_filter;              // list filter the rows were built with
 };
 
+// Every game of the Library (read from disk the first time).
+void uiLibraryRoms(UiApp &app, std::vector<std::string> &out);
+
 // --- Library: the start screen. The consoles (each as its cartridge), then
 // one console's games as box art in a carousel or on shelves. Only ROMs:
 // folders and settings live in the browser (BACK). Games are sorted into
@@ -91,12 +94,9 @@ public:
 
 private:
   enum { SYSTEMS = 4 };                 // GBA, GBC, GB, zip / 7z
-  void scan(UiApp &app, bool fromDisk);
-  void readFolders(UiApp &app);
-  void scanDir(UiApp &app, const std::string &dir, int depth, int &budget);
+  void scan(UiApp &app);
   std::vector<std::string> m_games[SYSTEMS];
   UiListState m_list[SYSTEMS];
-  float m_pos[SYSTEMS];                 // cover flow position, gliding to the selection
   std::vector<int> m_systems;           // consoles with games, in order
   int m_sys;                            // index into m_systems
   bool m_inSystem;                      // showing that console's games

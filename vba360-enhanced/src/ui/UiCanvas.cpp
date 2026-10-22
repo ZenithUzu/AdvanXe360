@@ -457,8 +457,7 @@ static inline UiColor dimColor(UiColor p, int bright)
 }
 
 void UiCanvas::blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, int dw,
-                        int topL, int hL, int topR, int hR, int bright, int reflect,
-                        int *sky, int *under)
+                        int topL, int hL, int topR, int hR, int bright, int reflect)
 {
   if (dw <= 0 || sw <= 0 || sh <= 0)
     return;
@@ -478,9 +477,8 @@ void UiCanvas::blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, i
     vs[i] = hh[i] > 0 ? (sh << 16) / hh[i] : 0;
     rh[i] = hh[i] * reflect / 100;
     col[i] = src + (i * sw + sw / 2) / dw;
-    // Rows a nearer card already covers are skipped.
-    body[i] = sky && sky[dx + i] - top[i] < hh[i] ? sky[dx + i] - top[i] : hh[i];
-    r0[i] = under ? under[dx + i] : 0;
+    body[i] = hh[i];
+    r0[i] = 0;
     if (top[i] < ymin) ymin = top[i];
     if (top[i] + hh[i] + 1 + rh[i] > ymax) ymax = top[i] + hh[i] + 1 + rh[i];
   }
@@ -501,10 +499,6 @@ void UiCanvas::blitCard(const UiColor *src, int sw, int sh, int pitch, int dx, i
         }
       }
     }
-  }
-  for (int i = i0; i < i1; i++) {
-    if (sky && top[i] < sky[dx + i]) sky[dx + i] = top[i];
-    if (under && rh[i] > under[dx + i]) under[dx + i] = rh[i];
   }
 }
 

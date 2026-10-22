@@ -26,13 +26,13 @@ enum
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_EFFECT,
-  U_BG_VIS, U_PANELS, U_ACCENT, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
+  U_BG_VIS, U_PANELS, U_ACCENT, U_COVERS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
   G_GBA_COLOR, G_BLEND, G_FPS, G_FRAMESKIP,
   CH_ADD = 1, CH_TYPE, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000,
-  G_CHEATS = 40, G_CONTROLS_MODE, G_CONTROLS, G_COVER_ONE, G_COVER_FOLDER
+  G_CHEATS = 40, G_CONTROLS_MODE, G_CONTROLS
 };
 
 // Confirm / keyboard purposes
@@ -842,6 +842,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
                tr("Cu\xe1nto ondula el fondo. Se nota sobre una imagen de fondo (backgrounds\\).",
                   "How much the background ripples. It shows over a background image (backgrounds\\)."))).choice = m_cfg.waterStrength;
     }
+    m.addHeader(tr("Portadas", "Box art"));
+    m.add(U_COVERS, ITEM_ACTION, tr("Descargar las portadas que faltan", "Download missing box art"), "",
+          tr("Para todos los juegos de la Biblioteca sin portada (internet: thumbnails.libretro.com).",
+             "For every Library game without box art (online: thumbnails.libretro.com)."));
     break;
   }
 
@@ -1190,14 +1194,6 @@ void UiApp::buildGameOptionsMenu(UiMenuScreen &m)
   if (m_gameCfg.customControls)
     m.add(G_CONTROLS, ITEM_SUBMENU, tr("Configurar botones", "Set up buttons"));
 
-  // Box art from the libretro thumbnail server.
-  m.addHeader(tr("Portada", "Box art"));
-  m.add(G_COVER_ONE, ITEM_ACTION, tr("Descargar portada", "Download box art"), "",
-        tr("La busca en internet (thumbnails.libretro.com) y la guarda en covers\\.",
-           "Looks it up online (thumbnails.libretro.com) and saves it in covers\\."));
-  m.add(G_COVER_FOLDER, ITEM_ACTION, tr("Descargar portadas de esta carpeta", "Download box art for this folder"), "",
-        tr("Para todos los juegos de la carpeta que a\xfan no tienen portada.",
-           "For every game in the folder that has no box art yet."));
 
   if (m_inGame)
     m.addInfo(tr("La imagen cambia al momento; el resto al reiniciar el juego.",
@@ -1343,6 +1339,11 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     }
     return;
 
+  case MENU_SETTINGS_LOOK:
+    if (id == U_COVERS)
+      startCoverDownload();
+    return;
+
   case MENU_SETTINGS_SAVES:
     if (id == S_DELETE_STATES)
       openConfirm(tr("\xbf""Borrar los estados guardados de todos los juegos?",
@@ -1382,9 +1383,6 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     } else if (id == G_PLAY) {
       m_gameCfg.save(gameConfigPath(m_gameCfgRom));
       launch(m_gameCfgRom);
-    } else if (id == G_COVER_ONE || id == G_COVER_FOLDER) {
-      m_gameCfg.save(gameConfigPath(m_gameCfgRom));
-      startCoverDownload(m_gameCfgRom, id == G_COVER_FOLDER);
     } else if (id == G_SAVE_PATCHED) {
       std::string where;
       if (m_host.savePatchedRom(where))
@@ -1726,25 +1724,16 @@ void UiApp::openSearch()
   openKeyboard(tr("Buscar en esta carpeta", "Search this folder"), m_listFilter, KEYBOARD_SEARCH);
 }
 
-void UiApp::startCoverDownload(const std::string &rom, bool wholeFolder)
+void UiApp::startCoverDownload()
 {
-  std::vector<std::string> roms;
-  if (wholeFolder) {
-    std::vector<UiDirEntry> entries;
-    m_host.listDir(uiParentDir(rom), entries);
-    for (size_t i = 0; i < entries.size(); i++)
-      if (!entries[i].isDir && uiIsRomFile(entries[i].name))
-        roms.push_back(entries[i].path);
-  } else {
-    roms.push_back(rom);
-  }
+  std::vector<std::string> roms;   // every game of the Library, those without one
+  uiLibraryRoms(*this, roms);
   std::string covers = uiJoinPath(m_host.emulatorDir(), "covers");
   std::vector<UiCoverItem> items;
   for (size_t i = 0; i < roms.size(); i++) {
     std::string name = uiStripExtension(uiFileName(roms[i]));
     std::string base = uiStripExtension(roms[i]);
-    if (wholeFolder &&
-        (m_host.fileExists(uiJoinPath(covers, name + ".png")) || m_host.fileExists(uiJoinPath(covers, name + ".jpg")) ||
+    if ((m_host.fileExists(uiJoinPath(covers, name + ".png")) || m_host.fileExists(uiJoinPath(covers, name + ".jpg")) ||
          m_host.fileExists(base + ".png") || m_host.fileExists(base + ".jpg")))
       continue;   // already has one
     UiCoverItem it;
@@ -1764,14 +1753,14 @@ void UiApp::startCoverDownload(const std::string &rom, bool wholeFolder)
     items.push_back(it);
   }
   if (items.empty()) {
-    toast(tr("Todos los juegos de la carpeta ya tienen portada", "Every game in the folder already has box art"));
+    toast(tr("Todos los juegos de la Biblioteca ya tienen portada", "Every Library game already has box art"));
     return;
   }
   if (!m_host.startCoverDownload(items, m_cfg.coverServer)) {
     toast(tr("Ya hay una descarga en curso", "A download is already running"));
     return;
   }
-  push(new UiCoverScreen(!wholeFolder));
+  push(new UiCoverScreen(false));
 }
 
 void UiApp::onCoversClosed()
