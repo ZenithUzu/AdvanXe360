@@ -52,6 +52,7 @@ extern unsigned (*sgbJoypIdleHook)();
 extern unsigned char (*serialDeviceHook)(unsigned char);
 }
 
+void gmbBridge::setCamera(void (*capture)(unsigned char *)) { gambatte::cameraCaptureHook = capture; }
 void gmbBridge::setSerialDevice(unsigned char (*send)(unsigned char)) { gambatte::serialDeviceHook = send; }
 
 // Called by Gambatte's MBC5 for rumble cartridges (Pokemon Pinball...).

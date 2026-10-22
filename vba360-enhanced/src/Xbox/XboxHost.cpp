@@ -10,6 +10,15 @@
 
 #include "XboxHost.h"
 #include "XboxCovers.h"
+#include "../gb/gbGambatteBridge.h"
+
+// Kinect as the Game Boy Camera. Build with XBOX_NO_KINECT defined if your
+// XDK has no Kinect (NUI) library.
+#ifndef XBOX_NO_KINECT
+#include <nuiapi.h>
+#pragma comment(lib, "nuiapi.lib")
+#endif
+static void kinectCapture(unsigned char *gray);   // Game Boy Camera picture (below)
 #define XBOX_LOG_NO_REDIRECT
 #include "XboxLog.h"
 
@@ -915,6 +924,7 @@ void xboxOnGameLoading(const char *romPath)
   // own choice (its game options, "Custom").
   extern u8 (*gbSerialFunction)(u8);
   gbSerialFunction = g_cfg.gbPrinter ? gbPrinterSend : 0;
+  gmbBridge::setCamera(kinectCapture);
   gambatteSgbMode = g_gameCfg.custom ? (g_gameCfg.sgbMode ? 2 : 0) : g_cfg.sgbBorders;
 
   // Game Boy patches are applied inside gbLoadRom().
@@ -1545,6 +1555,57 @@ void xboxApplySettings()
 Filter xboxSelectedFilter()
 {
   return coreFilterFor(xboxVideoFilter());
+}
+
+// Game Boy Camera picture: the Kinect's color camera, mirrored like a selfie,
+// cropped to the camera's 8:7 shape. Static noise without a Kinect.
+static void kinectCapture(unsigned char *gray)
+{
+#ifndef XBOX_NO_KINECT
+  static int state = 0;   // 0 not tried, 1 running, -1 no Kinect
+  static HANDLE stream = 0;
+  static unsigned char last[128 * 112];
+  static bool haveLast = false;
+  if (state == 0) {
+    state = -1;
+    if (SUCCEEDED(NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR, NUI_INITIALIZE_DEFAULT_HARDWARE_THREAD)) &&
+        SUCCEEDED(NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, NUI_IMAGE_RESOLUTION_640x480, 0, 2, NULL, &stream)))
+      state = 1;
+    xboxLog("Game Boy Camera: Kinect %s", state > 0 ? "on" : "not found");
+  }
+  const NUI_IMAGE_FRAME *frame = 0;
+  if (state > 0 && SUCCEEDED(NuiImageStreamGetNextFrame(stream, 0, &frame)) && frame) {
+    D3DSURFACE_DESC desc;
+    D3DLOCKED_RECT lr;
+    if (frame->pFrameTexture && SUCCEEDED(frame->pFrameTexture->GetLevelDesc(0, &desc)) &&
+        SUCCEEDED(frame->pFrameTexture->LockRect(0, &lr, NULL, D3DLOCK_READONLY))) {
+      bool uyvy = desc.Format == D3DFMT_UYVY || desc.Format == D3DFMT_LIN_UYVY;
+      bool yuy2 = desc.Format == D3DFMT_YUY2 || desc.Format == D3DFMT_LIN_YUY2;
+      int cw = desc.Height * 8 / 7, x0 = ((int)desc.Width - cw) / 2;
+      for (int y = 0; y < 112; y++) {
+        const unsigned char *row = (const unsigned char *)lr.pBits + (y * desc.Height / 112) * lr.Pitch;
+        for (int x = 0; x < 128; x++) {
+          int sx = x0 + (127 - x) * cw / 128;
+          if (uyvy || yuy2) {
+            last[y * 128 + x] = row[sx * 2 + (uyvy ? 1 : 0)];
+          } else {
+            DWORD c = ((const DWORD *)row)[sx];   // X8R8G8B8
+            last[y * 128 + x] = (unsigned char)((((c >> 16) & 0xFF) * 77 + ((c >> 8) & 0xFF) * 150 + (c & 0xFF) * 29) >> 8);
+          }
+        }
+      }
+      frame->pFrameTexture->UnlockRect(0);
+      haveLast = true;
+    }
+    NuiImageStreamReleaseFrame(stream, frame);
+  }
+  if (haveLast) {   // no new frame yet: the last one
+    memcpy(gray, last, sizeof(last));
+    return;
+  }
+#endif
+  for (int i = 0; i < 128 * 112; i++)
+    gray[i] = (unsigned char)(rand() & 0xFF);
 }
 
 void xboxGbPrint(const unsigned char *data, int palette)

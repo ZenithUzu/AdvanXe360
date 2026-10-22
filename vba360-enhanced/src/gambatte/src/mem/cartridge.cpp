@@ -770,6 +770,81 @@ namespace gambatte
       }
    };
 
+   bool cameraPresent = false;
+   void (*cameraCaptureHook)(unsigned char *) = 0;
+   static unsigned char camReg[0x36];
+   static unsigned char *camRam = 0;
+
+   void cameraReset(unsigned char *ram) { camRam = ram; std::memset(camReg, 0, sizeof(camReg)); }
+
+   // Only register 0 reads back (bit 0 = capturing; captures finish at once).
+   unsigned char cameraRead(unsigned p) { return (p & 0x7F) == 0 ? camReg[0] & 0x06 : 0; }
+
+   void cameraWrite(unsigned p, unsigned data)
+   {
+      p &= 0x7F;
+      if (p >= sizeof(camReg))
+         return;
+      camReg[p] = data;
+      if (p != 0 || !(data & 1) || !camRam)
+         return;
+      static unsigned char img[128 * 112];
+      std::memset(img, 0x80, sizeof(img));
+      if (cameraCaptureHook)
+         cameraCaptureHook(img);
+      unsigned long exposure = camReg[2] << 8 | camReg[3];
+      unsigned char *out = camRam + 0x100;
+      std::memset(out, 0, 16 * 14 * 16);
+      for (unsigned y = 0; y < 112; y++)
+         for (unsigned x = 0; x < 128; x++) {
+            unsigned long c = img[y * 128 + x] * exposure / 0x1000;
+            unsigned char const *d = camReg + 6 + ((x & 3) + (y & 3) * 4) * 3;   // dithering thresholds
+            unsigned px = c < d[0] ? 3 : c < d[1] ? 2 : c < d[2] ? 1 : 0;
+            unsigned char *t = out + ((y >> 3) * 16 + (x >> 3)) * 16 + (y & 7) * 2;
+            unsigned char bit = 0x80 >> (x & 7);
+            if (px & 1) t[0] |= bit;
+            if (px & 2) t[1] |= bit;
+         }
+      camReg[0] &= ~1u;
+   }
+
+   /* VBA360: Pocket Camera banks. RAM bank bit 4 maps the camera's registers
+    * (served by cameraRead/cameraWrite) instead of RAM. */
+   class PocketCamera : public DefaultMbc {
+      MemPtrs &memptrs;
+      unsigned char rombank, rambank;
+      bool enableRam;
+      void setRombank() const { memptrs.setRombank(rombank & (rombanks(memptrs) - 1)); }
+      void setRambank() const {
+         if (rambank & 0x10)
+            memptrs.setRambank(MemPtrs::READ_EN | MemPtrs::WRITE_EN | MemPtrs::RTC_EN, 0);   // null pointer: registers
+         else
+            memptrs.setRambank(MemPtrs::READ_EN | (enableRam ? MemPtrs::WRITE_EN : 0), rambank & 0x0F & (rambanks(memptrs) - 1));
+      }
+      public:
+      explicit PocketCamera(MemPtrs &memptrs) : memptrs(memptrs), rombank(1), rambank(0), enableRam(false) {}
+      virtual void romWrite(const unsigned P, const unsigned data) {
+         switch (P >> 13 & 3) {
+            case 0: enableRam = (data & 0xF) == 0xA; setRambank(); break;
+            case 1: rombank = data & 0x3F; setRombank(); break;
+            case 2: rambank = data & 0x1F; setRambank(); break;
+            default: break;
+         }
+      }
+      virtual void saveState(SaveState::Mem &ss) const {
+         ss.rombank = rombank;
+         ss.rambank = rambank;
+         ss.enableRam = enableRam;
+      }
+      virtual void loadState(const SaveState::Mem &ss) {
+         rombank = ss.rombank & 0x3F;
+         rambank = ss.rambank & 0x1F;
+         enableRam = ss.enableRam;
+         setRambank();
+         setRombank();
+      }
+   };
+
    unsigned mbc7AccelX = 0x81D0, mbc7AccelY = 0x81D0;
    bool mbc7Present = false;
 
@@ -1053,7 +1128,7 @@ namespace gambatte
       unsigned rambanks = 1;
       unsigned rombanks = 2;
       bool cgb = false;
-      enum Cartridgetype { PLAIN, MBC1, MBC2, MBC3, MBC5, MBC7, HUC1, HUC3, SACHEN_MMC1 } type = PLAIN;
+      enum Cartridgetype { PLAIN, MBC1, MBC2, MBC3, MBC5, MBC7, HUC1, HUC3, SACHEN_MMC1, CAMERA } type = PLAIN;
       bool rumble = false;
 
       isSachen_ = detectSachenMmc1(romdata, romsize);
@@ -1112,7 +1187,7 @@ namespace gambatte
             case 0x20: gambatte_log(RETRO_LOG_INFO, "MBC6 ROM not supported.\n"); return -1;
             case 0x22: gambatte_log(RETRO_LOG_INFO, "MBC7 ROM+ACCELEROMETER+EEPROM loaded.\n"); type = MBC7; break;
 	     case 0xEA: type = MBC1; break; // Hack to accept 0xEA as a MBC1 (Sonic 3D Blast 5)
-            case 0xFC: gambatte_log(RETRO_LOG_INFO, "Pocket Camera ROM not supported.\n"); return -1;
+            case 0xFC: gambatte_log(RETRO_LOG_INFO, "Pocket Camera ROM loaded.\n"); type = CAMERA; break;
             case 0xFD: gambatte_log(RETRO_LOG_INFO, "Bandai TAMA5 ROM not supported.\n"); return -1;
             case 0xFE: gambatte_log(RETRO_LOG_INFO, "HuC3 ROM+RAM+BATTERY loaded.\n"); type = HUC3; break;
             case 0xFF: gambatte_log(RETRO_LOG_INFO, "HuC1 ROM+BATTERY loaded.\n"); type = HUC1; break;
@@ -1179,6 +1254,7 @@ namespace gambatte
       huc3_.set(false);
       mbc7_.set(false, 0);
       mbc7Present = false;
+      cameraPresent = false;
 
       memcpy(memptrs_.romdata(), romdata, ((romsize / 0x4000) * 0x4000ul) * sizeof(unsigned char));
       std::memset(memptrs_.romdata() + (romsize / 0x4000) * 0x4000ul, 0xFF, (rombanks - romsize / 0x4000) * 0x4000ul);
@@ -1225,6 +1301,11 @@ namespace gambatte
             break;
          case SACHEN_MMC1:
             mbc.reset(new Mbc1Sachen(memptrs_));
+            break;
+         case CAMERA:
+            cameraReset(memptrs_.rambankdata());
+            cameraPresent = true;
+            mbc.reset(new PocketCamera(memptrs_));
             break;
          case MBC7:
             /* A blank EEPROM reads all ones; a save file replaces it. */

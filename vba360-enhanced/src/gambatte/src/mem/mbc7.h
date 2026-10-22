@@ -18,6 +18,17 @@ extern unsigned mbc7AccelX, mbc7AccelY;
 // True while an MBC7 cartridge is loaded.
 extern bool mbc7Present;
 
+// VBA360: Game Boy Camera / Pocket Camera (cartridge type 0xFC). Its
+// registers replace RAM at A000-BFFF while RAM bank bit 4 is set; a capture
+// asks the frontend for a 128x112 grayscale picture (0 black .. 255 white)
+// and turns it into tiles in RAM, as the camera's sensor chip does.
+// Algorithm adapted from SameBoy (Core/camera.c, MIT, (c) Lior Halphon).
+extern bool cameraPresent;
+extern void (*cameraCaptureHook)(unsigned char *gray128x112);
+void cameraReset(unsigned char *ram);
+unsigned char cameraRead(unsigned p);
+void cameraWrite(unsigned p, unsigned data);
+
 class Mbc7Chip {
 public:
 	Mbc7Chip() : enabled_(false), eeprom_(0) { reset(); }

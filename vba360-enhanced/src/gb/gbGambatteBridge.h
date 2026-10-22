@@ -29,6 +29,8 @@ long runFor(unsigned short *video, int pitch, unsigned *sound, unsigned soundSiz
 void setInput(unsigned (*getButtons)());   // A=1 B=2 Select=4 Start=8 Right Left Up Down
 void setBootloader(bool (*get)(bool isCgb, unsigned char *data, unsigned size));
 // Link port device (Game Boy Printer), or 0 for nothing plugged in.
+// Game Boy Camera: fills a 128x112 grayscale picture when the game takes one.
+void setCamera(void (*capture)(unsigned char *gray128x112));
 void setSerialDevice(unsigned char (*send)(unsigned char));
 void setRumble(void (*set)(bool on));   // rumble cartridges
 // MBC7 cartridges (Kirby Tilt 'n' Tumble): accelerometer in g (about -1..1;
