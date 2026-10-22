@@ -12,9 +12,10 @@
 #include "XboxCovers.h"
 #include "../gb/gbGambatteBridge.h"
 
-// Kinect as the Game Boy Camera. Build with XBOX_NO_KINECT defined if your
-// XDK has no Kinect (NUI) library.
-#ifndef XBOX_NO_KINECT
+// Kinect as the Game Boy Camera: off until the XDK's other Kinect libraries
+// (skeleton tracking, head detector...) are linked too; nuiapi.lib alone
+// leaves 22 unresolved symbols. Define XBOX_KINECT to turn it on.
+#ifdef XBOX_KINECT
 #include <nuiapi.h>
 #pragma comment(lib, "nuiapi.lib")
 #endif
@@ -1561,7 +1562,7 @@ Filter xboxSelectedFilter()
 // cropped to the camera's 8:7 shape. Static noise without a Kinect.
 static void kinectCapture(unsigned char *gray)
 {
-#ifndef XBOX_NO_KINECT
+#ifdef XBOX_KINECT
   static int state = 0;   // 0 not tried, 1 running, -1 no Kinect
   static HANDLE stream = 0;
   static unsigned char last[128 * 112];
