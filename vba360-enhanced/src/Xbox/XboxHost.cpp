@@ -327,7 +327,7 @@ static int shaderFilterFor(int uiFilter)
 }
 
 // Filters that read single console pixels need point sampling.
-bool xboxPointSampler()
+bool pointSampler()
 {
   int f = xboxVideoFilter();
   return f == FILTER_SHARP || f == FILTER_SCALE2X || f == FILTER_SCALE3X;
@@ -335,7 +335,7 @@ bool xboxPointSampler()
 
 void applySampler()
 {
-  D3DTEXTUREFILTERTYPE f = xboxPointSampler() ? D3DTEXF_POINT : D3DTEXF_LINEAR;
+  D3DTEXTUREFILTERTYPE f = pointSampler() ? D3DTEXF_POINT : D3DTEXF_LINEAR;
   pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, f);
   pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, f);
   // Clamp: with the default wrap mode the smooth filter blends the
@@ -1528,6 +1528,11 @@ void xboxApplySettings()
 Filter xboxSelectedFilter()
 {
   return coreFilterFor(xboxVideoFilter());
+}
+
+bool xboxPointSampler()
+{
+  return pointSampler();
 }
 
 int xboxVideoFilter()
