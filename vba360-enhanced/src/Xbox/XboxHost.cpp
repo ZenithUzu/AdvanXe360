@@ -1571,6 +1571,9 @@ static void kinectCapture(unsigned char *gray)
   if (state == 0) {
     state = -1;
     HRESULT hrInit = NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR, NUI_INITIALIZE_DEFAULT_HARDWARE_THREAD);
+    if (FAILED(hrInit))   // as the XDK's own samples do: all three streams
+      hrInit = NuiInitialize(NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX |
+                             NUI_INITIALIZE_FLAG_USES_COLOR, NUI_INITIALIZE_DEFAULT_HARDWARE_THREAD);
     HRESULT hrOpen = FAILED(hrInit) ? 0 : NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, NUI_IMAGE_RESOLUTION_640x480, 0, 2, NULL, &stream);
     if (SUCCEEDED(hrInit) && SUCCEEDED(hrOpen))
       state = 1;
