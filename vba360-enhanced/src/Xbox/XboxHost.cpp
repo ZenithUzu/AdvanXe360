@@ -28,6 +28,7 @@
 #include "../gb/gb.h"
 #include "../gb/gbCheats.h"
 #include "../gb/gbGambatte.h"
+#include "../gb/gbPrinter.h"
 #include "../Util.h"
 #include "../sdl/filters.h"
 
@@ -912,6 +913,8 @@ void xboxOnGameLoading(const char *romPath)
   strcpy(gambatteCgbBiosFileName, g_cfg.useBios && pathExists(gbcBios) ? gbcBios.c_str() : "");
   // Super Game Boy borders and colors: Settings > Video, or this game's
   // own choice (its game options, "Custom").
+  extern u8 (*gbSerialFunction)(u8);
+  gbSerialFunction = g_cfg.gbPrinter ? gbPrinterSend : 0;
   gambatteSgbMode = g_gameCfg.custom ? (g_gameCfg.sgbMode ? 2 : 0) : g_cfg.sgbBorders;
 
   // Game Boy patches are applied inside gbLoadRom().
@@ -1542,6 +1545,49 @@ void xboxApplySettings()
 Filter xboxSelectedFilter()
 {
   return coreFilterFor(xboxVideoFilter());
+}
+
+void xboxGbPrint(const unsigned char *data, int palette)
+{
+  extern int gbPrinterDataCount;
+  int w = 160, h = gbPrinterDataCount / 320 * 8;   // 20 tiles of 16 bytes per 8-pixel row
+  if (h <= 0)
+    return;
+  if (!palette)
+    palette = 0xE4;   // games may send 0: the normal one
+  std::string path;
+  for (int n = 1; n < 1000 && path.empty(); n++) {
+    char suffix[24];
+    sprintf(suffix, "-impresion-%03d", n);
+    std::string p = uiGameFile(xboxEmulatorDir(), "screenshots", g_rom, suffix, ".bmp");
+    if (!pathExists(p))
+      path = p;
+  }
+  FILE *f = path.empty() ? 0 : fopen(path.c_str(), "wb");
+  if (!f)
+    return;
+  int row = w * 3, size = 54 + row * h;
+  unsigned char hd[54] = { 'B', 'M' };
+  int fields[] = { 2, size, 10, 54, 14, 40, 18, w, 22, -h, 34, row * h };   // offset, value (top-down)
+  for (int i = 0; i < 12; i += 2)
+    for (int b = 0; b < 4; b++)
+      hd[fields[i] + b] = (unsigned char)(fields[i + 1] >> (b * 8));
+  hd[26] = 1;
+  hd[28] = 24;
+  fwrite(hd, 1, 54, f);
+  static const unsigned char shade[4] = { 255, 168, 96, 0 };
+  std::vector<unsigned char> line(row);
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      const unsigned char *t = data + ((y / 8) * 20 + x / 8) * 16 + (y % 8) * 2;
+      int bit = 7 - (x % 8);
+      int c = ((t[0] >> bit) & 1) | (((t[1] >> bit) & 1) << 1);
+      line[x * 3] = line[x * 3 + 1] = line[x * 3 + 2] = shade[(palette >> (c * 2)) & 3];
+    }
+    fwrite(&line[0], 1, row, f);
+  }
+  fclose(f);
+  systemScreenMessage(g_cfg.language ? "Printed: saved to screenshots" : "Impreso: guardado en screenshots");
 }
 
 bool xboxPointSampler()

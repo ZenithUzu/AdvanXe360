@@ -26,6 +26,11 @@
 
 namespace gambatte {
 
+// VBA360: device on the link port (Game Boy Printer). Gets the byte the game
+// sends, returns the one it receives at the end of the transfer.
+unsigned char (*serialDeviceHook)(unsigned char) = 0;
+static unsigned char s_serialIn = 0xFF;
+
 Memory::Memory(Interrupter const &interrupter) :
 #ifdef HAVE_NETWORK
   serialize_value_(0xFF)
@@ -184,7 +189,7 @@ void Memory::updateSerial(unsigned long const cc) {
 			ioamhram_[0x101] = ((ioamhram_[0x101] << serialCnt_) |
 					    (serialize_value_ >> (8 - serialCnt_))) & 0xFF;
 #else
-         ioamhram_[0x101] = (((ioamhram_[0x101] + 1) << serialCnt_) - 1) & 0xFF;
+         ioamhram_[0x101] = serialDeviceHook ? s_serialIn : (((ioamhram_[0x101] + 1) << serialCnt_) - 1) & 0xFF;
 #endif
 
 			ioamhram_[0x102] &= 0x7F;
@@ -711,6 +716,8 @@ void Memory::nontrivial_ff_write(unsigned const p, unsigned data, unsigned long 
 #else
 		if ((data & 0x81) == 0x81)
       {
+         if (serialDeviceHook)
+            s_serialIn = serialDeviceHook(ioamhram_[0x101]);
          intreq_.setEventTime<intevent_serial>((data & isCgb() * 2)
                ? (cc & ~0x07ul) + 0x010 * 8
                : (cc & ~0xFFul) + 0x200 * 8);

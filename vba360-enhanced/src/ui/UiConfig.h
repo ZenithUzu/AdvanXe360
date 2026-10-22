@@ -117,6 +117,7 @@ struct UiConfig
   int borderFit;         // UiBorderFit
   int screenEffect;      // UiScreenEffect
   int gbPalette;         // index into uiGbPalettes
+  int gbPrinter;         // Game Boy Printer on the link port: prints are saved as pictures
   int sgbBorders;        // Super Game Boy: 0 off, 1 Game Boy games, 2 also Color-compatible ones
   int gbaColor;          // GBA color correction: 0 off, 1 soft, 2 like the real screen
   int frameBlend;        // 0 off, 1 mix 2 frames (anti-flicker), 2 LCD ghosting

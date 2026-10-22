@@ -78,6 +78,8 @@ void xboxSetMenuCanvas(UiCanvas *canvas);
 Filter xboxSelectedFilter();
 // Image filter in effect (FILTER_*): Settings, or the game's own options.
 int xboxVideoFilter();
+// Game Boy Printer: saves the printed picture to screenshots\ as a .bmp.
+void xboxGbPrint(const unsigned char *data, int palette);
 bool xboxPointSampler();   // the game picture needs point sampling (sharp, Scale2x/3x)
 // Show FPS (per-game value when the game has a custom picture).
 int xboxShowFps();

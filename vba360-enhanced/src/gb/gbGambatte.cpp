@@ -21,6 +21,7 @@
 #include "gbGambatte.h"
 #include "gbGambatteBridge.h"
 #include "gbGambatteSgb.h"
+#include "gbPrinter.h"
 #include "../Xbox/XboxLog.h"   // last: fprintf(stdout) goes to vba360.log
 
 extern u8 *pix;
@@ -567,6 +568,8 @@ bool gambatteLoad()
   gmbBridge::setInput(gmbButtons);
   gmbBridge::setBootloader(gmbBootloader);
   gmbBridge::setRumble(systemCartridgeRumble);
+  gbPrinterReset();
+  gmbBridge::setSerialDevice(gbSerialFunction);   // set by the host: printer on or off
   bool sgb = wantsSgb();
   gmbBridge::setJoypHooks(sgb ? sgbJoypWrite : 0, sgb ? sgbJoypIdle : 0);
   if (!gmbBridge::load(gbRom, (unsigned)gbRomSize, sgb)) {

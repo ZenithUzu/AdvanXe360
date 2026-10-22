@@ -102,6 +102,7 @@ struct ConfigReader
     else if (k == "border_fit") c.borderFit = clampInt(v, 0, FIT_COUNT - 1, c.borderFit);
     else if (k == "screen_effect") c.screenEffect = clampInt(v, 0, EFFECT_COUNT - 1, c.screenEffect);
     else if (k == "gb_palette") c.gbPalette = clampInt(v, 0, GB_PALETTE_COUNT - 1, c.gbPalette);
+    else if (k == "gb_printer") c.gbPrinter = clampInt(v, 0, 1, c.gbPrinter);
     else if (k == "sgb_borders") c.sgbBorders = clampInt(v, 0, 2, c.sgbBorders);
     else if (k == "gba_color") c.gbaColor = clampInt(v, 0, 2, c.gbaColor);
     else if (k == "frame_blend") c.frameBlend = clampInt(v, 0, 2, c.frameBlend);
@@ -171,7 +172,7 @@ struct GameConfigReader
 UiConfig::UiConfig()
   : language(0), hideNonGames(1), menuTheme(0), optionStyle(OPT_STYLE_PANEL), listSort(SORT_NAME),
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), border(0), borderFit(FIT_CENTER),
-    screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), gbaColor(0), frameBlend(0), showFps(0), frameSkip(0),
+    screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), gbPrinter(0), gbaColor(0), frameBlend(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1), volume(VOLUME_DEFAULT), audioLatency(0),
     ffSpeed(1), ffToggle(0), useBios(0), gsaV3(0), sunLevel(7),
     sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
@@ -249,6 +250,7 @@ bool UiConfig::save(const std::string &path) const
           filter, stretch, border, borderImage.c_str(), borderFit);
   fprintf(f, "screen_effect=%d\ngb_palette=%d\nsgb_borders=%d\nshow_fps=%d\nframe_skip=%d\n",
           screenEffect, gbPalette, sgbBorders, showFps, frameSkip);
+  fprintf(f, "gb_printer=%d\n", gbPrinter);
   fprintf(f, "gba_color=%d\nframe_blend=%d\nsave_backups=%d\n", gbaColor, frameBlend, saveBackups);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\nvolume=%d\naudio_latency=%d\n", sound, muteFastForward, volume, audioLatency);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);

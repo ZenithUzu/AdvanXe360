@@ -28,6 +28,8 @@ long runFor(unsigned short *video, int pitch, unsigned *sound, unsigned soundSiz
 
 void setInput(unsigned (*getButtons)());   // A=1 B=2 Select=4 Start=8 Right Left Up Down
 void setBootloader(bool (*get)(bool isCgb, unsigned char *data, unsigned size));
+// Link port device (Game Boy Printer), or 0 for nothing plugged in.
+void setSerialDevice(unsigned char (*send)(unsigned char));
 void setRumble(void (*set)(bool on));   // rumble cartridges
 // MBC7 cartridges (Kirby Tilt 'n' Tumble): accelerometer in g (about -1..1;
 // x > 0 = tilted left, y > 0 = tilted away / up, as on the real cartridge).

@@ -49,7 +49,10 @@ namespace gambatte {
 // In gambatte-memory.cpp (VBA360 addition).
 extern void (*sgbJoypWriteHook)(unsigned data, unsigned oldValue);
 extern unsigned (*sgbJoypIdleHook)();
+extern unsigned char (*serialDeviceHook)(unsigned char);
 }
+
+void gmbBridge::setSerialDevice(unsigned char (*send)(unsigned char)) { gambatte::serialDeviceHook = send; }
 
 // Called by Gambatte's MBC5 for rumble cartridges (Pokemon Pinball...).
 void cartridge_set_rumble(unsigned active)

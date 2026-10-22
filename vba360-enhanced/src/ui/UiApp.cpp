@@ -18,7 +18,7 @@ enum
   Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
 
-  V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
+  V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_PRINTER, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   V_GBA_COLOR, V_BLEND,
   A_SOUND = 1, A_MUTE_FF, A_VOLUME, A_LATENCY,
   E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
@@ -665,6 +665,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
     (m.add(V_SGB, ITEM_OPTION, tr("Super Game Boy (marcos)", "Super Game Boy (borders)"), sgb[m_cfg.sgbBorders],
           tr("Marco y colores del juego en el Super Game Boy. Se aplica al abrir el juego.",
              "The game's Super Game Boy border and colors. Applies when the game starts."))).choice = m_cfg.sgbBorders;
+    const char *plugged[2] = { tr("Desconectada", "Unplugged"), tr("Conectada", "Plugged in") };
+    (m.add(V_PRINTER, ITEM_OPTION, "Game Boy Printer", plugged[m_cfg.gbPrinter],
+          tr("Lo que el juego imprima se guarda como imagen en screenshots. Se aplica al abrir el juego.",
+             "What the game prints is saved as a picture in screenshots. Applies when the game starts."))).choice = m_cfg.gbPrinter;
     {
       // Background: black, or an image from borders\ next to default.xex
       std::vector<std::string> images = cachedImages("borders");
@@ -1458,6 +1462,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == V_EFFECT) m_cfg.screenEffect = wrapIndex(m_cfg.screenEffect, delta, EFFECT_COUNT);
     else if (id == V_GB_COLORS) m_cfg.gbPalette = wrapIndex(m_cfg.gbPalette, delta, GB_PALETTE_COUNT);
     else if (id == V_SGB) m_cfg.sgbBorders = wrapIndex(m_cfg.sgbBorders, delta, 3);
+    else if (id == V_PRINTER) m_cfg.gbPrinter = wrapIndex(m_cfg.gbPrinter, delta, 2);
     else if (id == V_BORDER_FIT) m_cfg.borderFit = wrapIndex(m_cfg.borderFit, delta, FIT_COUNT);
     else if (id == V_BORDER) {
       std::vector<std::string> images = cachedImages("borders");

@@ -2171,6 +2171,7 @@ u32 systemGetClock()
 
 void systemGbPrint(u8 *data,int pages,int feed,int palette, int contrast)
 {
+  xboxGbPrint(data, palette);
 }
 
 /* xKiv: added timestamp */
