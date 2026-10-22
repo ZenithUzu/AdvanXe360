@@ -29,13 +29,14 @@ enum UiAction
   ACT_COUNT
 };
 
-enum UiFilter { FILTER_SHARP = 0, FILTER_SMOOTH, FILTER_SCALE2X, FILTER_LQ2X, FILTER_COUNT };
+// Scale2x, sharp bilinear and Scale3x run on the GPU; LQ2x on the CPU.
+enum UiFilter { FILTER_SHARP = 0, FILTER_SMOOTH, FILTER_SCALE2X, FILTER_LQ2X, FILTER_SHARP_SMOOTH, FILTER_SCALE3X, FILTER_COUNT };
 // Picture size: console proportions, fill the screen, or whole-number zoom.
 enum UiPictureSize { SIZE_ORIGINAL = 0, SIZE_FULL, SIZE_INTEGER, SIZE_WIDE, SIZE_COUNT };
 // How the background image is fitted: whole image centered, cover, stretch.
 enum UiBorderFit { FIT_CENTER = 0, FIT_FILL, FIT_STRETCH, FIT_COUNT };
 // Screen effect drawn over the game picture.
-enum UiScreenEffect { EFFECT_NONE = 0, EFFECT_SCANLINES, EFFECT_GRID, EFFECT_COUNT };
+enum UiScreenEffect { EFFECT_NONE = 0, EFFECT_SCANLINES, EFFECT_GRID, EFFECT_DOTS, EFFECT_COUNT };
 // Where a cartridge sensor reads from: right stick axis, optionally inverted.
 // A stick direction a cartridge sensor movement is mapped to.
 enum UiStickDir { SDIR_NONE = 0, SDIR_RS_RIGHT, SDIR_RS_LEFT, SDIR_RS_UP, SDIR_RS_DOWN,

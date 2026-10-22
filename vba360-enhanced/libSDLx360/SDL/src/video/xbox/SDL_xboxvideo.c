@@ -111,89 +111,156 @@ void (*XBOX_BackgroundHook)(void) = NULL;
 int XBOX_UseCustomRect = 0;
 int XBOX_CustomRect[4] = { 0, 0, 1280, 720 };
 
-/* Effect drawn over the game picture: 0 = none, 1 = CRT, 2 = LCD.
-   XBOX_EffectSource is the picture size in console pixels, so there is one
-   scanline per console line whatever the filter's zoom. */
+/* Effect drawn over the game picture: 0 = none, 1 = CRT, 2 = LCD, 3 = dot
+   matrix. XBOX_EffectSource is the picture size in console pixels, so there
+   is one scanline per console line whatever the texture's zoom.
+   XBOX_ShaderFilter: how the picture is enlarged on the GPU: 0 = by the
+   sampler (sharp / smooth), 1 = sharp bilinear, 2 = Scale2x, 3 = Scale3x.
+   The two are joined into one pixel shader, compiled the first time that
+   pair is used. */
 int XBOX_ScreenEffect = 0;
+int XBOX_ShaderFilter = 0;
 float XBOX_EffectSource[2] = { 240.0f, 160.0f };
-static D3DPixelShader *g_pEffectShader[3] = { NULL, NULL, NULL };
+#define XBOX_FILTERS 4
+#define XBOX_EFFECTS 4
+static D3DPixelShader *g_pGameShader[XBOX_FILTERS][XBOX_EFFECTS];
+static int g_gameShaderTried[XBOX_FILTERS][XBOX_EFFECTS];
 
-/* CRT: adapted from zfast_crt by Greg Hogan (SoltanGris42), GPL v2 or later
-   (libretro/glsl-shaders, crt/shaders/zfast_crt.glsl). Scanlines that are
-   thinner on bright colors, plus an aperture-grille mask every 3 columns.
-   c0 = console width, console height, picture width, picture height (px). */
-static const char *g_strCrtShader =
+/* Shared head: c0 = console width, console height, picture width, picture
+   height (px). px(p): the console pixel whose center is p (console units). */
+static const char *g_strShaderHead =
     "sampler detail : register(s0);\n"
     "float4 dims : register(c0);\n"
-    "float4 main( float2 uv : TEXCOORD0 ) : COLOR\n"
-    "{\n"
-    "    float2 p = uv * dims.xy;\n"
-    "    float2 f = p - ( floor( p ) + 0.5 );\n"
-    "    float Y = f.y * f.y;\n"
-    "    float YY = Y * Y;\n"
-    "    float whichmask = floor( uv.x * dims.z ) * -0.3333;\n"
-    "    float mask = 1.0 - step( frac( whichmask ), 0.3333 ) * 0.25;\n"
-    "    float3 c = tex2D( detail, uv ).rgb;\n"
-    "    float w = 1.25 - 5.0 * ( Y - 2.05 * YY );\n"
-    "    float wB = 1.0 - 10.0 * ( YY - 2.8 * YY * Y );\n"
-    "    float k = dot( c, float3( 0.26664, 0.26664, 0.26664 ) );\n"
-    "    return float4( c * lerp( w * mask, wB, k ), 1.0 );\n"
-    "}\n";
+    "float3 px( float2 p ) { return tex2D( detail, p / dims.xy ).rgb; }\n"
+    "bool eq( float3 a, float3 b ) { return dot( abs( a - b ), float3( 1, 1, 1 ) ) < 0.01; }\n";
 
-/* LCD: adapted from lcd3x by Gigaherz, public domain
-   (libretro/glsl-shaders, handheld/shaders/lcd3x.glsl). Faint lines between
-   rows and red/green/blue sub-pixel columns, like a handheld's screen. */
-static const char *g_strLcdShader =
-    "sampler detail : register(s0);\n"
-    "float4 dims : register(c0);\n"
-    "float4 main( float2 uv : TEXCOORD0 ) : COLOR\n"
-    "{\n"
-    "    float3 res = tex2D( detail, uv ).rgb;\n"
-    "    float2 angle = uv * dims.xy * 6.283185307;\n"
-    "    float yf = ( 16.0 + sin( angle.y ) ) / 17.0;\n"
-    "    float3 offs = 3.141592654 * float3( 0.5, 0.5 - 2.0 / 3.0, 0.5 - 4.0 / 3.0 );\n"
-    "    float3 xf = ( 4.0 + sin( angle.x + offs ) ) / 5.0;\n"
-    "    return float4( yf * xf * res, 1.0 );\n"
-    "}\n";
+static const char *g_strFilter[XBOX_FILTERS] = {
+    /* the sampler alone (point = sharp, linear = smooth) */
+    "float3 filt( float2 uv ) { return tex2D( detail, uv ).rgb; }\n",
+    /* Sharp bilinear (as libretro's sharp-bilinear): sharp pixels, only their
+       edges blended, so a non-integer zoom has no uneven pixels. Linear sampler. */
+    "float3 filt( float2 uv ) {\n"
+    "  float2 t = uv * dims.xy, tf = floor( t ), f = t - tf - 0.5;\n"
+    "  float2 k = max( floor( dims.zw / dims.xy ), 1.0 );\n"
+    "  float2 r = 0.5 - 0.5 / k;\n"
+    "  f = ( f - clamp( f, -r, r ) ) * k + 0.5;\n"
+    "  return tex2D( detail, ( tf + f ) / dims.xy ).rgb; }\n",
+    /* Scale2x (EPX / AdvMAME2x, Andrea Mazzoleni): each console pixel split in
+       2x2, a corner takes a neighbour's color where two neighbours agree. */
+    "float3 filt( float2 uv ) {\n"
+    "  float2 t = uv * dims.xy, c = floor( t ) + 0.5, f = t - floor( t );\n"
+    "  float3 E = px( c ), B = px( c + float2( 0, -1 ) ), D = px( c + float2( -1, 0 ) );\n"
+    "  float3 F = px( c + float2( 1, 0 ) ), H = px( c + float2( 0, 1 ) );\n"
+    "  if ( eq( B, H ) || eq( D, F ) ) return E;\n"
+    "  if ( f.y < 0.5 ) { if ( f.x < 0.5 ) return eq( D, B ) ? D : E; return eq( B, F ) ? F : E; }\n"
+    "  if ( f.x < 0.5 ) return eq( D, H ) ? D : E;\n"
+    "  return eq( H, F ) ? F : E; }\n",
+    /* Scale3x (AdvMAME3x, Andrea Mazzoleni): the same rule in 3x3. */
+    "float3 filt( float2 uv ) {\n"
+    "  float2 t = uv * dims.xy, c = floor( t ) + 0.5, f = t - floor( t );\n"
+    "  float3 A = px( c + float2( -1, -1 ) ), B = px( c + float2( 0, -1 ) ), C = px( c + float2( 1, -1 ) );\n"
+    "  float3 D = px( c + float2( -1, 0 ) ), E = px( c ), F = px( c + float2( 1, 0 ) );\n"
+    "  float3 G = px( c + float2( -1, 1 ) ), H = px( c + float2( 0, 1 ) ), I = px( c + float2( 1, 1 ) );\n"
+    "  if ( eq( B, H ) || eq( D, F ) ) return E;\n"
+    "  int col = f.x < 1.0 / 3.0 ? 0 : ( f.x < 2.0 / 3.0 ? 1 : 2 );\n"
+    "  int row = f.y < 1.0 / 3.0 ? 0 : ( f.y < 2.0 / 3.0 ? 1 : 2 );\n"
+    "  bool db = eq( D, B ), bf = eq( B, F ), dh = eq( D, H ), hf = eq( H, F );\n"
+    "  if ( row == 0 ) {\n"
+    "    if ( col == 0 ) return db ? D : E;\n"
+    "    if ( col == 1 ) return ( db && !eq( E, C ) ) || ( bf && !eq( E, A ) ) ? B : E;\n"
+    "    return bf ? F : E; }\n"
+    "  if ( row == 1 ) {\n"
+    "    if ( col == 0 ) return ( db && !eq( E, G ) ) || ( dh && !eq( E, A ) ) ? D : E;\n"
+    "    if ( col == 1 ) return E;\n"
+    "    return ( bf && !eq( E, I ) ) || ( hf && !eq( E, C ) ) ? F : E; }\n"
+    "  if ( col == 0 ) return dh ? D : E;\n"
+    "  if ( col == 1 ) return ( dh && !eq( E, I ) ) || ( hf && !eq( E, G ) ) ? H : E;\n"
+    "  return hf ? F : E; }\n",
+};
 
-/* Compiles the effect shaders once (when the video mode is set, so the
-   first game frames are not held up by the shader compiler). */
+static const char *g_strEffect[XBOX_EFFECTS] = {
+    "float3 effect( float3 c, float2 uv ) { return c; }\n",
+    /* CRT: adapted from zfast_crt by Greg Hogan (SoltanGris42), GPL v2 or later
+       (libretro/glsl-shaders, crt/shaders/zfast_crt.glsl). Scanlines that are
+       thinner on bright colors, plus an aperture-grille mask every 3 columns. */
+    "float3 effect( float3 c, float2 uv ) {\n"
+    "  float2 p = uv * dims.xy;\n"
+    "  float2 f = p - ( floor( p ) + 0.5 );\n"
+    "  float Y = f.y * f.y, YY = Y * Y;\n"
+    "  float whichmask = floor( uv.x * dims.z ) * -0.3333;\n"
+    "  float mask = 1.0 - step( frac( whichmask ), 0.3333 ) * 0.25;\n"
+    "  float w = 1.25 - 5.0 * ( Y - 2.05 * YY );\n"
+    "  float wB = 1.0 - 10.0 * ( YY - 2.8 * YY * Y );\n"
+    "  float k = dot( c, float3( 0.26664, 0.26664, 0.26664 ) );\n"
+    "  return c * lerp( w * mask, wB, k ); }\n",
+    /* LCD: adapted from lcd3x by Gigaherz, public domain
+       (libretro/glsl-shaders, handheld/shaders/lcd3x.glsl). Faint lines between
+       rows and red/green/blue sub-pixel columns, like a handheld's screen. */
+    "float3 effect( float3 c, float2 uv ) {\n"
+    "  float2 angle = uv * dims.xy * 6.283185307;\n"
+    "  float yf = ( 16.0 + sin( angle.y ) ) / 17.0;\n"
+    "  float3 offs = 3.141592654 * float3( 0.5, 0.5 - 2.0 / 3.0, 0.5 - 4.0 / 3.0 );\n"
+    "  float3 xf = ( 4.0 + sin( angle.x + offs ) ) / 5.0;\n"
+    "  return yf * xf * c; }\n",
+    /* Dot matrix: each console pixel a square dot with a darker gap around
+       it, like the original Game Boy's screen. */
+    "float3 effect( float3 c, float2 uv ) {\n"
+    "  float2 f = abs( frac( uv * dims.xy ) - 0.5 );\n"
+    "  float d = max( f.x, f.y );\n"
+    "  return c * lerp( 1.0, 0.62, smoothstep( 0.34, 0.48, d ) ); }\n",
+};
+
+static const char *g_strShaderMain =
+    "float4 main( float2 uv : TEXCOORD0 ) : COLOR { return float4( effect( filt( uv ), uv ), 1.0 ); }\n";
+
+/* The pixel shader for a filter and effect pair, compiled the first time
+   (NULL if it can't be: the plain picture is used then). */
+static D3DPixelShader *XBOX_GameShader(int f, int e)
+{
+	char src[4096];
+	LPD3DXBUFFER code = NULL;
+	if (f < 0 || f >= XBOX_FILTERS) f = 0;
+	if (e < 0 || e >= XBOX_EFFECTS) e = 0;
+	if (g_pGameShader[f][e] || g_gameShaderTried[f][e])
+		return g_pGameShader[f][e];
+	g_gameShaderTried[f][e] = 1;
+	strcpy(src, g_strShaderHead);
+	strcat(src, g_strFilter[f]);
+	strcat(src, g_strEffect[e]);
+	strcat(src, g_strShaderMain);
+	if (SUCCEEDED(D3DXCompileShader(src, (UINT)strlen(src), NULL, NULL, "main", "ps_3_0", 0,
+	                                &code, NULL, NULL)) && code)
+	{
+		g_pGameShader[f][e] = D3DDevice_CreatePixelShader((DWORD *)code->lpVtbl->GetBufferPointer(code));
+		code->lpVtbl->Release(code);
+	}
+	return g_pGameShader[f][e];
+}
+
+/* Compiles the current pair once (when the video mode is set, so the first
+   game frames are not held up by the shader compiler). */
 static void XBOX_CompileEffectShaders(void)
 {
-	const char *src[3];
-	int i;
-	src[0] = NULL;
-	src[1] = g_strCrtShader;
-	src[2] = g_strLcdShader;
-	for (i = 1; i < 3; i++)
-	{
-		LPD3DXBUFFER code = NULL;
-		if (g_pEffectShader[i])
-			continue;
-		if (SUCCEEDED(D3DXCompileShader(src[i], (UINT)strlen(src[i]), NULL, NULL, "main", "ps_3_0", 0,
-		                                &code, NULL, NULL)) && code)
-		{
-			g_pEffectShader[i] = D3DDevice_CreatePixelShader((DWORD *)code->lpVtbl->GetBufferPointer(code));
-			code->lpVtbl->Release(code);
-		}
-	}
+	if (XBOX_ShaderFilter || XBOX_ScreenEffect)
+		XBOX_GameShader(XBOX_ShaderFilter, XBOX_ScreenEffect);
 }
 
 /* Picture size on screen, for the CRT mask (set in XBOX_SetVideoMode). */
 static float g_pictureSize[2] = { 1280.0f, 720.0f };
 
-/* Pixel shader for the game picture: plain, or with the screen effect. */
+/* Pixel shader for the game picture: plain, or with the filter / effect. */
 static void XBOX_SetGamePixelShader(void)
 {
-	int e = XBOX_ScreenEffect;
-	if (e > 0 && e < 3 && g_pEffectShader[e])
+	D3DPixelShader *ps = (XBOX_ShaderFilter || XBOX_ScreenEffect)
+	                     ? XBOX_GameShader(XBOX_ShaderFilter, XBOX_ScreenEffect) : NULL;
+	if (ps)
 	{
 		float params[4];
 		params[0] = XBOX_EffectSource[0];
 		params[1] = XBOX_EffectSource[1];
 		params[2] = g_pictureSize[0];
 		params[3] = g_pictureSize[1];
-		D3DDevice_SetPixelShader(D3D_Device, g_pEffectShader[e]);
+		D3DDevice_SetPixelShader(D3D_Device, ps);
 		IDirect3DDevice9_SetPixelShaderConstantF(D3D_Device, 0, params, 1);
 	}
 	else

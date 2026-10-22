@@ -310,16 +310,32 @@ void migrateOldCheats()
 
 Filter coreFilterFor(int uiFilter)
 {
+  // Only LQ2x still runs on the CPU; the others are done by the GPU from
+  // the plain 2x picture (see shaderFilterFor).
+  return uiFilter == FILTER_LQ2X ? klq2x : kStretch2x;
+}
+
+// XBOX_ShaderFilter for a menu filter (SDL_xboxvideo.c).
+static int shaderFilterFor(int uiFilter)
+{
   switch (uiFilter) {
-  case FILTER_SCALE2X: return kAdMame2x;
-  case FILTER_LQ2X: return klq2x;
-  default: return kStretch2x;
+  case FILTER_SHARP_SMOOTH: return 1;
+  case FILTER_SCALE2X: return 2;
+  case FILTER_SCALE3X: return 3;
+  default: return 0;
   }
+}
+
+// Filters that read single console pixels need point sampling.
+bool xboxPointSampler()
+{
+  int f = xboxVideoFilter();
+  return f == FILTER_SHARP || f == FILTER_SCALE2X || f == FILTER_SCALE3X;
 }
 
 void applySampler()
 {
-  D3DTEXTUREFILTERTYPE f = xboxVideoFilter() == FILTER_SHARP ? D3DTEXF_POINT : D3DTEXF_LINEAR;
+  D3DTEXTUREFILTERTYPE f = xboxPointSampler() ? D3DTEXF_POINT : D3DTEXF_LINEAR;
   pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, f);
   pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, f);
   // Clamp: with the default wrap mode the smooth filter blends the
@@ -1274,6 +1290,7 @@ static void applyBorder()
 extern "C" int XBOX_UseCustomRect;
 extern "C" int XBOX_CustomRect[4];
 extern "C" int XBOX_ScreenEffect;
+extern "C" int XBOX_ShaderFilter;
 extern "C" float XBOX_EffectSource[2];
 
 void xboxSetupPicture(int srcW, int srcH)
@@ -1319,6 +1336,7 @@ void xboxSetupPicture(int srcW, int srcH)
   XBOX_EffectSource[0] = (float)srcW;
   XBOX_EffectSource[1] = (float)srcH;
   XBOX_ScreenEffect = videoEffect();
+  XBOX_ShaderFilter = shaderFilterFor(xboxVideoFilter());
 }
 
 static void applyGbPalette()
@@ -1480,6 +1498,7 @@ void xboxApplySettings()
   applyGbPalette();
   rtcSetTimeOffset(g_cfg.clockMode ? g_cfg.clockOffset : 0);
   XBOX_ScreenEffect = videoEffect();
+  XBOX_ShaderFilter = shaderFilterFor(xboxVideoFilter());
   showSpeed = videoShowFps() ? 2 : 0;
   if (videoFrameSkip() == 0) {
     autoFrameSkip = 1;

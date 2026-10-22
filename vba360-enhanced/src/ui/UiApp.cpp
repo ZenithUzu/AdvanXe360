@@ -64,7 +64,8 @@ int wrapIndex(int v, int delta, int count)
 // per-game options).
 const char *filterName(const UiApp &app, int i)
 {
-  const char *n[FILTER_COUNT] = { app.tr("N\xedtido", "Sharp"), app.tr("Suave", "Smooth"), "Scale2x", "LQ2x" };
+  const char *n[FILTER_COUNT] = { app.tr("N\xedtido", "Sharp"), app.tr("Suave", "Smooth"), "Scale2x", "LQ2x",
+                                  app.tr("N\xedtido suave", "Sharp smooth"), "Scale3x" };
   return n[i < 0 || i >= FILTER_COUNT ? 0 : i];
 }
 
@@ -81,7 +82,8 @@ const char *effectName(const UiApp &app, int i)
 {
   const char *n[EFFECT_COUNT] = {
     app.tr("Ninguno", "None"), app.tr("CRT (TV antigua)", "CRT (old TV)"),
-    app.tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)") };
+    app.tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)"),
+    app.tr("Matriz de puntos (Game Boy)", "Dot matrix (Game Boy)") };
   return n[i < 0 || i >= EFFECT_COUNT ? 0 : i];
 }
 
@@ -626,10 +628,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.title = tr("Video", "Video");
     m.subtitle = tr("C\xf3mo se ve el juego", "How the game looks");
     const char *filters[FILTER_COUNT] = {
-      tr("N\xedtido", "Sharp"), tr("Suave", "Smooth"), "Scale2x", "LQ2x" };
+      tr("N\xedtido", "Sharp"), tr("Suave", "Smooth"), "Scale2x", "LQ2x", tr("N\xedtido suave", "Sharp smooth"), "Scale3x" };
     (m.add(V_FILTER, ITEM_OPTION, tr("Filtro de imagen", "Image filter"), filters[m_cfg.filter],
-          tr("N\xedtido: p\xedxeles definidos. Suave: bilineal. Scale2x/LQ2x: suavizan bordes.",
-             "Sharp: crisp pixels. Smooth: bilinear. Scale2x/LQ2x: smooth the edges."))).choice = m_cfg.filter;
+          tr("N\xedtido: p\xedxeles definidos. Suave: bilineal. N\xedtido suave: definido sin p\xedxeles desiguales. Scale2x/3x y LQ2x: redondean los bordes.",
+             "Sharp: crisp pixels. Smooth: bilinear. Sharp smooth: crisp, no uneven pixels. Scale2x/3x and LQ2x: round off edges."))).choice = m_cfg.filter;
     const char *stretch[SIZE_COUNT] = {
       tr("Original", "Original"), tr("Pantalla completa", "Full screen"), tr("Entera (p\xedxel exacto)", "Integer (pixel perfect)"),
       tr("16:9 (toda la pantalla)", "16:9 (whole screen)") };
@@ -637,10 +639,11 @@ void UiApp::buildMenu(UiMenuScreen &m)
           tr("Original: proporci\xf3n de la consola. Entera: zoom exacto. 16:9: llena la TV (estirada).",
              "Original: console proportions. Integer: exact zoom. 16:9: fills the TV (stretched)."))).choice = m_cfg.stretch;
     const char *effects[EFFECT_COUNT] = {
-      tr("Ninguno", "None"), tr("CRT (TV antigua)", "CRT (old TV)"), tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)") };
+      tr("Ninguno", "None"), tr("CRT (TV antigua)", "CRT (old TV)"), tr("LCD (pantalla port\xe1til)", "LCD (handheld screen)"),
+      tr("Matriz de puntos (Game Boy)", "Dot matrix (Game Boy)") };
     (m.add(V_EFFECT, ITEM_OPTION, tr("Efecto de pantalla", "Screen effect"), effects[m_cfg.screenEffect],
-          tr("CRT: l\xedneas y m\xe1scara de TV (zfast_crt). LCD: rejilla de port\xe1til (lcd3x). Mejor con Entera.",
-             "CRT: TV scanlines and mask (zfast_crt). LCD: handheld grid (lcd3x). Best with Integer size."))).choice = m_cfg.screenEffect;
+          tr("CRT: l\xedneas y m\xe1scara de TV (zfast_crt). LCD: rejilla de port\xe1til (lcd3x). Matriz: puntos del Game Boy. Mejor con Entera.",
+             "CRT: TV scanlines and mask (zfast_crt). LCD: handheld grid (lcd3x). Dot matrix: Game Boy dots. Best with Integer size."))).choice = m_cfg.screenEffect;
     (m.add(V_GB_COLORS, ITEM_OPTION, tr("Colores (Game Boy)", "Colors (Game Boy)"),
           uiGbPaletteNames[m_cfg.gbPalette][m_cfg.language ? 1 : 0],
           tr("Para juegos de Game Boy (los de Color usan los suyos). Autom\xe1tica: los que les da el GBC.",

@@ -1146,7 +1146,7 @@ void sdlInitVideo() {
     }
   }
 
-	if (xboxVideoFilter() == FILTER_SHARP)
+	if (xboxPointSampler())
 	{
 		pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 		pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
