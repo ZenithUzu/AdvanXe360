@@ -31,11 +31,21 @@ Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba
 - **Sensores de cartucho** con el stick derecho: sol (Boktai), inclinación (Yoshi, Koro Koro, Kirby Tilt 'n' Tumble), giroscopio y vibración (WarioWare: Twisted!, Drill Dozer).
 - **Estados** en 9 ranuras con miniatura, guardar al salir y **continuar donde lo dejaste**.
 - **Avance rápido** de 2x a 8x o máximo (mantener o alternar), **trucos** (GameShark, Action Replay, CodeBreaker, Game Genie) y **reloj** ajustable.
-- **Audio:** volumen de 25 % a 200 % y retraso del sonido ajustable.
+- **Audio:** volumen de 25 % a 200 %, retraso del sonido ajustable y **música en el menú** con tus propios `.wav`.
 - **Partidas seguras:** copia automática del `.sav` al abrir cada juego, y opciones para borrar estados dañados o restablecer la configuración.
-- **Imagen:** filtros (nítido, suave, Scale2x, LQ2x), tamaños (original, pantalla completa, entera y 16:9), efectos **CRT / LCD**, **corrección de color** de GBA, **mezcla de cuadros**, 41 paletas de Game Boy y fondo con tu propia imagen.
+- **Imagen:** filtros (nítido, suave, **nítido suave**, **Scale2x**, **Scale3x** —los tres en la tarjeta gráfica— y LQ2x), tamaños (original, pantalla completa, entera y 16:9), efectos **CRT / LCD / Matriz de puntos**, **corrección de color** de GBA, **mezcla de cuadros**, 41 paletas de Game Boy y fondo con tu propia imagen.
 - **Opciones por juego:** imagen, botones, trucos, tipo de guardado y parche, guardados por nombre de archivo.
-- **Menú propio** en español e inglés, con 7 temas (incluido **Frutiger Aero**), imagen de fondo, **burbujas y agua en movimiento**, portadas, búsqueda y favoritos.
+- **Biblioteca:** arranca eligiendo la consola por su cartucho y muestra tus juegos como **tarjetas con portada**, sin carpetas. Portadas descargadas solas y cartuchos personalizables.
+- **Menú propio** en español e inglés, con 7 temas (incluido **Frutiger Aero**), transparencia y tono a tu gusto, imagen de fondo, **burbujas y agua en movimiento**, búsqueda y favoritos.
+
+## Biblioteca
+
+| | |
+|---|---|
+| ![Elegir consola por su cartucho](docs/screenshots/library-consoles.png) | ![Juegos de GBA en tarjetas](docs/screenshots/library-gba.png) |
+| ![Juegos de Game Boy Color](docs/screenshots/library-gbc.png) | ![Juegos de Game Boy](docs/screenshots/library-gb.png) |
+
+Estas muestran la **Biblioteca**, la pantalla con la que arranca: primero eliges la consola por su **cartucho** (aquí con cartuchos personalizados de `carts\`) y después ves los juegos como **tarjetas con su portada**; la elegida se resalta y un corazón marca los favoritos. Todo con el tema **Frutiger Aero** y un fondo propio.
 
 ## Game Boy Advance
 
@@ -90,6 +100,12 @@ Estas muestran la **imagen**: arriba, el efecto **LCD** con la **corrección de 
 
 Estas muestran **efectos y paletas de Game Boy** en *Pokémon Rojo*: sin efecto con paleta gris, **CRT** con paleta verde y **LCD** con las paletas Pocket y Light.
 
+| | |
+|---|---|
+| ![Filtros de imagen](docs/screenshots/filters-list.png) | ![Efectos de pantalla](docs/screenshots/screen-effects-list.png) |
+
+Estas muestran los **filtros** (nítido, suave, Scale2x, LQ2x, **nítido suave** y **Scale3x**) y los **efectos** (CRT, LCD y **matriz de puntos** del Game Boy). Se combinan como quieras, en GBA, GB y GBC, y también por juego.
+
 ## Menú y ajustes
 
 | | |
@@ -121,6 +137,13 @@ Estas muestran **cómo se cambia una opción**: con **panel lateral** o **lista 
 | ![Imagen de fondo del menú](docs/screenshots/menu-background-image.png) | ![Menú en inglés](docs/screenshots/controls-english.png) |
 
 Estas muestran los **temas**: Predeterminado, Rojo, Game Boy Advance y **Frutiger Aero** (botones de cristal y burbujas); abajo, el menú con una **imagen de fondo** propia y el menú en **inglés**.
+
+| | |
+|---|---|
+| ![Apariencia](docs/screenshots/menu-appearance.png) | ![Música del menú](docs/screenshots/menu-audio-music.png) |
+| ![Apariencia con Frutiger Aero](docs/screenshots/aero-appearance.png) | ![Efectos de Frutiger Aero](docs/screenshots/aero-effects.png) |
+
+Estas muestran **Apariencia** (tema, fondo, transparencia de los paneles, tono de resaltado y *Descargar las portadas que faltan*), la **música del menú** en Audio, y Frutiger Aero con un fondo propio, paneles muy transparentes y los efectos de **burbujas y agua**.
 
 ---
 
@@ -262,6 +285,7 @@ Más detalles técnicos en el [README original](docs/README-original.md).
 - **Sonido de Game Boy y archivos comprimidos:** Gb_Apu, Blip_Buffer y File_Extractor de **Shay Green (blargg)**.
 - **Íconos de los botones:** imágenes del control de Xbox 360 del paquete [Xbox 360 Controller Button Images](https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Xbox-360-Controller-Button-Images) de **Microsoft** (XNA Game Studio), licencia Ms-PL ([texto](vba360-enhanced/src/ui/LICENSE-ButtonImages.txt)).
 - **Portadas:** [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails) del equipo y la comunidad de **libretro**, servidas desde [thumbnails.libretro.com](https://thumbnails.libretro.com).
+- **Filtros Scale2x / Scale3x:** algoritmo de **Andrea Mazzoleni** (AdvanceMAME); **Nítido suave**: la idea del *sharp-bilinear* de libretro. Reescritos para la tarjeta gráfica del 360.
 - **Efecto de agua:** idea de [snes360-enhanced](https://github.com/frankischilling/snes360-enhanced) de **frankischilling** (el agua que ondula el fondo), reescrita para este menú.
 - **Cartuchos de la Biblioteca:** los que trae son genéricos, dibujados para AdvanXe360 (sin logos ni arte de nadie). Si quieres renders realistas, en los foros de LaunchBox hay de autores como [ABeezy13](https://forums.launchbox-app.com/profile/77427-abeezy13/); se descargan y se ponen en `carts\` (no vienen incluidos).
 - **Estilo de este README y de las notas de versión:** inspirado en [Pokemon-Terminal](https://github.com/LazoVelko/Pokemon-Terminal) y en las [releases de PokeRogue](https://github.com/pagefaultgames/pokerogue/releases).
