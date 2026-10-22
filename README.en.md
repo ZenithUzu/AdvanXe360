@@ -207,7 +207,7 @@ Put images (PNG, JPG, BMP, TGA or DDS; 1280×720 is best) in `borders\` and pick
 - **Menu music** (*Audio*): put **`.wav`** files (16-bit PCM; Audacity exports them like that) in the `music\` folder next to `default.xex`. They play only in the main menu, **in order** or **shuffled**, with their own volume; never during a game.
 - **Game list preview** (*Interface & language*): *Box art or last played*, *Box art only* or *Last played only* (the picture of the last moment you played).
 - **Automatic box art:** with the console online, *Settings → Appearance → Download missing box art* (every Library game that has none yet). They come from [thumbnails.libretro.com](https://thumbnails.libretro.com) (the same as RetroArch) for GBA, GB and GBC. They're found best when the ROM has its **official name** (No-Intro), e.g. `Pokemon - Emerald Version (USA, Europe).gba`; short names like `Pokemon Emerald` usually work too, but hacks or translated names don't. If that server ever stops working, another one can be set in `vba360.ini` with `cover_server=`.
-- **Covers by hand:** put `covers\<ROM name>.png` (or `.jpg`), for example `covers\Pokemon Emerald.png`. About 400×400 px is enough. Downloads never replace a game's existing cover, except *Download box art* for that game.
+- **Covers by hand:** put `covers\<ROM name>.png` (or `.jpg`), for example `covers\Pokemon Emerald.png`. About 400×400 px is enough. Downloads never replace a game's existing cover.
 
 ## Super Game Boy
 
