@@ -1570,10 +1570,12 @@ static void kinectCapture(unsigned char *gray)
   static bool haveLast = false;
   if (state == 0) {
     state = -1;
-    if (SUCCEEDED(NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR, NUI_INITIALIZE_DEFAULT_HARDWARE_THREAD)) &&
-        SUCCEEDED(NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, NUI_IMAGE_RESOLUTION_640x480, 0, 2, NULL, &stream)))
+    HRESULT hrInit = NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR, NUI_INITIALIZE_DEFAULT_HARDWARE_THREAD);
+    HRESULT hrOpen = FAILED(hrInit) ? 0 : NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, NUI_IMAGE_RESOLUTION_640x480, 0, 2, NULL, &stream);
+    if (SUCCEEDED(hrInit) && SUCCEEDED(hrOpen))
       state = 1;
-    xboxLog("Game Boy Camera: Kinect %s", state > 0 ? "on" : "not found");
+    xboxLog("Game Boy Camera: Kinect %s (NuiInitialize 0x%08X, NuiImageStreamOpen 0x%08X)",
+            state > 0 ? "on" : "not found", (unsigned)hrInit, (unsigned)hrOpen);
   }
   const NUI_IMAGE_FRAME *frame = 0;
   if (state > 0 && SUCCEEDED(NuiImageStreamGetNextFrame(stream, 0, &frame)) && frame) {
