@@ -103,6 +103,9 @@ public:
   virtual void removeCheat(const std::string &rom, int index) = 0;
   // Imports "<rom>.cht" / "<rom>.txt" style text lists; returns cheats added.
   virtual int importCheatFile(const std::string &rom, const std::string &path) = 0;
+  // Looks the game up in libretro's online cheat database and imports what it
+  // finds: codes added, or -1 with err set ("nomatch", "net"...).
+  virtual int downloadCheats(const std::string &rom, std::string &err) { err = "net"; return -1; }
 
   // Decodes an image file (PNG, JPG, BMP...) scaled to w x h, 0xAARRGGBB.
   virtual bool loadImage(const std::string &path, int w, int h, std::vector<UiColor> &out) { return false; }

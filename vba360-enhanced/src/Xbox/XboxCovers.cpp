@@ -1,5 +1,6 @@
 // Box art downloader (see XboxCovers.h).
 #include "XboxCovers.h"
+#include "fex/fex.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -372,6 +373,8 @@ bool netStart(std::string &err)
 #endif
 }
 
+bool resolveDns(const std::string &host, unsigned long &ip, std::string &err);
+
 bool resolve(const std::string &host, unsigned long &ip, std::string &err)
 {
   unsigned long a = inet_addr(host.c_str());
@@ -379,6 +382,23 @@ bool resolve(const std::string &host, unsigned long &ip, std::string &err)
     ip = a;
     return true;
   }
+  // One lookup per host and session: every cover used to ask the DNS again.
+  static std::string lastHost;
+  static unsigned long lastIp = 0;
+  if (host == lastHost && lastIp) {
+    ip = lastIp;
+    return true;
+  }
+  bool found = resolveDns(host, ip, err);
+  if (found) {
+    lastHost = host;
+    lastIp = ip;
+  }
+  return found;
+}
+
+bool resolveDns(const std::string &host, unsigned long &ip, std::string &err)
+{
 #ifdef _XBOX
   XNDNS *dns = NULL;
   if (XNetDnsLookup(host.c_str(), NULL, &dns) != 0 || !dns) {
@@ -420,6 +440,8 @@ Sock connectTo(unsigned long ip, int port)
   DWORD ms = 15000;
   setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&ms, sizeof(ms));
   setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char *)&ms, sizeof(ms));
+  int rcv = 256 * 1024;   // a bigger receive window: much faster downloads
+  setsockopt(s, SOL_SOCKET, SO_RCVBUF, (const char *)&rcv, sizeof(rcv));
 #else
   struct timeval tv;
   tv.tv_sec = 15;
@@ -519,18 +541,19 @@ bool httpGet(const std::string &url0, std::string &body, std::string &err)
       return false;
     }
     std::string data;
-    char buf[8192];
+    std::vector<char> chunk(64 * 1024);
+    char *buf = &chunk[0];
     for (;;) {
       if (g_cancel) {
         closeSock(s);
         err = "cancel";
         return false;
       }
-      int n = recv(s, buf, sizeof(buf), 0);
+      int n = recv(s, buf, (int)chunk.size(), 0);
       if (n <= 0)
         break;
       data.append(buf, n);
-      if (data.size() > 8 * 1024 * 1024)
+      if (data.size() > 48 * 1024 * 1024)   // the cheat database is the biggest file
         break;
     }
     closeSock(s);
@@ -625,6 +648,30 @@ bool writeFile(const std::string &path, const std::string &data)
   return ok;
 }
 
+void readLines(const std::string &path, std::vector<std::string> &out)
+{
+  FILE *f = fopen(path.c_str(), "rb");
+  if (!f)
+    return;
+  char line[1024];
+  while (fgets(line, sizeof(line), f)) {
+    std::string l = line;
+    while (!l.empty() && (l[l.size() - 1] == '\n' || l[l.size() - 1] == '\r'))
+      l.erase(l.size() - 1);
+    if (!l.empty())
+      out.push_back(l);
+  }
+  fclose(f);
+}
+
+void writeLines(const std::string &path, const std::vector<std::string> &lines)
+{
+  std::string data;
+  for (size_t i = 0; i < lines.size(); i++)
+    data += lines[i] + "\n";
+  writeFile(path, data);
+}
+
 std::string trimSlash(const std::string &s)
 {
   std::string r = s;
@@ -667,10 +714,18 @@ void coversRun(const std::vector<UiCoverItem> &items, const std::string &server0
         continue;
       if (!indexTried[sys]) {
         indexTried[sys] = true;
+        // The list of names is kept in covers\ (it's the slowest part, several
+        // MB); delete the .txt to fetch it again.
+        std::string cache = it.coverPath.substr(0, it.coverPath.find_last_of("\\/") + 1) +
+                            "_lista-" + kSystemFolder[sys] + ".txt";
+        readLines(cache, index[sys]);
         std::string html;
         std::string url = server + "/" + coversUrlEncode(kSystemFolder[sys]) + "/Named_Boxarts/";
-        if (httpGet(url, html, err)) {
+        if (!index[sys].empty()) {
+          COVERS_LOG("Covers: %s list from cache: %d names", kSystemFolder[sys], (int)index[sys].size());
+        } else if (httpGet(url, html, err)) {
           index[sys] = coversParseIndex(html);
+          writeLines(cache, index[sys]);
           COVERS_LOG("Covers: %s list: %d names", kSystemFolder[sys], (int)index[sys].size());
         } else {
           indexFailures++;
@@ -793,4 +848,61 @@ void coversStatus(UiCoverStatus &out)
 void coversCancel()
 {
   g_cancel = true;
+}
+
+bool cheatsFetch(const std::string &romName, const char *systemFolder, const std::string &zipPath,
+                 const std::string &outPath, std::string &err)
+{
+  g_cancel = false;
+  FILE *have = fopen(zipPath.c_str(), "rb");
+  if (have) {
+    fclose(have);
+  } else {
+    if (!netStart(err))
+      return false;
+    std::string zip;
+    if (!httpGet("http://buildbot.libretro.com/assets/frontend/cheats.zip", zip, err))
+      return false;
+    if (zip.size() < 4 || zip.compare(0, 2, "PK") != 0) {
+      err = "zip";
+      return false;
+    }
+    if (!writeFile(zipPath, zip)) {
+      err = "write";
+      return false;
+    }
+  }
+  // Names of that console's .cht files, and where each one is in the zip.
+  fex_t *fe = 0;
+  if (fex_open(&fe, zipPath.c_str()) || !fe) {
+    err = "zip";
+    return false;
+  }
+  std::string folder = std::string(systemFolder) + "/";
+  std::vector<std::string> names;
+  std::vector<fex_pos_t> where;
+  while (!fex_done(fe)) {
+    std::string n = fex_name(fe);
+    size_t at = n.find(folder);
+    if (at != std::string::npos && n.size() > 4 && lowerAscii(n.substr(n.size() - 4)) == ".cht") {
+      std::string base = n.substr(at + folder.size());
+      names.push_back(base.substr(0, base.size() - 4));
+      where.push_back(fex_tell_arc(fe));
+    }
+    if (fex_next(fe))
+      break;
+  }
+  int m = coversBestMatch(romName, names);
+  bool ok = false;
+  if (m < 0) {
+    err = "nomatch";
+  } else if (!fex_seek_arc(fe, where[m])) {
+    const void *data = 0;
+    if (!fex_data(fe, &data) && data)
+      ok = writeFile(outPath, std::string((const char *)data, fex_size(fe)));
+    if (!ok)
+      err = "zip";
+  }
+  fex_close(fe);
+  return ok;
 }

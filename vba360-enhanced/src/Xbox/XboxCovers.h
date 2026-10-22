@@ -40,4 +40,11 @@ void coversCancel();
 // Runs a whole job in the calling thread (used by the thread and by tests).
 void coversRun(const std::vector<UiCoverItem> &items, const std::string &server);
 
+// Cheats from libretro's cheat database (the zip RetroArch's updater uses,
+// downloaded once to zipPath): the .cht whose name best matches romName in
+// systemFolder ("Nintendo - Game Boy Advance"...) is written to outPath.
+// err: "net" / "dns" / ... / "nomatch" / "zip".
+bool cheatsFetch(const std::string &romName, const char *systemFolder, const std::string &zipPath,
+                 const std::string &outPath, std::string &err);
+
 #endif

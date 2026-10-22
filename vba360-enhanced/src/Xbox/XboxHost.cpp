@@ -693,6 +693,20 @@ public:
       syncCoreCheats();
   }
 
+  virtual int downloadCheats(const std::string &rom, std::string &err)
+  {
+    const char *sys = "Nintendo - Game Boy Advance";
+    if (romIsGb(rom))
+      sys = (romInfo(rom) & UI_ROM_CGB) ? "Nintendo - Game Boy Color" : "Nintendo - Game Boy";
+    std::string dir = uiJoinPath(xboxEmulatorDir(), "cheats");
+    std::string got = uiJoinPath(dir, "_libretro.cht");
+    if (!cheatsFetch(uiStripExtension(uiFileName(rom)), sys, uiJoinPath(dir, "libretro-cheats.zip"), got, err))
+      return -1;
+    int n = importCheatFile(rom, got);
+    DeleteFile(got.c_str());
+    return n;
+  }
+
   virtual int importCheatFile(const std::string &rom, const std::string &path)
   {
     std::vector<UiCheatEntry> entries;

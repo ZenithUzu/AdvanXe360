@@ -31,7 +31,7 @@ enum
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
   G_GBA_COLOR, G_BLEND, G_FPS, G_FRAMESKIP,
-  CH_ADD = 1, CH_TYPE, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000,
+  CH_ADD = 1, CH_TYPE, CH_ONLINE, CH_IMPORT_BASE = 10, CH_CHEAT_BASE = 1000,
   G_CHEATS = 40, G_CONTROLS_MODE, G_CONTROLS
 };
 
@@ -139,7 +139,7 @@ std::string uiStickDirName(UiApp &app, int dir)
 UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
-    m_request(UI_REQ_NONE), m_toastFrames(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_request(UI_REQ_NONE), m_toastFrames(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
     m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
@@ -304,6 +304,18 @@ void UiApp::update(unsigned int held)
 
   if (m_toastFrames > 0)
     m_toastFrames--;
+  if (m_cheatDownload > 0 && --m_cheatDownload == 0) {
+    std::string err;
+    int n = m_host.downloadCheats(m_cheatRom, err);
+    char buf[128];
+    if (n >= 0)
+      sprintf(buf, tr("%d c\xf3""digos agregados de internet", "%d codes added from the internet"), n);
+    else
+      strcpy(buf, err == "nomatch" ? tr("No hay trucos para este juego en la base", "No cheats for this game in the database")
+                                   : tr("No se pudo descargar (\xbf""consola en internet?)", "Download failed (is the console online?)"));
+    toast(buf);
+    rebuildMenus();
+  }
   updateStickCapture();
   m_frame++;
 
@@ -1247,6 +1259,10 @@ void UiApp::buildCheatsMenu(UiMenuScreen &m)
                                          "Type it with the keyboard, then give it a name."))
                         : std::string(tr("Formato: ", "Format: ")) + example);
 
+  m.add(CH_ONLINE, ITEM_ACTION, tr("Buscar trucos en internet", "Find cheats online"), "",
+        tr("De la base de trucos de libretro (RetroArch). La primera vez la descarga (unos MB).",
+           "From libretro's (RetroArch's) cheat database. The first time it downloads it (a few MB)."));
+
   // Text lists the player dropped next to the ROM or in cheats\.
   std::string base = uiStripExtension(m.arg);
   const std::string candidates[4] = {
@@ -1409,6 +1425,10 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
       openKeyboard(title, "", KEYBOARD_CHEAT);
     } else if (id == CH_TYPE) {
       onMenuChange(m, id, 1);
+    } else if (id == CH_ONLINE) {
+      // Shown first, then done a few frames later (the download blocks).
+      toast(tr("Buscando trucos en internet...", "Looking for cheats online..."), 600);
+      m_cheatDownload = 4;
     } else if (id >= CH_IMPORT_BASE && id < CH_IMPORT_BASE + 4) {
       const std::string &path = m.items[m.list.sel].help;
       int n = m_host.importCheatFile(m.arg, path);

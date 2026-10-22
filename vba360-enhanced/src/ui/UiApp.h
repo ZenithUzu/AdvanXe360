@@ -169,6 +169,7 @@ private:
   std::string m_requestRom;
   std::string m_toast;
   int m_toastFrames;
+  int m_cheatDownload;   // frames until the online cheat search runs (0 = none)
   // Sensor being mapped by moving the right stick (item id, 0 = none).
   int m_stickCapture;
   int m_stickCaptureFrames;
