@@ -101,6 +101,10 @@ private:
   int m_sys;                            // index into m_systems
   bool m_inSystem;                      // showing that console's games
   bool m_rescan;                        // back from the browser: look again
+  bool m_favOnly;                       // RB: only the favorites
+  bool m_viewDirty;                     // m_view must be made again
+  std::vector<std::string> m_view;      // the console's games shown (favorites / search)
+  void buildView(UiApp &app, int sys);
   std::string m_root;                   // folder the games were read from
 };
 

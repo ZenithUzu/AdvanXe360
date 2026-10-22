@@ -1,4 +1,5 @@
 #include "UiApp.h"
+#include <algorithm>
 #include "UiGlyphs.h"
 #include "UiScreens.h"
 #include "UiCheatParse.h"
@@ -1803,8 +1804,18 @@ void UiApp::onCoversClosed()
 const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)
 {
   std::map<std::string, Cover>::iterator it = m_covers.find(rom);
-  if (it != m_covers.end())
-    return it->second.px.empty() ? 0 : &it->second;
+  if (it != m_covers.end()) {
+    if (it->second.px.empty())
+      return 0;
+    // Used again: last to be dropped, so the games on screen stay loaded
+    // when you go to another console and back.
+    std::vector<std::string>::iterator o = std::find(m_coverOrder.begin(), m_coverOrder.end(), rom);
+    if (o != m_coverOrder.end() && o + 1 != m_coverOrder.end()) {
+      m_coverOrder.erase(o);
+      m_coverOrder.push_back(rom);
+    }
+    return &it->second;
+  }
   // One file read per frame, so a shelf full of covers fills in without
   // freezing the menu.
   if (!allowLoad || m_coverLoadsLeft <= 0)
@@ -1812,7 +1823,7 @@ const UiApp::Cover *UiApp::cover(const std::string &rom, bool allowLoad)
   m_coverLoadsLeft--;
   // Keep the last kCoverCache images (up to ~450 KB each) and the "no cover"
   // answers; the oldest image goes first.
-  const size_t kCoverCache = 20;
+  const size_t kCoverCache = 40;   // ~18 MB: two full grids and the browser
   if (m_covers.size() > 400) {
     m_covers.clear();
     m_coverOrder.clear();

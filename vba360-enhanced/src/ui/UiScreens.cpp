@@ -1248,7 +1248,7 @@ void ensureLibrary(UiApp &app)
 } // namespace
 
 UiLibraryScreen::UiLibraryScreen(UiApp &app, const std::string &selectRom)
-  : m_sys(0), m_inSystem(false), m_rescan(false)
+  : m_sys(0), m_inSystem(false), m_rescan(false), m_favOnly(false), m_viewDirty(true)
 {
   scan(app);
   if (selectRom.empty())
@@ -1290,8 +1290,31 @@ void uiLibraryRoms(UiApp &app, std::vector<std::string> &out)
     out.insert(out.end(), g_library.games[s].begin(), g_library.games[s].end());
 }
 
+// The games of the console that pass RB (favorites) and LB (search), keeping
+// the chosen one chosen.
+void UiLibraryScreen::buildView(UiApp &app, int sys)
+{
+  UiListState &ls = m_list[sys];
+  std::string keep = ls.sel >= 0 && ls.sel < (int)m_view.size() ? m_view[ls.sel] : "";
+  std::string needle = lowerAscii(app.listFilter());
+  const std::vector<std::string> &g = m_games[sys];
+  m_view.clear();
+  for (size_t i = 0; i < g.size(); i++) {
+    if (m_favOnly && !app.favorites().contains(g[i]))
+      continue;
+    if (!needle.empty() && lowerAscii(uiFileName(g[i])).find(needle) == std::string::npos)
+      continue;
+    if (g[i] == keep)
+      ls.sel = (int)m_view.size();
+    m_view.push_back(g[i]);
+  }
+  ls.clamp((int)m_view.size());
+  m_viewDirty = false;
+}
+
 void UiLibraryScreen::onResume(UiApp &app)
 {
+  m_viewDirty = true;   // favorites or the search may have changed
   if (m_rescan) {
     m_rescan = false;
     scan(app);   // read again only if the library folder changed (Y in the browser)
@@ -1310,21 +1333,34 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
   if (!m_inSystem) {
     if ((in.repeat & PAD_BIT(PAD_LEFT)) && m_sys > 0) m_sys--;
     if ((in.repeat & PAD_BIT(PAD_RIGHT)) && m_sys < (int)m_systems.size() - 1) m_sys++;
-    if (in.pressed & PAD_BIT(PAD_A))
+    if (in.pressed & PAD_BIT(PAD_A)) {
       m_inSystem = true;
+      m_viewDirty = true;
+    }
     return;
   }
   int sys = m_systems[m_sys];
-  const std::vector<std::string> &g = m_games[sys];
+  if (m_viewDirty)
+    buildView(app, sys);
+  const std::vector<std::string> &g = m_view;
   UiListState &ls = m_list[sys];
   int count = (int)g.size();
+  if (in.pressed & PAD_BIT(PAD_LB)) {   // search this console's games
+    app.openSearch();
+    return;
+  }
+  if (in.pressed & PAD_BIT(PAD_RB)) {   // only favorites / all
+    m_favOnly = !m_favOnly;
+    buildView(app, sys);
+    count = (int)g.size();
+  }
   if ((in.repeat & PAD_BIT(PAD_LEFT)) && ls.sel > 0) ls.sel--;
   if ((in.repeat & PAD_BIT(PAD_RIGHT)) && ls.sel < count - 1) ls.sel++;
   const int step = GRID_COLS;
   if ((in.repeat & PAD_BIT(PAD_UP)) && ls.sel >= step) ls.sel -= step;
   if ((in.repeat & PAD_BIT(PAD_DOWN)) && ls.sel < count - 1) ls.sel = std::min(ls.sel + step, count - 1);
   // LT / RT: previous / next first letter.
-  if (in.repeat & (PAD_BIT(PAD_LT) | PAD_BIT(PAD_RT))) {
+  if (count > 0 && (in.repeat & (PAD_BIT(PAD_LT) | PAD_BIT(PAD_RT)))) {
     int dir = (in.repeat & PAD_BIT(PAD_RT)) ? 1 : -1;
     char key = rowInitial(uiFileName(g[ls.sel]));
     int i = ls.sel;
@@ -1341,11 +1377,17 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
   if (row >= ls.scroll + GRID_ROWS) ls.scroll = row - GRID_ROWS + 1;
 
   if (in.pressed & PAD_BIT(PAD_B)) {
-    m_inSystem = false;
+    if (!app.listFilter().empty()) {   // first B clears the search
+      app.setListFilter("");
+      m_viewDirty = true;
+    } else {
+      m_inSystem = false;
+    }
   } else if (count > 0 && (in.pressed & PAD_BIT(PAD_A))) {
     app.launch(g[ls.sel]);
   } else if (count > 0 && (in.pressed & PAD_BIT(PAD_X))) {
     app.toggleFavorite(g[ls.sel]);
+    m_viewDirty = m_favOnly;
   } else if (count > 0 && (in.pressed & PAD_BIT(PAD_Y))) {
     app.openMenu(MENU_GAME_OPTIONS, g[ls.sel]);
   }
@@ -1424,30 +1466,43 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
   }
 
   // One console's games: back, the console, and where you are in the list.
-  const std::vector<std::string> &g = m_games[sys];
+  if (m_viewDirty)
+    buildView(app, sys);
+  const std::vector<std::string> &g = m_view;
   const UiListState &ls = m_list[sys];
   c.fillCircle(x + 20, 52, 20, 0x30FFFFFF);
   drawArrow(c, x + 14, 52, 7, false, UI_COL_TEXT);
-  c.drawTextFit(UI_FONT_SMALL, x + 56, 26, 500, kSysYear[sys], UI_COL_TEXT_DIM);
+  std::string sub = m_favOnly ? app.tr("Solo favoritos", "Favorites only") : "";
+  if (!app.listFilter().empty())
+    sub += std::string(sub.empty() ? "" : " \xb7 ") + app.tr("Buscando: ", "Searching: ") + app.listFilter();
+  if (sub.empty())
+    sub = kSysYear[sys];
+  c.drawTextFit(UI_FONT_SMALL, x + 56, 26, 700, sub.c_str(), m_favOnly || !app.listFilter().empty() ? UI_COL_ACCENT : UI_COL_TEXT_DIM);
   c.drawTextFit(UI_FONT_TITLE, x + 56, 44, 700,
                 sys == SYS_OTHER ? app.tr("Comprimidos", "Archives") : kSysName[sys], UI_COL_TEXT);
   char pos[32];
-  sprintf(pos, "%d / %d", ls.sel + 1, (int)g.size());
+  sprintf(pos, "%d / %d", g.empty() ? 0 : ls.sel + 1, (int)g.size());
   int pw = c.textWidth(UI_FONT_BODY, pos);
   c.drawText(UI_FONT_BODY, x + w - pw, 44, pos, UI_COL_TEXT_DIM);
-  char initial[2] = { (char)toupper((unsigned char)rowInitial(uiFileName(g[ls.sel]))), 0 };
+  char initial[2] = { g.empty() ? '#' : (char)toupper((unsigned char)rowInitial(uiFileName(g[ls.sel]))), 0 };
   if (initial[0] == '#' || initial[0] < 'A' || initial[0] > 'Z') initial[0] = '#';
   uiDrawSelection(c, x + w - pw - 58, 40, 42, 42, 10, true);
   c.drawTextFit(UI_FONT_BODY, x + w - pw - 58, 45, 42, initial, 0xFFFFFFFF, UI_ALIGN_CENTER);
 
   int top = UI_HEADER_H + 20, h = UI_FOOTER_Y - 12 - top;
   drawGrid(app, c, x, top, w - 20, h, g, ls, sys);
+  if (g.empty())
+    c.drawTextFit(UI_FONT_BODY, x, top + h / 2 - 20, w, m_favOnly && app.listFilter().empty()
+                  ? app.tr("Sin favoritos aqu\xed: marca juegos con X (RB para ver todos)", "No favorites here: mark games with X (RB shows all)")
+                  : app.tr("Ning\xfan juego coincide (B borra la b\xfasqueda)", "No game matches (B clears the search)"),
+                  UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
   const char *hints[] = {
     app.tr("A:Jugar", "A:Play"), app.tr("B:Consolas", "B:Consoles"),
-    app.favorites().contains(g[ls.sel]) ? app.tr("X:Quitar favorito", "X:Unfavorite") : app.tr("X:Favorito", "X:Favorite"),
-    app.tr("Y:Opciones", "Y:Options"),
+    !g.empty() && app.favorites().contains(g[ls.sel]) ? app.tr("X:Quitar", "X:Unfavorite") : app.tr("X:Favorito", "X:Favorite"),
+    app.tr("Y:Opciones", "Y:Options"), app.tr("LB:Buscar", "LB:Search"),
+    m_favOnly ? app.tr("RB:Todos", "RB:All") : app.tr("RB:Favoritos", "RB:Favorites"),
     app.tr("LT/RT:Letra", "LT/RT:Letter"), app.tr("BACK:Men\xfa", "BACK:Menu") };
-  app.drawHints(c, hints, 6);
+  app.drawHints(c, hints, 8);
 }
 
 void UiHomeScreen::draw(UiApp &app, UiCanvas &c)
