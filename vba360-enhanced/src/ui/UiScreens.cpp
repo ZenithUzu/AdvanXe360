@@ -1159,21 +1159,25 @@ int gridHandTarget(int px, int py, int x, int y, int w, int h, int scroll, int c
 
 // The games as cards: box art on a rounded panel with the name under it.
 // The chosen one rises, gets an accent ring and full brightness.
+// scrollPx: how far down the list the view is, in pixels (rows * rowH when
+// still; in between while it slides).
 void drawGrid(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
-              const std::vector<std::string> &roms, const UiListState &ls, int sys)
+              const std::vector<std::string> &roms, const UiListState &ls, int sys, int scrollPx)
 {
   const int count = (int)roms.size();
   const int gap = GRID_GAP, pad = GRID_PAD, stripH = GRID_STRIP_H;
   int cardW, cardH, rowH;
   gridLayout(w, h, cardW, cardH, rowH);
   const int art = cardW - pad * 2;
-  for (int r = 0; r < GRID_ROWS; r++) {
+  int first = scrollPx / rowH;
+  c.setClip(x - 10, y - 10, w + 20, GRID_ROWS * rowH - gap + 20);   // cards slide in and out of the grid
+  for (int r = 0; r <= GRID_ROWS; r++) {
     for (int col = 0; col < GRID_COLS; col++) {
-      int idx = (ls.scroll + r) * GRID_COLS + col;
+      int idx = (first + r) * GRID_COLS + col;
       if (idx >= count)
         break;
       bool sel = idx == ls.sel;
-      int cx = x + col * (cardW + gap), cy = y + r * rowH + (sel ? 0 : 6);
+      int cx = x + col * (cardW + gap), cy = y + (first + r) * rowH - scrollPx + (sel ? 0 : 6);
       if (sel) {   // a soft glow and a ring in the accent color
         c.fillRoundRect(cx - 6, cy - 6, cardW + 12, cardH + 12, 20, uiWithAlpha(UI_COL_ACCENT, 0x38));
         uiDrawPanel(c, cx, cy, cardW, cardH, 14, 0xE8);
@@ -1194,6 +1198,7 @@ void drawGrid(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
                     sel ? UI_COL_TEXT : UI_COL_TEXT_DIM, UI_ALIGN_CENTER);
     }
   }
+  c.resetClip();
   drawScrollbar(c, x + w + 14, y, GRID_ROWS * rowH - gap, ls.scroll, GRID_ROWS,
                 (count + GRID_COLS - 1) / GRID_COLS);
   if (ls.sel < 0 || ls.sel >= count)
@@ -1285,7 +1290,7 @@ void ensureLibrary(UiApp &app)
 } // namespace
 
 UiLibraryScreen::UiLibraryScreen(UiApp &app, const std::string &selectRom)
-  : m_sys(0), m_inSystem(false), m_rescan(false), m_favOnly(false), m_viewDirty(true)
+  : m_sys(0), m_inSystem(false), m_rescan(false), m_favOnly(false), m_viewDirty(true), m_scrollPx(-1), m_scrollSys(-1)
 {
   scan(app);
   if (selectRom.empty())
@@ -1570,7 +1575,19 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
   c.drawTextFit(UI_FONT_BODY, x + w - pw - 58, 45, 42, initial, 0xFFFFFFFF, UI_ALIGN_CENTER);
 
   int top = UI_HEADER_H + 20, h = UI_FOOTER_Y - 12 - top;
-  drawGrid(app, c, x, top, w - 20, h, g, ls, sys);
+  // The view slides to the row it should show instead of jumping there.
+  int cardW, cardH, rowH;
+  gridLayout(w - 20, h, cardW, cardH, rowH);
+  int target = ls.scroll * rowH;
+  if (m_scrollPx < 0 || m_scrollSys != sys) {
+    m_scrollPx = target;
+    m_scrollSys = sys;
+  } else if (m_scrollPx != target) {
+    int d = target - m_scrollPx, step = d / 4;
+    m_scrollPx += step ? step : (d > 0 ? 1 : -1);
+    app.drawAgain();
+  }
+  drawGrid(app, c, x, top, w - 20, h, g, ls, sys, m_scrollPx);
   if (g.empty())
     c.drawTextFit(UI_FONT_BODY, x, top + h / 2 - 20, w, m_favOnly && app.listFilter().empty()
                   ? app.tr("Sin favoritos aqu\xed: marca juegos con X (RB para ver todos)", "No favorites here: mark games with X (RB shows all)")

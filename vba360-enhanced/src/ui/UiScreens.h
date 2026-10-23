@@ -103,6 +103,7 @@ private:
   bool m_rescan;                        // back from the browser: look again
   bool m_favOnly;                       // RB: only the favorites
   bool m_viewDirty;                     // m_view must be made again
+  int m_scrollPx, m_scrollSys;          // where the grid is drawn while it slides (-1: not yet)
   std::vector<std::string> m_view;      // the console's games shown (favorites / search)
   std::string m_viewFilter;             // the search m_view was made with
   void buildView(UiApp &app, int sys);
