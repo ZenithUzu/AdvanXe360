@@ -100,7 +100,9 @@ struct UiConfig
   int listView;                 // UiListView
   int bgEffect;                 // UiBgEffect bits (0 = none)
   int startScreen;              // 0 = library, 1 = file browser
+  int kinect;                   // Kinect connected: 0 = never touched, 1 = its features below can be used
   int kinectHands;              // move through the Library with your hand (Kinect)
+  int kinectCamera;             // the Game Boy Camera sees through the Kinect
   int bgVisibility;             // index into uiBgVeilAlpha
   int panelOpacity;             // index into uiPanelOpacityPercent
   int accentTint;               // index into uiAccentTints (0 = the theme's)

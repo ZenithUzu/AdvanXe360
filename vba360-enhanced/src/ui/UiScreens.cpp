@@ -640,6 +640,7 @@ void UiHomeScreen::buildRows(UiApp &app)
       { MENU_CLOCK, "Reloj de los juegos", "Game clock", "Hora de la consola o personalizada", "Console time or a custom one" },
       { MENU_SETTINGS_UI, "Interfaz e idioma", "Interface & language", "Idioma, pantalla de inicio y lista", "Language, start screen and list" },
       { MENU_SETTINGS_LOOK, "Apariencia", "Appearance", "Tema, fondo, transparencia y efectos", "Theme, background, transparency and effects" },
+      { MENU_SETTINGS_KINECT, "Kinect", "Kinect", "Control con la mano y Game Boy Camera", "Hand control and Game Boy Camera" },
       { MENU_ABOUT, "Acerca de", "About", "Versi\xf3n y cr\xe9""ditos", "Version and credits" },
       { -1, "Salir al Dashboard", "Exit to Dashboard", "Cierra el emulador", "Close the emulator" }
     };

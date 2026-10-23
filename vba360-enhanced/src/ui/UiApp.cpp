@@ -29,7 +29,7 @@ enum
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_KINECT_HANDS, U_EFFECT,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_KINECT, U_KINECT_HANDS, U_KINECT_CAMERA, U_EFFECT,
   U_BG_VIS, U_PANELS, U_ACCENT, U_COVERS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
@@ -144,7 +144,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
-    m_handTarget(-1), m_handFrames(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
     m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
@@ -302,15 +302,25 @@ void UiApp::update(unsigned int held)
 
   // Kinect hand: only in the menus (in a game it would slow the game down).
   int hx, hy;
-  m_handOn = m_cfg.kinectHands && !m_inGame && m_host.handCursor(hx, hy);
+  bool handsWanted = m_cfg.kinect && m_cfg.kinectHands && !m_inGame;
+  if (handsWanted && !m_handWasOn && m_handStartIn < 0) {
+    // Starting the Kinect takes a moment and blocks: say so first.
+    toast(tr("Iniciando Kinect... levanta la mano en unos segundos", "Starting the Kinect... raise your hand in a few seconds"), 240);
+    m_handStartIn = 5;
+  }
+  if (m_handStartIn > 0)
+    m_handStartIn--;
+  m_handOn = handsWanted && m_handStartIn == 0 && m_host.handCursor(hx, hy);
+  if (handsWanted && m_handStartIn == 0)
+    m_handWasOn = true;   // started (a hand may not be up yet)
   if (m_handOn) {
     m_handX += (hx - m_handX) / 3;   // smooth out the shake
     m_handY += (hy - m_handY) / 3;
     m_dirtyFrames = 3;
-    m_handWasOn = true;
-  } else if (!m_cfg.kinectHands && m_handWasOn) {
+  } else if (!(m_cfg.kinect && m_cfg.kinectHands) && m_handWasOn) {
     m_host.handStop();
     m_handWasOn = false;
+    m_handStartIn = -1;
   }
   if (!m_handOn)
     m_handTarget = -1;
@@ -635,7 +645,27 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_CLOCK, ITEM_SUBMENU, tr("Reloj de los juegos", "Game clock"));
     m.add(MENU_SETTINGS_UI, ITEM_SUBMENU, tr("Interfaz e idioma", "Interface & language"));
     m.add(MENU_SETTINGS_LOOK, ITEM_SUBMENU, tr("Apariencia", "Appearance"));
+    m.add(MENU_SETTINGS_KINECT, ITEM_SUBMENU, "Kinect");
     break;
+
+  case MENU_SETTINGS_KINECT: {
+    // Nothing of the Kinect is used (or shown) until it is turned on here.
+    m.title = "Kinect";
+    m.subtitle = tr("Control con la mano y c\xe1mara para la Game Boy Camera", "Hand control and camera for the Game Boy Camera");
+    const char *onOff[2] = { tr("Apagado", "Off"), tr("Encendido", "On") };
+    (m.add(U_KINECT, ITEM_OPTION, "Kinect", m_cfg.kinect ? tr("Conectado", "Connected") : tr("No usar", "Don't use"),
+           tr("Act\xedvalo si tienes un Kinect conectado: aparecen sus funciones. Necesita los archivos Database del XDK junto al default.xex.",
+              "Turn it on if you have a Kinect plugged in: its features appear. Needs the XDK's Database files next to default.xex."))).choice = m_cfg.kinect;
+    if (m_cfg.kinect) {
+      (m.add(U_KINECT_HANDS, ITEM_OPTION, tr("Control con la mano (Biblioteca)", "Hand control (Library)"), onOff[m_cfg.kinectHands],
+             tr("Levanta la mano para mover el cursor; d\xe9jala quieta sobre un juego para abrirlo. Solo en los men\xfas; el Kinect tarda unos segundos en arrancar.",
+                "Raise your hand to move the cursor; hold it still on a game to open it. Menus only; the Kinect takes a few seconds to start."))).choice = m_cfg.kinectHands;
+      (m.add(U_KINECT_CAMERA, ITEM_OPTION, "Game Boy Camera", m_cfg.kinectCamera ? tr("C\xe1mara del Kinect", "Kinect's camera") : tr("Sin c\xe1mara", "No camera"),
+             tr("Lo que ve el Kinect entra en la Game Boy Camera. Se aplica al abrir el juego.",
+                "What the Kinect sees goes into the Game Boy Camera. Applies when the game starts."))).choice = m_cfg.kinectCamera;
+    }
+    break;
+  }
 
   case MENU_CLOCK: {
     m.title = tr("Reloj de los juegos", "Game clock");
@@ -825,10 +855,6 @@ void UiApp::buildMenu(UiMenuScreen &m)
              std::string(tr("Biblioteca: consolas y portadas, sin carpetas (BACK abre el explorador). Juegos de: ",
                             "Library: consoles and box art, no folders (BACK opens the browser). Games from: ")) + lib +
              tr(" (Y sobre una carpeta en el explorador la cambia).", " (Y on a folder in the browser changes it)."))).choice = m_cfg.startScreen;
-      const char *kh[2] = { tr("Apagado", "Off"), tr("Encendido", "On") };
-      (m.add(U_KINECT_HANDS, ITEM_OPTION, tr("Control con Kinect (Biblioteca)", "Kinect control (Library)"), kh[m_cfg.kinectHands],
-             tr("Levanta la mano para mover el cursor; d\xe9jala quieta sobre un juego para abrirlo. Solo en los men\xfas.",
-                "Raise your hand to move the cursor; hold it still on a game to open it. Menus only."))).choice = m_cfg.kinectHands;
     }
     {
       const char *pv[PREVIEW_COUNT] = { tr("Portada o \xfaltima partida", "Box art or last played"),
@@ -1558,13 +1584,16 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     break;
   case MENU_SETTINGS_UI:
   case MENU_SETTINGS_LOOK:
+  case MENU_SETTINGS_KINECT:
     if (id == U_LANGUAGE) m_cfg.language ^= 1;
     else if (id == U_HIDE) m_cfg.hideNonGames ^= 1;
     else if (id == U_THEME) m_cfg.menuTheme = wrapIndex(m_cfg.menuTheme, delta, UI_THEME_COUNT);
     else if (id == U_OPTION_STYLE) m_cfg.optionStyle = wrapIndex(m_cfg.optionStyle, delta, OPT_STYLE_COUNT);
     else if (id == U_PREVIEW) m_cfg.previewMode = wrapIndex(m_cfg.previewMode, delta, PREVIEW_COUNT);
     else if (id == U_START) m_cfg.startScreen = wrapIndex(m_cfg.startScreen, delta, 2);
+    else if (id == U_KINECT) m_cfg.kinect = wrapIndex(m_cfg.kinect, delta, 2);   // the rebuild below shows / hides its options
     else if (id == U_KINECT_HANDS) m_cfg.kinectHands = wrapIndex(m_cfg.kinectHands, delta, 2);
+    else if (id == U_KINECT_CAMERA) m_cfg.kinectCamera = wrapIndex(m_cfg.kinectCamera, delta, 2);
     else if (id == U_EFFECT) m_cfg.bgEffect = wrapIndex(m_cfg.bgEffect, delta, UI_EFFECT_COUNT);
     else if (id == U_BG_VIS) m_cfg.bgVisibility = wrapIndex(m_cfg.bgVisibility, delta, BG_VIS_COUNT);
     else if (id == U_PANELS) m_cfg.panelOpacity = wrapIndex(m_cfg.panelOpacity, delta, PANEL_OPACITY_COUNT);

@@ -972,7 +972,7 @@ void xboxOnGameLoading(const char *romPath)
   extern u8 (*gbSerialFunction)(u8);
   gbSerialFunction = g_cfg.gbPrinter ? gbPrinterSend : 0;
   kinectStop();
-  gmbBridge::setCamera(kinectCapture);
+  gmbBridge::setCamera(g_cfg.kinect && g_cfg.kinectCamera ? kinectCapture : 0);   // no Kinect: a gray picture
   gambatteSgbMode = g_gameCfg.custom ? (g_gameCfg.sgbMode ? 2 : 0) : g_cfg.sgbBorders;
 
   // Game Boy patches are applied inside gbLoadRom().
