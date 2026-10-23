@@ -23,6 +23,7 @@
 #pragma comment(lib, "st.lib")
 #endif
 static void kinectCapture(unsigned char *gray);   // Game Boy Camera picture (below)
+static void kinectStop();
 #define XBOX_LOG_NO_REDIRECT
 #include "XboxLog.h"
 
@@ -967,6 +968,7 @@ void xboxOnGameLoading(const char *romPath)
   // own choice (its game options, "Custom").
   extern u8 (*gbSerialFunction)(u8);
   gbSerialFunction = g_cfg.gbPrinter ? gbPrinterSend : 0;
+  kinectStop();
   gmbBridge::setCamera(kinectCapture);
   gambatteSgbMode = g_gameCfg.custom ? (g_gameCfg.sgbMode ? 2 : 0) : g_cfg.sgbBorders;
 
@@ -1602,11 +1604,28 @@ Filter xboxSelectedFilter()
 
 // Game Boy Camera picture: the Kinect's color camera, mirrored like a selfie,
 // cropped to the camera's 8:7 shape. Static noise without a Kinect.
+#ifndef XBOX_NO_KINECT
+static int g_kinect = 0;   // 0 off, 1 running, -1 no Kinect
+static HANDLE g_kinectStream = 0;
+#endif
+
+// Turns the Kinect off: once on, its processing keeps running and slows down
+// every other game. Called when a game loads; the camera turns it on again.
+static void kinectStop()
+{
+#ifndef XBOX_NO_KINECT
+  if (g_kinect > 0)
+    NuiShutdown();
+  g_kinect = 0;
+  g_kinectStream = 0;
+#endif
+}
+
 static void kinectCapture(unsigned char *gray)
 {
 #ifndef XBOX_NO_KINECT
-  static int state = 0;   // 0 not tried, 1 running, -1 no Kinect
-  static HANDLE stream = 0;
+  int &state = g_kinect;
+  HANDLE &stream = g_kinectStream;
   static unsigned char last[128 * 112];
   static bool haveLast = false;
   if (state == 0) {
