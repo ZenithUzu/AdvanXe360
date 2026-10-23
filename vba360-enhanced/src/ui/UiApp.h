@@ -86,6 +86,10 @@ public:
   // The screen says what is under the cursor (-1: nothing) every update;
   // true once the hand has stayed on the same thing long enough (= A).
   bool handDwell(int target);
+  // A fast stroke of the hand this update: content follows the hand, like the
+  // Xbox's Kinect menus (hand up = the list goes up, to the next rows).
+  enum { SWIPE_NONE, SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT };
+  int handSwipe() const { return m_handSwipe; }
   const char *tr(const char *es, const char *en) const;
 
   // --- Used by the screens -------------------------------------------------
@@ -179,7 +183,9 @@ private:
   int m_toastFrames;
   bool m_handOn, m_handUsed, m_handWasOn;
   int m_handX, m_handY, m_handTarget, m_handFrames;
-  int m_handStartIn;   // frames until the Kinect is started (its message shows first); -1 = not waiting
+  int m_handStartIn;
+  int m_handSwipe, m_swipeCooldown, m_handHist;   // m_handHist: frames in m_rawX/Y
+  int m_rawX[8], m_rawY[8];   // frames until the Kinect is started (its message shows first); -1 = not waiting
   int m_cheatDownload;   // frames until the online cheat search runs (0 = none)
   // Sensor being mapped by moving the right stick (item id, 0 = none).
   int m_stickCapture;

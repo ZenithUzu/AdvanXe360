@@ -1371,6 +1371,9 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
     return;
   if (!m_inSystem) {
     if (app.handActive()) {   // hand: left / right cartridge to move, the middle one to open
+      int sw = app.handSwipe();   // a swipe moves the cartridges with the hand
+      if (sw == UiApp::SWIPE_LEFT && m_sys < (int)m_systems.size() - 1) m_sys++;
+      if (sw == UiApp::SWIPE_RIGHT && m_sys > 0) m_sys--;
       int t = app.handX() < UI_W / 2 - 200 ? 0 : app.handX() > UI_W / 2 + 200 ? 2 : 1;
       if (app.handDwell(t)) {
         if (t == 0 && m_sys > 0) m_sys--;
@@ -1408,6 +1411,17 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
     int top = UI_HEADER_H + 20;
     int t = gridHandTarget(app.handX(), app.handY(), UI_MARGIN_X, top, UI_W - UI_MARGIN_X * 2 - 20,
                            UI_FOOTER_Y - 12 - top, ls.scroll, count);
+    // A swipe turns a page (two rows); the list moves with the hand.
+    int sw = app.handSwipe(), page = step * GRID_ROWS;
+    if (sw == UiApp::SWIPE_UP || sw == UiApp::SWIPE_LEFT) {
+      ls.sel = std::min(ls.sel + page, count - 1);
+      ls.scroll = std::min(ls.scroll + GRID_ROWS, std::max(0, (count + step - 1) / step - GRID_ROWS));
+      t = -1;
+    } else if (sw == UiApp::SWIPE_DOWN || sw == UiApp::SWIPE_RIGHT) {
+      ls.sel = std::max(ls.sel - page, 0);
+      ls.scroll = std::max(ls.scroll - GRID_ROWS, 0);
+      t = -1;
+    }
     if (t >= 0 && t < count)
       ls.sel = t;
     if (app.handDwell(t)) {

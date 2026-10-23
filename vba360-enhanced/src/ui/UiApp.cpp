@@ -144,7 +144,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
-    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
     m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
@@ -313,7 +313,31 @@ void UiApp::update(unsigned int held)
   m_handOn = handsWanted && m_handStartIn == 0 && m_host.handCursor(hx, hy);
   if (handsWanted && m_handStartIn == 0)
     m_handWasOn = true;   // started (a hand may not be up yet)
+  m_handSwipe = SWIPE_NONE;
+  if (m_swipeCooldown > 0)
+    m_swipeCooldown--;
   if (m_handOn) {
+    // Swipe: the raw hand moved a third of the screen in the last 6 updates.
+    for (int i = 7; i > 0; i--) {
+      m_rawX[i] = m_rawX[i - 1];
+      m_rawY[i] = m_rawY[i - 1];
+    }
+    m_rawX[0] = hx;
+    m_rawY[0] = hy;
+    if (m_handHist < 8)
+      m_handHist++;
+    if (m_handHist > 6 && m_swipeCooldown == 0) {
+      int dx = hx - m_rawX[6], dy = hy - m_rawY[6];
+      int ax = dx < 0 ? -dx : dx, ay = dy < 0 ? -dy : dy;
+      if (ay > 240 && ay > ax * 2)
+        m_handSwipe = dy < 0 ? SWIPE_UP : SWIPE_DOWN;
+      else if (ax > 400 && ax > ay * 2)
+        m_handSwipe = dx < 0 ? SWIPE_LEFT : SWIPE_RIGHT;
+      if (m_handSwipe) {
+        m_swipeCooldown = 20;
+        m_handFrames = 0;   // a swipe is never a "hold still"
+      }
+    }
     m_handX += (hx - m_handX) / 3;   // smooth out the shake
     m_handY += (hy - m_handY) / 3;
     m_dirtyFrames = 3;
@@ -322,8 +346,10 @@ void UiApp::update(unsigned int held)
     m_handWasOn = false;
     m_handStartIn = -1;
   }
-  if (!m_handOn)
+  if (!m_handOn) {
     m_handTarget = -1;
+    m_handHist = 0;
+  }
   m_handUsed = false;
 
   if (!m_stack.empty())
