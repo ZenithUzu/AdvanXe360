@@ -83,7 +83,7 @@ VOID __cdecl main()
   waitForRelease(canvas, ui);
 
   for (;;) {
-    xboxMusicUpdate(g_cfg.menuMusic, uiMusicVolumePercent[g_cfg.musicVolume]);
+    xboxMusicUpdate(g_cfg.menuMusic, uiMusicVolumePercent[g_cfg.musicVolume], g_cfg.musicSong);
     ui.update(xboxReadPads(true));
     bool redraw = ui.needsRedraw();
     if (redraw)

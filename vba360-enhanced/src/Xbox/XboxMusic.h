@@ -4,6 +4,8 @@
 #ifndef XBOX_MUSIC_H
 #define XBOX_MUSIC_H
 
+#include <string>
+
 // What a .wav file holds (only 16-bit PCM is played).
 struct WavInfo
 {
@@ -17,7 +19,8 @@ bool musicParseWav(const unsigned char *buf, long len, WavInfo &out);
 
 // Call every main menu frame: starts, feeds and changes songs.
 // mode: UiMusicMode; volumePercent: 0..100.
-void xboxMusicUpdate(int mode, int volumePercent);
+// song: a file name in music\ to repeat, or "" for all of them by mode.
+void xboxMusicUpdate(int mode, int volumePercent, const std::string &song);
 // Stops the music and frees its voice (before a game starts).
 void xboxMusicStop();
 

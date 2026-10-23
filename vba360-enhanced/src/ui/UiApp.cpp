@@ -30,7 +30,7 @@ enum
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_KINECT, U_KINECT_HANDS, U_KINECT_CAMERA, U_EFFECT,
-  U_BG_VIS, U_PANELS, U_ACCENT, U_COVERS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
+  U_BG_VIS, U_PANELS, U_ACCENT, U_COVERS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL, U_MUSIC_SONG,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
@@ -812,9 +812,20 @@ void UiApp::buildMenu(UiMenuScreen &m)
       (m.add(U_MUSIC, ITEM_OPTION, tr("M\xfasica del men\xfa", "Menu music"), mm[m_cfg.menuMusic],
              tr("Suena s\xf3lo en el men\xfa principal. Pon archivos .wav en la carpeta music\\ del emulador.",
                 "Plays only in the main menu. Put .wav files in the emulator's music\\ folder."))).choice = m_cfg.menuMusic;
-      if (m_cfg.menuMusic != MUSIC_OFF)
+      if (m_cfg.menuMusic != MUSIC_OFF) {
         (m.add(U_MUSIC_VOL, ITEM_OPTION, tr("Volumen de la m\xfasica", "Music volume"),
                intStr(uiMusicVolumePercent[m_cfg.musicVolume]) + "%")).choice = m_cfg.musicVolume;
+        // One song chosen by hand (it repeats), or all of them.
+        const std::vector<std::string> &songs = cachedImages("music", ".wav");
+        int cur = 0;
+        for (size_t i = 0; i < songs.size(); i++)
+          if (songs[i] == m_cfg.musicSong)
+            cur = (int)i + 1;
+        (m.add(U_MUSIC_SONG, ITEM_OPTION, tr("Canci\xf3n", "Song"),
+               cur ? uiStripExtension(songs[cur - 1]) : std::string(tr("Todas", "All of them")),
+               tr("Todas: en orden o aleatorias. Elige una para que se repita.",
+                  "All of them: in order or shuffled. Pick one to keep it playing."))).choice = cur;
+      }
     }
     break;
 
@@ -1593,6 +1604,15 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == A_LATENCY) m_cfg.audioLatency = wrapIndex(m_cfg.audioLatency, delta, uiAudioLatencyCount);
     else if (id == U_MUSIC) m_cfg.menuMusic = wrapIndex(m_cfg.menuMusic, delta, MUSIC_MODE_COUNT);
     else if (id == U_MUSIC_VOL) m_cfg.musicVolume = wrapIndex(m_cfg.musicVolume, delta, MUSIC_VOLUME_COUNT);
+    else if (id == U_MUSIC_SONG) {
+      const std::vector<std::string> &songs = cachedImages("music", ".wav");
+      int cur = 0;
+      for (size_t i = 0; i < songs.size(); i++)
+        if (songs[i] == m_cfg.musicSong)
+          cur = (int)i + 1;
+      cur = wrapIndex(cur, delta, (int)songs.size() + 1);
+      m_cfg.musicSong = cur ? songs[cur - 1] : std::string();
+    }
     break;
   case MENU_SETTINGS_EMU:
     if (id == E_FF_SPEED) m_cfg.ffSpeed = wrapIndex(m_cfg.ffSpeed, delta, uiFastForwardSpeedCount);
@@ -1703,7 +1723,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     m_host.applySettings();
 }
 
-const std::vector<std::string> &UiApp::cachedImages(const char *folder)
+const std::vector<std::string> &UiApp::cachedImages(const char *folder, const char *ext)
 {
   // Read once per menu opened: rebuilding a menu after every change listed
   // the folder again (slow on the Xbox hard drive).
@@ -1714,7 +1734,7 @@ const std::vector<std::string> &UiApp::cachedImages(const char *folder)
   std::vector<UiDirEntry> entries;
   m_host.listDir(uiJoinPath(m_host.emulatorDir(), folder), entries);
   for (size_t i = 0; i < entries.size(); i++)
-    if (!entries[i].isDir && uiIsImageFile(entries[i].name))
+    if (!entries[i].isDir && (ext ? uiExtension(entries[i].name) == ext : uiIsImageFile(entries[i].name)))
       names.push_back(entries[i].name);
   return names;
 }

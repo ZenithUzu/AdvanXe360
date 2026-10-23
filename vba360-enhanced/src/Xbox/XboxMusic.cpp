@@ -72,6 +72,7 @@ int g_song = -1;
 int g_lastMode = -1;
 int g_failures = 0;                    // songs in a row that wouldn't play
 int g_volume = -1;                     // volume last given to the voice
+std::string g_wantSong;                // chosen by hand ("" = all)
 
 void closeSong()
 {
@@ -106,7 +107,13 @@ bool openSong(int mode)
   closeSong();
   if (g_songs.empty() || g_failures >= (int)g_songs.size())
     return false;
-  if (mode == MUSIC_SHUFFLE && g_songs.size() > 1) {
+  int chosen = -1;
+  for (size_t i = 0; i < g_songs.size() && !g_wantSong.empty(); i++)
+    if (uiFileName(g_songs[i]) == g_wantSong)
+      chosen = (int)i;
+  if (chosen >= 0) {
+    g_song = chosen;   // the chosen song, over and over
+  } else if (mode == MUSIC_SHUFFLE && g_songs.size() > 1) {
     int n;
     do n = rand() % (int)g_songs.size(); while (n == g_song);
     g_song = n;
@@ -177,8 +184,13 @@ bool feed()
 
 } // namespace
 
-void xboxMusicUpdate(int mode, int volumePercent)
+void xboxMusicUpdate(int mode, int volumePercent, const std::string &song)
 {
+  if (song != g_wantSong) {   // another song chosen: start it now
+    g_wantSong = song;
+    closeSong();
+    g_failures = 0;
+  }
   if (mode == MUSIC_OFF) {
     if (g_voice || g_file)
       closeSong();

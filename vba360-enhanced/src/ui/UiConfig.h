@@ -110,6 +110,7 @@ struct UiConfig
   int waterStrength;            // 0 soft, 1 normal, 2 strong
   int menuMusic;                // UiMusicMode: songs from music\ in the menu
   int musicVolume;              // index into uiMusicVolumePercent
+  std::string musicSong;        // a .wav in music\ to play on its own ("" = all, by menuMusic)
   std::string libraryDir;       // the library's games folder ("" = lastDir)
 
   // Video

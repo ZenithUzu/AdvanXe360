@@ -117,7 +117,8 @@ public:
   void openPicker(UiMenuScreen &menu, int itemId);
   // Image files in an emulator folder (borders, backgrounds), cached while
   // a menu is open; ROM header info (UI_ROM_*), cached.
-  const std::vector<std::string> &cachedImages(const char *folder);
+  // Files in a folder of the emulator: pictures, or those with extension ext.
+  const std::vector<std::string> &cachedImages(const char *folder, const char *ext = 0);
   int romInfo(const std::string &rom);
   // Button map being edited: Settings, or the game's (controls opened from
   // its game options).
