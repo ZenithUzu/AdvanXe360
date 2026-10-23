@@ -598,7 +598,7 @@ public:
     }
     static const char *const names[2] = { "RetroAchievements", "GitHub" };
     static const char *const urls[2] = {
-      "https://retroachievements.org/dorequest.php?r=latestclient&e=0",
+      "https://retroachievements.org/",
       "https://raw.githubusercontent.com/libretro/libretro-database/master/README.md" };
     bool all = true;
     report.clear();
