@@ -255,6 +255,16 @@ std::string archiveInnerRom(const std::string &archive)
   return found;
 }
 
+// A cheat code compared without spaces, '+' or case ("8200055C+0000" = "8200055c 0000").
+std::string cheatKey(const std::string &code)
+{
+  std::string k;
+  for (size_t i = 0; i < code.size(); i++)
+    if (isalnum((unsigned char)code[i]))
+      k += (char)toupper((unsigned char)code[i]);
+  return k;
+}
+
 bool romIsGb(const std::string &rom)
 {
   std::string ext = uiExtension(rom);
@@ -770,10 +780,19 @@ public:
     if (!uiParseCheatFile(path, !romIsGb(rom), entries))
       return 0;
     std::vector<UiStoredCheat> list;
-    loadCheatStore(rom, list);
+    loadCheatStore(rom, list);   // the player's own cheats stay as they are
     int added = 0;
     for (size_t i = 0; i < entries.size(); i++) {
       if (entries[i].codes.empty())
+        continue;
+      // Already there (imported before, or typed by the player): skip it.
+      std::string key;
+      for (size_t k = 0; k < entries[i].codes.size(); k++)
+        key += cheatKey(entries[i].codes[k].code);
+      bool have = false;
+      for (size_t k = 0; k < list.size() && !have; k++)
+        have = cheatKey(list[k].code) == key;
+      if (have)
         continue;
       UiStoredCheat c;
       c.desc = entries[i].desc;

@@ -365,8 +365,10 @@ void UiApp::update(unsigned int held)
     std::string err;
     int n = m_host.downloadCheats(m_cheatRom, err);
     char buf[128];
-    if (n >= 0)
+    if (n > 0)
       sprintf(buf, tr("%d c\xf3""digos agregados de internet", "%d codes added from the internet"), n);
+    else if (n == 0)
+      strcpy(buf, tr("Ya ten\xed""as todos los trucos de la base para este juego", "You already have every cheat from the database for this game"));
     else
       strcpy(buf, err == "nomatch" ? tr("No hay trucos para este juego en la base", "No cheats for this game in the database")
                                    : tr("Falta cheats\\libretro-cheats.zip (est\xe1 en el .zip del emulador)",
