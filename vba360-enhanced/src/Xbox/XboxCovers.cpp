@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <algorithm>
 
 #ifdef _XBOX
@@ -850,8 +851,20 @@ void coversCancel()
   g_cancel = true;
 }
 
-bool cheatsFetch(const std::string &romName, const char *systemFolder, const std::string &zipPath,
-                 const std::string &outPath, std::string &err)
+// "Pokemon - Fire Red Version (USA)" -> "pokemonfireredversion".
+static std::string compactTitle(const std::string &name)
+{
+  std::string t, out;
+  splitTitle(name, t, out);
+  out.clear();
+  for (size_t i = 0; i < t.size(); i++)
+    if (isalnum((unsigned char)t[i]))
+      out += (char)tolower((unsigned char)t[i]);
+  return out;
+}
+
+bool cheatsFetch(const std::string &romName, const std::string &gameCode, const char *systemFolder,
+                 const std::string &zipPath, const std::string &outPath, std::string &err)
 {
   g_cancel = false;
   FILE *have = fopen(zipPath.c_str(), "rb");
@@ -879,25 +892,51 @@ bool cheatsFetch(const std::string &romName, const char *systemFolder, const std
     return false;
   }
   std::string folder = std::string(systemFolder) + "/";
-  std::vector<std::string> names;
+  std::vector<std::string> names, full;
   std::vector<fex_pos_t> where;
+  fex_pos_t index = -1;   // _gamecodes.txt: GBA game code -> file
   while (!fex_done(fe)) {
     std::string n = fex_name(fe);
     size_t at = n.find(folder);
     if (at != std::string::npos && n.size() > 4 && lowerAscii(n.substr(n.size() - 4)) == ".cht") {
       std::string base = n.substr(at + folder.size());
       names.push_back(base.substr(0, base.size() - 4));
+      full.push_back(n.substr(n.find(systemFolder)));
       where.push_back(fex_tell_arc(fe));
+    } else if (n.find("_gamecodes.txt") != std::string::npos) {
+      index = fex_tell_arc(fe);
     }
     if (fex_next(fe))
       break;
   }
-  int m = coversBestMatch(romName, names);
+  int m = -1;
+  // 1. The GBA game code in the ROM's header (any language of the game).
+  const void *data = 0;
+  if (gameCode.size() == 4 && index >= 0 && !fex_seek_arc(fe, index) && !fex_data(fe, &data) && data) {
+    std::string idx((const char *)data, fex_size(fe));
+    size_t at = idx.find(gameCode + "=");
+    if (at != std::string::npos && (at == 0 || idx[at - 1] == '\n')) {
+      size_t eol = idx.find_first_of("\r\n", at);
+      std::string file = idx.substr(at + 5, eol == std::string::npos ? std::string::npos : eol - at - 5);
+      for (size_t i = 0; i < full.size() && m < 0; i++)
+        if (full[i] == file)
+          m = (int)i;
+    }
+  }
+  // 2. The name; 3. the name without spaces or symbols ("Fire Red" = "FireRed").
+  if (m < 0)
+    m = coversBestMatch(romName, names);
+  if (m < 0) {
+    std::string want = compactTitle(romName);
+    for (size_t i = 0; i < names.size() && m < 0 && !want.empty(); i++)
+      if (compactTitle(names[i]) == want)
+        m = (int)i;
+  }
   bool ok = false;
   if (m < 0) {
     err = "nomatch";
   } else if (!fex_seek_arc(fe, where[m])) {
-    const void *data = 0;
+    data = 0;
     if (!fex_data(fe, &data) && data)
       ok = writeFile(outPath, std::string((const char *)data, fex_size(fe)));
     if (!ok)

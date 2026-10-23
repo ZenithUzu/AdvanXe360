@@ -10,6 +10,8 @@
 
 #include "XboxHost.h"
 #include "XboxCovers.h"
+#include "fex/fex.h"
+#include <map>
 #include "../gb/gbGambatteBridge.h"
 
 // Kinect as the Game Boy Camera. nuiapi.lib needs st.lib (skeleton tracking,
@@ -227,6 +229,30 @@ void setCoreCheat(int i, bool on)
 // cheats\gba\<game>.vch or cheats\gb\<game>.vch (UiCheatParse.h), so a list
 // is never fed to the wrong core. The running game's core list is rebuilt
 // from that file whenever it changes.
+// The ROM inside a .zip / .7z, by name ("" if none); each archive is read once.
+std::string archiveRomName(const std::string &archive)
+{
+  static std::map<std::string, std::string> cache;
+  std::map<std::string, std::string>::iterator it = cache.find(archive);
+  if (it != cache.end())
+    return it->second;
+  std::string found;
+  fex_t *fe = 0;
+  if (!fex_open(&fe, archive.c_str()) && fe) {
+    while (!fex_done(fe) && found.empty()) {
+      std::string n = fex_name(fe);
+      std::string e = uiExtension(n);
+      if (e == ".gba" || e == ".agb" || e == ".gb" || e == ".gbc" || e == ".cgb" || e == ".dmg" || e == ".sgb")
+        found = n;
+      else if (fex_next(fe))
+        break;
+    }
+    fex_close(fe);
+  }
+  cache[archive] = found;
+  return found;
+}
+
 bool romIsGb(const std::string &rom)
 {
   std::string ext = uiExtension(rom);
@@ -234,10 +260,11 @@ bool romIsGb(const std::string &rom)
     return true;
   if (ext == ".gba" || ext == ".agb" || ext == ".bin" || ext == ".elf" || ext == ".mb")
     return false;
-  // Compressed: the running game knows; otherwise guess GBA.
+  // Compressed: the running game knows; else the ROM inside; else GBA.
   if (!g_rom.empty() && rom == g_rom)
     return cartridgeType == 1;
-  return false;
+  std::string inner = archiveRomName(rom);
+  return !inner.empty() && romIsGb(inner);
 }
 
 std::string cheatStorePath(const std::string &rom)
@@ -549,6 +576,8 @@ public:
     return xboxRomPatched && !g_rom.empty();
   }
 
+  virtual std::string archiveRomName(const std::string &archive) { return ::archiveRomName(archive); }
+
   virtual int romInfo(const std::string &rom)
   {
     std::string ext = uiExtension(rom);
@@ -709,10 +738,22 @@ public:
   {
     const char *sys = "Nintendo - Game Boy Advance";
     if (romIsGb(rom))
-      sys = (romInfo(rom) & UI_ROM_CGB) ? "Nintendo - Game Boy Color" : "Nintendo - Game Boy";
+      sys = (romInfo(rom) & UI_ROM_CGB) || uiExtension(::archiveRomName(rom)) == ".gbc" ? "Nintendo - Game Boy Color"
+                                                                                       : "Nintendo - Game Boy";
     std::string dir = uiJoinPath(xboxEmulatorDir(), "cheats");
     std::string got = uiJoinPath(dir, "_libretro.cht");
-    if (!cheatsFetch(uiStripExtension(uiFileName(rom)), sys, uiJoinPath(dir, "libretro-cheats.zip"), got, err))
+    // GBA game code (header 0xAC), so any language of the game finds its cheats.
+    std::string code;
+    std::string ext = uiExtension(rom);   // a .zip has no header to read
+    FILE *f = ext == ".gba" || ext == ".agb" || ext == ".bin" ? fopen(rom.c_str(), "rb") : 0;
+    if (f) {
+      char c[4];
+      if (fseek(f, 0xAC, SEEK_SET) == 0 && fread(c, 1, 4, f) == 4 && isalnum((unsigned char)c[0]) &&
+          isalnum((unsigned char)c[1]) && isalnum((unsigned char)c[2]) && isalnum((unsigned char)c[3]))
+        code.assign(c, 4);
+      fclose(f);
+    }
+    if (!cheatsFetch(uiStripExtension(uiFileName(rom)), code, sys, uiJoinPath(dir, "libretro-cheats.zip"), got, err))
       return -1;
     int n = importCheatFile(rom, got);
     DeleteFile(got.c_str());

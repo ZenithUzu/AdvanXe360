@@ -147,9 +147,15 @@ void UiCanvas::hspan(int x0, int x1, int y, UiColor c)
   if (a >= 255) {
     for (int x = x0; x < x1; x++)
       row[x] = c;
-  } else {
-    for (int x = x0; x < x1; x++)
-      blendPixel(row + x, c, a);
+  } else if (a > 0) {
+    // One color over many pixels: red and blue blended in one multiply, green
+    // in another. Alpha 0..255 -> 0..256 so the weights add up to 256 (/256).
+    unsigned w = a + (a >> 7), inv = 256 - w;
+    unsigned crb = (c & 0xFF00FF) * w + 0x800080, cg = (c & 0xFF00) * w + 0x8000;
+    for (int x = x0; x < x1; x++) {
+      UiColor d = row[x];
+      row[x] = 0xFF000000 | ((((d & 0xFF00FF) * inv + crb) >> 8) & 0xFF00FF) | ((((d & 0xFF00) * inv + cg) >> 8) & 0xFF00);
+    }
   }
 }
 

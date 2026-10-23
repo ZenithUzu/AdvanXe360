@@ -86,6 +86,8 @@ public:
   virtual int cartHardware() { return 0; }
   // UI_ROM_* bits from the ROM header (0 for GBA games or unknown).
   virtual int romInfo(const std::string &rom) { return 0; }
+  // The ROM inside a .zip / .7z (its name in the archive), "" if none.
+  virtual std::string archiveRomName(const std::string &archive) { return ""; }
   // True when a .bps/.ups/.ips patch was applied to the running game.
   virtual bool romPatched() { return false; }
   // Writes the patched ROM next to the original, e.g. "Game (patched).gba".

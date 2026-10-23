@@ -313,7 +313,8 @@ void UiApp::update(unsigned int held)
       sprintf(buf, tr("%d c\xf3""digos agregados de internet", "%d codes added from the internet"), n);
     else
       strcpy(buf, err == "nomatch" ? tr("No hay trucos para este juego en la base", "No cheats for this game in the database")
-                                   : tr("No se pudo descargar (\xbf""consola en internet?)", "Download failed (is the console online?)"));
+                                   : tr("Falta cheats\\libretro-cheats.zip (est\xe1 en el .zip del emulador)",
+                                        "cheats\\libretro-cheats.zip is missing (it's in the emulator's .zip)"));
     toast(buf);
     rebuildMenus();
   }
@@ -989,6 +990,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
         { "Portadas", "Box art", "libretro-thumbnails (libretro)",
           "Las descarga de thumbnails.libretro.com; hechas por la comunidad de libretro.",
           "Downloaded from thumbnails.libretro.com; made by the libretro community." },
+        { "Base de trucos", "Cheat database", "libretro-database (libretro), superfw-cheats (davidgfnet)",
+          "Trucos de GB, GBC y GBA (CC BY-SA 4.0) y de GBA de SuperFW, en cheats\\libretro-cheats.zip.",
+          "GB, GBC and GBA cheats (CC BY-SA 4.0) and SuperFW's GBA cheats, in cheats\\libretro-cheats.zip." },
         { "Cartuchos de la Biblioteca", "Library cartridges", "AdvanXe360",
           "Gen\xe9ricos, sin logos. Pon los tuyos en carts\\ (gba.png, gbc.png, gb.png, zip.png).",
           "Generic, no logos. Put your own in carts\\ (gba.png, gbc.png, gb.png, zip.png)." },
@@ -1265,8 +1269,8 @@ void UiApp::buildCheatsMenu(UiMenuScreen &m)
                         : std::string(tr("Formato: ", "Format: ")) + example);
 
   m.add(CH_ONLINE, ITEM_ACTION, tr("Buscar trucos en internet", "Find cheats online"), "",
-        tr("De la base de trucos de libretro (RetroArch). La primera vez la descarga (unos MB).",
-           "From libretro's (RetroArch's) cheat database. The first time it downloads it (a few MB)."));
+        tr("Busca el juego en cheats\\libretro-cheats.zip (viene con el emulador); si no est\xe1, intenta descargarlo.",
+           "Looks the game up in cheats\\libretro-cheats.zip (comes with the emulator); if it's missing, tries to download it."));
 
   // Text lists the player dropped next to the ROM or in cheats\.
   std::string base = uiStripExtension(m.arg);

@@ -1,0 +1,13 @@
+libretro-cheats.zip - base de trucos de AdvanXe360 / AdvanXe360 cheat database
+
+Copia este .zip (sin descomprimir) a la carpeta cheats\ del emulador.
+Copy this .zip (do not unzip it) to the emulator's cheats\ folder.
+
+Contenido / Contents:
+- Game Boy, Game Boy Color y Game Boy Advance de libretro-database
+  (https://github.com/libretro/libretro-database, carpeta cht/),
+  licencia Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0).
+- Trucos de GBA de superfw-cheats (https://github.com/davidgfnet/superfw-cheats)
+  de davidgfnet, convertidos al formato .cht de RetroArch (archivos "(SuperFW).cht"),
+  y _gamecodes.txt: codigo de juego GBA -> archivo, para encontrar cualquier
+  idioma del juego.

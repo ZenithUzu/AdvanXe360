@@ -104,6 +104,7 @@ private:
   bool m_favOnly;                       // RB: only the favorites
   bool m_viewDirty;                     // m_view must be made again
   std::vector<std::string> m_view;      // the console's games shown (favorites / search)
+  std::string m_viewFilter;             // the search m_view was made with
   void buildView(UiApp &app, int sys);
   std::string m_root;                   // folder the games were read from
 };

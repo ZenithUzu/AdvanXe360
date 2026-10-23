@@ -1200,7 +1200,13 @@ void scanDir(UiApp &app, const std::string &dir, int depth, int &budget)
       if (depth < 3)
         scanDir(app, e[i].path, depth + 1, budget);
     } else if (uiIsRomFile(e[i].name) && lowerAscii(e[i].name).find("bios") == std::string::npos) {
-      g_library.games[romSystem(e[i].path)].push_back(e[i].path);
+      int sys = romSystem(e[i].path);
+      if (sys == SYS_OTHER) {   // a zip / 7z goes with the console of the game inside
+        std::string inner = app.host().archiveRomName(e[i].path);
+        if (!inner.empty())
+          sys = romSystem(inner);
+      }
+      g_library.games[sys].push_back(e[i].path);
     }
   }
 }
@@ -1310,6 +1316,8 @@ void UiLibraryScreen::buildView(UiApp &app, int sys)
   }
   ls.clamp((int)m_view.size());
   m_viewDirty = false;
+  m_viewFilter = app.listFilter();
+  app.setListMatches((int)m_view.size());   // the search keyboard shows it
 }
 
 void UiLibraryScreen::onResume(UiApp &app)
@@ -1466,7 +1474,7 @@ void UiLibraryScreen::draw(UiApp &app, UiCanvas &c)
   }
 
   // One console's games: back, the console, and where you are in the list.
-  if (m_viewDirty)
+  if (m_viewDirty || m_viewFilter != app.listFilter())   // the search filters as you type
     buildView(app, sys);
   const std::vector<std::string> &g = m_view;
   const UiListState &ls = m_list[sys];
@@ -1972,8 +1980,7 @@ void UiKeyboardScreen::drawSearch(UiApp &app, UiCanvas &c)
 {
   int w = UI_W - UI_MARGIN_X * 2, h = 322;
   int x = UI_MARGIN_X, y = UI_FOOTER_Y - 12 - h;
-  c.fillRect(0, y - 16, UI_W, UI_H - y + 16, 0x60000000);
-  uiDrawPanel(c, x, y, w, h, 20, 0xF4);
+  uiDrawPanel(c, x, y, w, h, 20, 0xF4);   // no dark veil under it: it doubled the cost of every frame
   c.fillRoundRect(x, y, w, 4, 2, UI_COL_ACCENT);
 
   // Magnifier + text field + number of matches
