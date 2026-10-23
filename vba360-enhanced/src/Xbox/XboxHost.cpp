@@ -230,7 +230,7 @@ void setCoreCheat(int i, bool on)
 // is never fed to the wrong core. The running game's core list is rebuilt
 // from that file whenever it changes.
 // The ROM inside a .zip / .7z, by name ("" if none); each archive is read once.
-std::string archiveRomName(const std::string &archive)
+std::string archiveInnerRom(const std::string &archive)
 {
   static std::map<std::string, std::string> cache;
   std::map<std::string, std::string>::iterator it = cache.find(archive);
@@ -263,7 +263,7 @@ bool romIsGb(const std::string &rom)
   // Compressed: the running game knows; else the ROM inside; else GBA.
   if (!g_rom.empty() && rom == g_rom)
     return cartridgeType == 1;
-  std::string inner = archiveRomName(rom);
+  std::string inner = archiveInnerRom(rom);
   return !inner.empty() && romIsGb(inner);
 }
 
@@ -576,7 +576,7 @@ public:
     return xboxRomPatched && !g_rom.empty();
   }
 
-  virtual std::string archiveRomName(const std::string &archive) { return ::archiveRomName(archive); }
+  virtual std::string archiveRomName(const std::string &archive) { return archiveInnerRom(archive); }
 
   virtual int romInfo(const std::string &rom)
   {
@@ -738,7 +738,7 @@ public:
   {
     const char *sys = "Nintendo - Game Boy Advance";
     if (romIsGb(rom))
-      sys = (romInfo(rom) & UI_ROM_CGB) || uiExtension(::archiveRomName(rom)) == ".gbc" ? "Nintendo - Game Boy Color"
+      sys = (romInfo(rom) & UI_ROM_CGB) || uiExtension(archiveInnerRom(rom)) == ".gbc" ? "Nintendo - Game Boy Color"
                                                                                        : "Nintendo - Game Boy";
     std::string dir = uiJoinPath(xboxEmulatorDir(), "cheats");
     std::string got = uiJoinPath(dir, "_libretro.cht");
