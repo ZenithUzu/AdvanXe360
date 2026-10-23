@@ -87,6 +87,7 @@ struct ConfigReader
     else if (k == "list_view") c.listView = clampInt(v, 0, LIST_VIEW_COUNT - 1, c.listView);
     else if (k == "bg_effect") c.bgEffect = clampInt(v, 0, UI_EFFECT_COUNT - 1, c.bgEffect);
     else if (k == "start_screen") c.startScreen = clampInt(v, 0, 1, c.startScreen);
+    else if (k == "kinect_hands") c.kinectHands = clampInt(v, 0, 1, c.kinectHands);
     else if (k == "library_dir") c.libraryDir = v;
     else if (k == "bg_visibility") c.bgVisibility = clampInt(v, 0, BG_VIS_COUNT - 1, c.bgVisibility);
     else if (k == "panel_opacity") c.panelOpacity = clampInt(v, 0, PANEL_OPACITY_COUNT - 1, c.panelOpacity);
@@ -184,6 +185,7 @@ UiConfig::UiConfig()
   listView = LIST_VIEW_CAROUSEL;
   bgEffect = UI_EFFECT_BUBBLES;
   startScreen = 0;
+  kinectHands = 0;
   bgVisibility = 1;
   panelOpacity = 1;
   accentTint = 0;
@@ -242,7 +244,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "menu_theme=%d\nmenu_background=%s\noption_style=%d\nlist_sort=%d\n",
           menuTheme, menuBackground.c_str(), optionStyle, listSort);
   fprintf(f, "cover_server=%s\npreview_mode=%d\nlist_view=%d\nbg_effect=%d\n", coverServer.c_str(), previewMode, listView, bgEffect);
-  fprintf(f, "start_screen=%d\nlibrary_dir=%s\n", startScreen, libraryDir.c_str());
+  fprintf(f, "start_screen=%d\nlibrary_dir=%s\nkinect_hands=%d\n", startScreen, libraryDir.c_str(), kinectHands);
   fprintf(f, "bg_visibility=%d\npanel_opacity=%d\naccent_tint=%d\nbubble_amount=%d\nwater_strength=%d\n",
           bgVisibility, panelOpacity, accentTint, bubbleAmount, waterStrength);
   fprintf(f, "menu_music=%d\nmusic_volume=%d\n", menuMusic, musicVolume);

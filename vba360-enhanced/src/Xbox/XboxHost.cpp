@@ -24,6 +24,7 @@
 #endif
 static void kinectCapture(unsigned char *gray);   // Game Boy Camera picture (below)
 static void kinectStop();
+static bool kinectHand(int &sx, int &sy);
 #define XBOX_LOG_NO_REDIRECT
 #include "XboxLog.h"
 
@@ -578,6 +579,8 @@ public:
   }
 
   virtual std::string archiveRomName(const std::string &archive) { return archiveInnerRom(archive); }
+  virtual bool handCursor(int &x, int &y) { return kinectHand(x, y); }
+  virtual void handStop() { kinectStop(); }
 
   virtual int romInfo(const std::string &rom)
   {
@@ -1605,7 +1608,7 @@ Filter xboxSelectedFilter()
 // Game Boy Camera picture: the Kinect's color camera, mirrored like a selfie,
 // cropped to the camera's 8:7 shape. Static noise without a Kinect.
 #ifndef XBOX_NO_KINECT
-static int g_kinect = 0;   // 0 off, 1 running, -1 no Kinect
+static int g_kinect = 0;   // 0 off, 1 camera (color) on, 2 hand tracking on, -1 failed
 static HANDLE g_kinectStream = 0;
 #endif
 
@@ -1621,6 +1624,64 @@ static void kinectStop()
 #endif
 }
 
+// Kinect hand cursor for the menus: the raised hand (the higher one) moves
+// over the screen relative to its shoulder, like the Xbox's own Kinect menus.
+static bool kinectHand(int &sx, int &sy)
+{
+#ifndef XBOX_NO_KINECT
+  if (g_kinect == 1)
+    kinectStop();   // the camera was on (Game Boy Camera): switch to tracking
+  if (g_kinect == 0) {
+    g_kinect = -1;
+    HRESULT hr = NuiInitialize(NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX,
+                               NUI_INITIALIZE_DEFAULT_HARDWARE_THREAD);
+    HRESULT hrTrack = SUCCEEDED(hr) ? NuiSkeletonTrackingEnable(NULL, 0) : 0;
+    if (SUCCEEDED(hr) && SUCCEEDED(hrTrack))
+      g_kinect = 2;
+    else if (SUCCEEDED(hr))
+      NuiShutdown();
+    xboxLog("Kinect hands: %s (NuiInitialize 0x%08X, tracking 0x%08X)", g_kinect == 2 ? "on" : "failed",
+            (unsigned)hr, (unsigned)hrTrack);
+  }
+  if (g_kinect != 2)
+    return false;
+  static NUI_SKELETON_FRAME frame;
+  static bool have = false;
+  if (SUCCEEDED(NuiSkeletonGetNextFrame(0, &frame))) {
+    NuiTransformSmooth(&frame, NULL);
+    have = true;
+  }
+  if (!have)
+    return false;
+  for (int i = 0; i < NUI_SKELETON_COUNT; i++) {
+    const NUI_SKELETON_DATA &sk = frame.SkeletonData[i];
+    if (sk.eTrackingState != NUI_SKELETON_TRACKED)
+      continue;
+    const XMVECTOR *p = sk.SkeletonPositions;
+    bool right = sk.eSkeletonPositionTrackingState[NUI_SKELETON_POSITION_HAND_RIGHT] == NUI_SKELETON_POSITION_TRACKED;
+    bool left = sk.eSkeletonPositionTrackingState[NUI_SKELETON_POSITION_HAND_LEFT] == NUI_SKELETON_POSITION_TRACKED;
+    if (right && left)
+      right = p[NUI_SKELETON_POSITION_HAND_RIGHT].y >= p[NUI_SKELETON_POSITION_HAND_LEFT].y;
+    else if (!right && !left)
+      return false;
+    const XMVECTOR &hand = p[right ? NUI_SKELETON_POSITION_HAND_RIGHT : NUI_SKELETON_POSITION_HAND_LEFT];
+    const XMVECTOR &shoulder = p[right ? NUI_SKELETON_POSITION_SHOULDER_RIGHT : NUI_SKELETON_POSITION_SHOULDER_LEFT];
+    if (hand.y < p[NUI_SKELETON_POSITION_HIP_CENTER].y)
+      return false;   // hand down: no cursor
+    // A box in front of the shoulder (meters) covers the screen: 60 cm wide,
+    // from 25 cm above the shoulder to 35 cm below it.
+    float fx = (hand.x - shoulder.x + (right ? 0.15f : 0.45f)) / 0.60f;
+    float fy = (shoulder.y + 0.25f - hand.y) / 0.60f;
+    fx = fx < 0 ? 0 : fx > 1 ? 1 : fx;
+    fy = fy < 0 ? 0 : fy > 1 ? 1 : fy;
+    sx = (int)(fx * 1279);
+    sy = (int)(fy * 719);
+    return true;
+  }
+#endif
+  return false;
+}
+
 static void kinectCapture(unsigned char *gray)
 {
 #ifndef XBOX_NO_KINECT
@@ -1628,6 +1689,8 @@ static void kinectCapture(unsigned char *gray)
   HANDLE &stream = g_kinectStream;
   static unsigned char last[128 * 112];
   static bool haveLast = false;
+  if (state == 2)
+    kinectStop();   // hand tracking from the menu: the camera needs color
   if (state == 0) {
     state = -1;
     HRESULT hrInit = NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR, NUI_INITIALIZE_DEFAULT_HARDWARE_THREAD);

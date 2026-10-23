@@ -100,6 +100,7 @@ struct UiConfig
   int listView;                 // UiListView
   int bgEffect;                 // UiBgEffect bits (0 = none)
   int startScreen;              // 0 = library, 1 = file browser
+  int kinectHands;              // move through the Library with your hand (Kinect)
   int bgVisibility;             // index into uiBgVeilAlpha
   int panelOpacity;             // index into uiPanelOpacityPercent
   int accentTint;               // index into uiAccentTints (0 = the theme's)

@@ -9,6 +9,9 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
+enum { HAND_DWELL_FRAMES = 75 };   // Kinect hand: ~1.25 s still on the same thing = A
 #include <string.h>
 
 namespace {
@@ -26,7 +29,7 @@ enum
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_EFFECT,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_KINECT_HANDS, U_EFFECT,
   U_BG_VIS, U_PANELS, U_ACCENT, U_COVERS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
@@ -140,7 +143,8 @@ std::string uiStickDirName(UiApp &app, int dir)
 UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
-    m_request(UI_REQ_NONE), m_toastFrames(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
+    m_handTarget(-1), m_handFrames(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
     m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
@@ -296,6 +300,22 @@ void UiApp::update(unsigned int held)
   m_prevHeld = held;
   m_coverLoadsLeft = 1;
 
+  // Kinect hand: only in the menus (in a game it would slow the game down).
+  int hx, hy;
+  m_handOn = m_cfg.kinectHands && !m_inGame && m_host.handCursor(hx, hy);
+  if (m_handOn) {
+    m_handX += (hx - m_handX) / 3;   // smooth out the shake
+    m_handY += (hy - m_handY) / 3;
+    m_dirtyFrames = 3;
+    m_handWasOn = true;
+  } else if (!m_cfg.kinectHands && m_handWasOn) {
+    m_host.handStop();
+    m_handWasOn = false;
+  }
+  if (!m_handOn)
+    m_handTarget = -1;
+  m_handUsed = false;
+
   if (!m_stack.empty())
     m_stack.back()->update(*this, in);
 
@@ -402,6 +422,16 @@ void UiApp::draw(UiCanvas &c)
     m_stack[i]->draw(*this, c);
   }
   m_hintsAllowed = true;
+
+  if (m_handOn && m_handUsed) {   // the hand cursor, its ring filling while it waits
+    c.fillCircle(m_handX, m_handY, 22, 0x50000000);
+    c.fillCircle(m_handX, m_handY, 14, 0xE0FFFFFF);
+    int dots = m_handFrames > 0 ? 24 * m_handFrames / HAND_DWELL_FRAMES : 0;
+    for (int i = 0; i < dots; i++) {
+      float a = (float)i / 24 * 6.2832f - 1.5708f;
+      c.fillCircle(m_handX + (int)(cosf(a) * 22), m_handY + (int)(sinf(a) * 22), 4, UI_COL_ACCENT);
+    }
+  }
 
   if (m_toastFrames > 0 && !m_toast.empty()) {
     int a = m_toastFrames < 20 ? m_toastFrames * 12 : 240;
@@ -795,6 +825,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
              std::string(tr("Biblioteca: consolas y portadas, sin carpetas (BACK abre el explorador). Juegos de: ",
                             "Library: consoles and box art, no folders (BACK opens the browser). Games from: ")) + lib +
              tr(" (Y sobre una carpeta en el explorador la cambia).", " (Y on a folder in the browser changes it)."))).choice = m_cfg.startScreen;
+      const char *kh[2] = { tr("Apagado", "Off"), tr("Encendido", "On") };
+      (m.add(U_KINECT_HANDS, ITEM_OPTION, tr("Control con Kinect (Biblioteca)", "Kinect control (Library)"), kh[m_cfg.kinectHands],
+             tr("Levanta la mano para mover el cursor; d\xe9jala quieta sobre un juego para abrirlo. Solo en los men\xfas.",
+                "Raise your hand to move the cursor; hold it still on a game to open it. Menus only."))).choice = m_cfg.kinectHands;
     }
     {
       const char *pv[PREVIEW_COUNT] = { tr("Portada o \xfaltima partida", "Box art or last played"),
@@ -1530,6 +1564,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == U_OPTION_STYLE) m_cfg.optionStyle = wrapIndex(m_cfg.optionStyle, delta, OPT_STYLE_COUNT);
     else if (id == U_PREVIEW) m_cfg.previewMode = wrapIndex(m_cfg.previewMode, delta, PREVIEW_COUNT);
     else if (id == U_START) m_cfg.startScreen = wrapIndex(m_cfg.startScreen, delta, 2);
+    else if (id == U_KINECT_HANDS) m_cfg.kinectHands = wrapIndex(m_cfg.kinectHands, delta, 2);
     else if (id == U_EFFECT) m_cfg.bgEffect = wrapIndex(m_cfg.bgEffect, delta, UI_EFFECT_COUNT);
     else if (id == U_BG_VIS) m_cfg.bgVisibility = wrapIndex(m_cfg.bgVisibility, delta, BG_VIS_COUNT);
     else if (id == U_PANELS) m_cfg.panelOpacity = wrapIndex(m_cfg.panelOpacity, delta, PANEL_OPACITY_COUNT);
@@ -1797,6 +1832,20 @@ void UiApp::startCoverDownload()
     return;
   }
   push(new UiCoverScreen(false));
+}
+
+bool UiApp::handDwell(int target)
+{
+  m_handUsed = true;
+  if (!m_handOn || target < 0 || target != m_handTarget) {
+    m_handTarget = m_handOn ? target : -1;
+    m_handFrames = 0;
+    return false;
+  }
+  if (++m_handFrames < HAND_DWELL_FRAMES)
+    return false;
+  m_handFrames = -HAND_DWELL_FRAMES / 2;   // a pause before it can fire again
+  return true;
 }
 
 void UiApp::onCoversClosed()

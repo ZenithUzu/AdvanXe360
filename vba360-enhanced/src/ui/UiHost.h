@@ -86,6 +86,10 @@ public:
   virtual int cartHardware() { return 0; }
   // UI_ROM_* bits from the ROM header (0 for GBA games or unknown).
   virtual int romInfo(const std::string &rom) { return 0; }
+  // Kinect hand cursor (menus only): screen position of the raised hand, false
+  // when no hand is up. handStop turns the skeleton tracking off.
+  virtual bool handCursor(int &x, int &y) { return false; }
+  virtual void handStop() {}
   // The ROM inside a .zip / .7z (its name in the archive), "" if none.
   virtual std::string archiveRomName(const std::string &archive) { return ""; }
   // True when a .bps/.ups/.ips patch was applied to the running game.

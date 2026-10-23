@@ -78,6 +78,13 @@ public:
   bool fastForward;
 
   void toast(const std::string &msg, int frames = 150);
+  // Kinect hand cursor: on while a hand is raised in a menu (Settings).
+  bool handActive() const { return m_handOn; }
+  int handX() const { return m_handX; }
+  int handY() const { return m_handY; }
+  // The screen says what is under the cursor (-1: nothing) every update;
+  // true once the hand has stayed on the same thing long enough (= A).
+  bool handDwell(int target);
   const char *tr(const char *es, const char *en) const;
 
   // --- Used by the screens -------------------------------------------------
@@ -169,6 +176,8 @@ private:
   std::string m_requestRom;
   std::string m_toast;
   int m_toastFrames;
+  bool m_handOn, m_handUsed, m_handWasOn;
+  int m_handX, m_handY, m_handTarget, m_handFrames;
   int m_cheatDownload;   // frames until the online cheat search runs (0 = none)
   // Sensor being mapped by moving the right stick (item id, 0 = none).
   int m_stickCapture;

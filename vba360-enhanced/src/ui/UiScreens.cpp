@@ -1124,6 +1124,37 @@ void drawHeart(UiCanvas &c, int cx, int cy, int r, UiColor col)
 }
 
 enum { GRID_COLS = 6, GRID_ROWS = 2 };
+enum { GRID_GAP = 20, GRID_PAD = 8, GRID_NAME_H = 30, GRID_STRIP_H = 58 };
+
+// The cards' size and spacing in a w x h area (drawGrid and the hand cursor).
+void gridLayout(int w, int h, int &cardW, int &cardH, int &rowH)
+{
+  cardW = (w - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
+  cardH = GRID_PAD + (cardW - GRID_PAD * 2) + GRID_PAD + GRID_NAME_H;
+  rowH = (h - GRID_STRIP_H - cardH * GRID_ROWS) / GRID_ROWS + cardH;
+}
+
+// What the hand points at in the Library's grid of games: a game's index,
+// one of these, or -1.
+enum { HAND_BACK = 1 << 20, HAND_UP, HAND_DOWN };
+
+int gridHandTarget(int px, int py, int x, int y, int w, int h, int scroll, int count)
+{
+  int dx = px - (x + 20), dy = py - 52;
+  if (dx * dx + dy * dy < 40 * 40)
+    return HAND_BACK;   // the round back button by the title
+  int cardW, cardH, rowH;
+  gridLayout(w, h, cardW, cardH, rowH);
+  if (py < y)
+    return scroll > 0 ? HAND_UP : -1;
+  if (py > y + GRID_ROWS * rowH - GRID_GAP)
+    return (scroll + GRID_ROWS) * GRID_COLS < count ? HAND_DOWN : -1;
+  int col = (px - x) / (cardW + GRID_GAP), row = (py - y) / rowH;
+  if (px < x || col >= GRID_COLS || (px - x) % (cardW + GRID_GAP) >= cardW || (py - y) % rowH >= cardH)
+    return -1;
+  int idx = (scroll + row) * GRID_COLS + col;
+  return idx < count ? idx : -1;
+}
 
 // The games as cards: box art on a rounded panel with the name under it.
 // The chosen one rises, gets an accent ring and full brightness.
@@ -1131,11 +1162,10 @@ void drawGrid(UiApp &app, UiCanvas &c, int x, int y, int w, int h,
               const std::vector<std::string> &roms, const UiListState &ls, int sys)
 {
   const int count = (int)roms.size();
-  const int gap = 20, pad = 8, nameH = 30, stripH = 58;
-  const int cardW = (w - gap * (GRID_COLS - 1)) / GRID_COLS;
+  const int gap = GRID_GAP, pad = GRID_PAD, stripH = GRID_STRIP_H;
+  int cardW, cardH, rowH;
+  gridLayout(w, h, cardW, cardH, rowH);
   const int art = cardW - pad * 2;
-  const int cardH = pad + art + pad + nameH;
-  const int rowH = (h - stripH - cardH * GRID_ROWS) / GRID_ROWS + cardH;
   for (int r = 0; r < GRID_ROWS; r++) {
     for (int col = 0; col < GRID_COLS; col++) {
       int idx = (ls.scroll + r) * GRID_COLS + col;
@@ -1339,6 +1369,14 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
   if (m_systems.empty())
     return;
   if (!m_inSystem) {
+    if (app.handActive()) {   // hand: left / right cartridge to move, the middle one to open
+      int t = app.handX() < UI_W / 2 - 200 ? 0 : app.handX() > UI_W / 2 + 200 ? 2 : 1;
+      if (app.handDwell(t)) {
+        if (t == 0 && m_sys > 0) m_sys--;
+        else if (t == 2 && m_sys < (int)m_systems.size() - 1) m_sys++;
+        else if (t == 1) { m_inSystem = true; m_viewDirty = true; return; }
+      }
+    }
     if ((in.repeat & PAD_BIT(PAD_LEFT)) && m_sys > 0) m_sys--;
     if ((in.repeat & PAD_BIT(PAD_RIGHT)) && m_sys < (int)m_systems.size() - 1) m_sys++;
     if (in.pressed & PAD_BIT(PAD_A)) {
@@ -1365,6 +1403,25 @@ void UiLibraryScreen::update(UiApp &app, const UiInputState &in)
   if ((in.repeat & PAD_BIT(PAD_LEFT)) && ls.sel > 0) ls.sel--;
   if ((in.repeat & PAD_BIT(PAD_RIGHT)) && ls.sel < count - 1) ls.sel++;
   const int step = GRID_COLS;
+  if (app.handActive()) {   // hand: pointing chooses, staying still opens
+    int top = UI_HEADER_H + 20;
+    int t = gridHandTarget(app.handX(), app.handY(), UI_MARGIN_X, top, UI_W - UI_MARGIN_X * 2 - 20,
+                           UI_FOOTER_Y - 12 - top, ls.scroll, count);
+    if (t >= 0 && t < count)
+      ls.sel = t;
+    if (app.handDwell(t)) {
+      if (t == HAND_BACK) {
+        m_inSystem = false;
+        return;
+      }
+      if (t == HAND_UP && ls.sel >= step) ls.sel -= step;
+      else if (t == HAND_DOWN) ls.sel = std::min(ls.sel + step, count - 1);
+      else if (t >= 0 && t < count) {
+        app.launch(g[t]);
+        return;
+      }
+    }
+  }
   if ((in.repeat & PAD_BIT(PAD_UP)) && ls.sel >= step) ls.sel -= step;
   if ((in.repeat & PAD_BIT(PAD_DOWN)) && ls.sel < count - 1) ls.sel = std::min(ls.sel + step, count - 1);
   // LT / RT: previous / next first letter.
