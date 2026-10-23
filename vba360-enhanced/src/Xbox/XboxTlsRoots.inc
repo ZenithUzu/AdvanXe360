@@ -5412,1327 +5412,166 @@ static const unsigned char TA119_RSA_E[] = {
 	0x01, 0x00, 0x01
 };
 
-static const br_x509_trust_anchor TAs[120] = {
-	{
-		{ (unsigned char *)TA0_DN, sizeof TA0_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA0_EC_Q, sizeof TA0_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA1_DN, sizeof TA1_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA1_RSA_N, sizeof TA1_RSA_N,
-				(unsigned char *)TA1_RSA_E, sizeof TA1_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA2_DN, sizeof TA2_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA2_RSA_N, sizeof TA2_RSA_N,
-				(unsigned char *)TA2_RSA_E, sizeof TA2_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA3_DN, sizeof TA3_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA3_RSA_N, sizeof TA3_RSA_N,
-				(unsigned char *)TA3_RSA_E, sizeof TA3_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA4_DN, sizeof TA4_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA4_RSA_N, sizeof TA4_RSA_N,
-				(unsigned char *)TA4_RSA_E, sizeof TA4_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA5_DN, sizeof TA5_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA5_RSA_N, sizeof TA5_RSA_N,
-				(unsigned char *)TA5_RSA_E, sizeof TA5_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA6_DN, sizeof TA6_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA6_RSA_N, sizeof TA6_RSA_N,
-				(unsigned char *)TA6_RSA_E, sizeof TA6_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA7_DN, sizeof TA7_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA7_RSA_N, sizeof TA7_RSA_N,
-				(unsigned char *)TA7_RSA_E, sizeof TA7_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA8_DN, sizeof TA8_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA8_RSA_N, sizeof TA8_RSA_N,
-				(unsigned char *)TA8_RSA_E, sizeof TA8_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA9_DN, sizeof TA9_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA9_RSA_N, sizeof TA9_RSA_N,
-				(unsigned char *)TA9_RSA_E, sizeof TA9_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA10_DN, sizeof TA10_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA10_RSA_N, sizeof TA10_RSA_N,
-				(unsigned char *)TA10_RSA_E, sizeof TA10_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA11_DN, sizeof TA11_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA11_RSA_N, sizeof TA11_RSA_N,
-				(unsigned char *)TA11_RSA_E, sizeof TA11_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA12_DN, sizeof TA12_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA12_RSA_N, sizeof TA12_RSA_N,
-				(unsigned char *)TA12_RSA_E, sizeof TA12_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA13_DN, sizeof TA13_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA13_RSA_N, sizeof TA13_RSA_N,
-				(unsigned char *)TA13_RSA_E, sizeof TA13_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA14_DN, sizeof TA14_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA14_RSA_N, sizeof TA14_RSA_N,
-				(unsigned char *)TA14_RSA_E, sizeof TA14_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA15_DN, sizeof TA15_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA15_RSA_N, sizeof TA15_RSA_N,
-				(unsigned char *)TA15_RSA_E, sizeof TA15_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA16_DN, sizeof TA16_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA16_RSA_N, sizeof TA16_RSA_N,
-				(unsigned char *)TA16_RSA_E, sizeof TA16_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA17_DN, sizeof TA17_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA17_RSA_N, sizeof TA17_RSA_N,
-				(unsigned char *)TA17_RSA_E, sizeof TA17_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA18_DN, sizeof TA18_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA18_RSA_N, sizeof TA18_RSA_N,
-				(unsigned char *)TA18_RSA_E, sizeof TA18_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA19_DN, sizeof TA19_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA19_RSA_N, sizeof TA19_RSA_N,
-				(unsigned char *)TA19_RSA_E, sizeof TA19_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA20_DN, sizeof TA20_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA20_RSA_N, sizeof TA20_RSA_N,
-				(unsigned char *)TA20_RSA_E, sizeof TA20_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA21_DN, sizeof TA21_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA21_RSA_N, sizeof TA21_RSA_N,
-				(unsigned char *)TA21_RSA_E, sizeof TA21_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA22_DN, sizeof TA22_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA22_RSA_N, sizeof TA22_RSA_N,
-				(unsigned char *)TA22_RSA_E, sizeof TA22_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA23_DN, sizeof TA23_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA23_RSA_N, sizeof TA23_RSA_N,
-				(unsigned char *)TA23_RSA_E, sizeof TA23_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA24_DN, sizeof TA24_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA24_RSA_N, sizeof TA24_RSA_N,
-				(unsigned char *)TA24_RSA_E, sizeof TA24_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA25_DN, sizeof TA25_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA25_EC_Q, sizeof TA25_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA26_DN, sizeof TA26_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA26_RSA_N, sizeof TA26_RSA_N,
-				(unsigned char *)TA26_RSA_E, sizeof TA26_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA27_DN, sizeof TA27_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA27_EC_Q, sizeof TA27_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA28_DN, sizeof TA28_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA28_RSA_N, sizeof TA28_RSA_N,
-				(unsigned char *)TA28_RSA_E, sizeof TA28_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA29_DN, sizeof TA29_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA29_RSA_N, sizeof TA29_RSA_N,
-				(unsigned char *)TA29_RSA_E, sizeof TA29_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA30_DN, sizeof TA30_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA30_RSA_N, sizeof TA30_RSA_N,
-				(unsigned char *)TA30_RSA_E, sizeof TA30_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA31_DN, sizeof TA31_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA31_EC_Q, sizeof TA31_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA32_DN, sizeof TA32_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA32_EC_Q, sizeof TA32_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA33_DN, sizeof TA33_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA33_RSA_N, sizeof TA33_RSA_N,
-				(unsigned char *)TA33_RSA_E, sizeof TA33_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA34_DN, sizeof TA34_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA34_RSA_N, sizeof TA34_RSA_N,
-				(unsigned char *)TA34_RSA_E, sizeof TA34_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA35_DN, sizeof TA35_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA35_RSA_N, sizeof TA35_RSA_N,
-				(unsigned char *)TA35_RSA_E, sizeof TA35_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA36_DN, sizeof TA36_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA36_RSA_N, sizeof TA36_RSA_N,
-				(unsigned char *)TA36_RSA_E, sizeof TA36_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA37_DN, sizeof TA37_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA37_RSA_N, sizeof TA37_RSA_N,
-				(unsigned char *)TA37_RSA_E, sizeof TA37_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA38_DN, sizeof TA38_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA38_RSA_N, sizeof TA38_RSA_N,
-				(unsigned char *)TA38_RSA_E, sizeof TA38_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA39_DN, sizeof TA39_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA39_RSA_N, sizeof TA39_RSA_N,
-				(unsigned char *)TA39_RSA_E, sizeof TA39_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA40_DN, sizeof TA40_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA40_EC_Q, sizeof TA40_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA41_DN, sizeof TA41_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA41_RSA_N, sizeof TA41_RSA_N,
-				(unsigned char *)TA41_RSA_E, sizeof TA41_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA42_DN, sizeof TA42_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA42_RSA_N, sizeof TA42_RSA_N,
-				(unsigned char *)TA42_RSA_E, sizeof TA42_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA43_DN, sizeof TA43_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA43_RSA_N, sizeof TA43_RSA_N,
-				(unsigned char *)TA43_RSA_E, sizeof TA43_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA44_DN, sizeof TA44_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA44_RSA_N, sizeof TA44_RSA_N,
-				(unsigned char *)TA44_RSA_E, sizeof TA44_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA45_DN, sizeof TA45_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp256r1,
-				(unsigned char *)TA45_EC_Q, sizeof TA45_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA46_DN, sizeof TA46_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA46_EC_Q, sizeof TA46_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA47_DN, sizeof TA47_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA47_RSA_N, sizeof TA47_RSA_N,
-				(unsigned char *)TA47_RSA_E, sizeof TA47_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA48_DN, sizeof TA48_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA48_RSA_N, sizeof TA48_RSA_N,
-				(unsigned char *)TA48_RSA_E, sizeof TA48_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA49_DN, sizeof TA49_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA49_RSA_N, sizeof TA49_RSA_N,
-				(unsigned char *)TA49_RSA_E, sizeof TA49_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA50_DN, sizeof TA50_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA50_EC_Q, sizeof TA50_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA51_DN, sizeof TA51_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA51_RSA_N, sizeof TA51_RSA_N,
-				(unsigned char *)TA51_RSA_E, sizeof TA51_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA52_DN, sizeof TA52_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA52_EC_Q, sizeof TA52_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA53_DN, sizeof TA53_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA53_RSA_N, sizeof TA53_RSA_N,
-				(unsigned char *)TA53_RSA_E, sizeof TA53_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA54_DN, sizeof TA54_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA54_EC_Q, sizeof TA54_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA55_DN, sizeof TA55_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA55_RSA_N, sizeof TA55_RSA_N,
-				(unsigned char *)TA55_RSA_E, sizeof TA55_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA56_DN, sizeof TA56_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA56_RSA_N, sizeof TA56_RSA_N,
-				(unsigned char *)TA56_RSA_E, sizeof TA56_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA57_DN, sizeof TA57_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA57_RSA_N, sizeof TA57_RSA_N,
-				(unsigned char *)TA57_RSA_E, sizeof TA57_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA58_DN, sizeof TA58_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA58_RSA_N, sizeof TA58_RSA_N,
-				(unsigned char *)TA58_RSA_E, sizeof TA58_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA59_DN, sizeof TA59_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA59_RSA_N, sizeof TA59_RSA_N,
-				(unsigned char *)TA59_RSA_E, sizeof TA59_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA60_DN, sizeof TA60_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA60_EC_Q, sizeof TA60_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA61_DN, sizeof TA61_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA61_RSA_N, sizeof TA61_RSA_N,
-				(unsigned char *)TA61_RSA_E, sizeof TA61_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA62_DN, sizeof TA62_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA62_EC_Q, sizeof TA62_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA63_DN, sizeof TA63_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA63_RSA_N, sizeof TA63_RSA_N,
-				(unsigned char *)TA63_RSA_E, sizeof TA63_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA64_DN, sizeof TA64_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp256r1,
-				(unsigned char *)TA64_EC_Q, sizeof TA64_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA65_DN, sizeof TA65_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA65_RSA_N, sizeof TA65_RSA_N,
-				(unsigned char *)TA65_RSA_E, sizeof TA65_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA66_DN, sizeof TA66_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA66_RSA_N, sizeof TA66_RSA_N,
-				(unsigned char *)TA66_RSA_E, sizeof TA66_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA67_DN, sizeof TA67_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA67_EC_Q, sizeof TA67_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA68_DN, sizeof TA68_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA68_RSA_N, sizeof TA68_RSA_N,
-				(unsigned char *)TA68_RSA_E, sizeof TA68_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA69_DN, sizeof TA69_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA69_EC_Q, sizeof TA69_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA70_DN, sizeof TA70_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA70_RSA_N, sizeof TA70_RSA_N,
-				(unsigned char *)TA70_RSA_E, sizeof TA70_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA71_DN, sizeof TA71_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA71_EC_Q, sizeof TA71_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA72_DN, sizeof TA72_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA72_RSA_N, sizeof TA72_RSA_N,
-				(unsigned char *)TA72_RSA_E, sizeof TA72_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA73_DN, sizeof TA73_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA73_RSA_N, sizeof TA73_RSA_N,
-				(unsigned char *)TA73_RSA_E, sizeof TA73_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA74_DN, sizeof TA74_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA74_RSA_N, sizeof TA74_RSA_N,
-				(unsigned char *)TA74_RSA_E, sizeof TA74_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA75_DN, sizeof TA75_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA75_EC_Q, sizeof TA75_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA76_DN, sizeof TA76_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA76_RSA_N, sizeof TA76_RSA_N,
-				(unsigned char *)TA76_RSA_E, sizeof TA76_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA77_DN, sizeof TA77_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA77_EC_Q, sizeof TA77_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA78_DN, sizeof TA78_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA78_RSA_N, sizeof TA78_RSA_N,
-				(unsigned char *)TA78_RSA_E, sizeof TA78_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA79_DN, sizeof TA79_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA79_EC_Q, sizeof TA79_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA80_DN, sizeof TA80_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA80_RSA_N, sizeof TA80_RSA_N,
-				(unsigned char *)TA80_RSA_E, sizeof TA80_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA81_DN, sizeof TA81_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp256r1,
-				(unsigned char *)TA81_EC_Q, sizeof TA81_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA82_DN, sizeof TA82_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA82_RSA_N, sizeof TA82_RSA_N,
-				(unsigned char *)TA82_RSA_E, sizeof TA82_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA83_DN, sizeof TA83_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA83_EC_Q, sizeof TA83_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA84_DN, sizeof TA84_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA84_EC_Q, sizeof TA84_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA85_DN, sizeof TA85_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA85_RSA_N, sizeof TA85_RSA_N,
-				(unsigned char *)TA85_RSA_E, sizeof TA85_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA86_DN, sizeof TA86_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA86_EC_Q, sizeof TA86_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA87_DN, sizeof TA87_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA87_EC_Q, sizeof TA87_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA88_DN, sizeof TA88_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA88_EC_Q, sizeof TA88_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA89_DN, sizeof TA89_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA89_RSA_N, sizeof TA89_RSA_N,
-				(unsigned char *)TA89_RSA_E, sizeof TA89_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA90_DN, sizeof TA90_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA90_RSA_N, sizeof TA90_RSA_N,
-				(unsigned char *)TA90_RSA_E, sizeof TA90_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA91_DN, sizeof TA91_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA91_EC_Q, sizeof TA91_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA92_DN, sizeof TA92_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA92_EC_Q, sizeof TA92_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA93_DN, sizeof TA93_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA93_RSA_N, sizeof TA93_RSA_N,
-				(unsigned char *)TA93_RSA_E, sizeof TA93_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA94_DN, sizeof TA94_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA94_EC_Q, sizeof TA94_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA95_DN, sizeof TA95_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA95_EC_Q, sizeof TA95_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA96_DN, sizeof TA96_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA96_RSA_N, sizeof TA96_RSA_N,
-				(unsigned char *)TA96_RSA_E, sizeof TA96_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA97_DN, sizeof TA97_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA97_RSA_N, sizeof TA97_RSA_N,
-				(unsigned char *)TA97_RSA_E, sizeof TA97_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA98_DN, sizeof TA98_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA98_EC_Q, sizeof TA98_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA99_DN, sizeof TA99_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA99_EC_Q, sizeof TA99_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA100_DN, sizeof TA100_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA100_RSA_N, sizeof TA100_RSA_N,
-				(unsigned char *)TA100_RSA_E, sizeof TA100_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA101_DN, sizeof TA101_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA101_RSA_N, sizeof TA101_RSA_N,
-				(unsigned char *)TA101_RSA_E, sizeof TA101_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA102_DN, sizeof TA102_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA102_EC_Q, sizeof TA102_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA103_DN, sizeof TA103_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA103_EC_Q, sizeof TA103_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA104_DN, sizeof TA104_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA104_RSA_N, sizeof TA104_RSA_N,
-				(unsigned char *)TA104_RSA_E, sizeof TA104_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA105_DN, sizeof TA105_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA105_RSA_N, sizeof TA105_RSA_N,
-				(unsigned char *)TA105_RSA_E, sizeof TA105_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA106_DN, sizeof TA106_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA106_RSA_N, sizeof TA106_RSA_N,
-				(unsigned char *)TA106_RSA_E, sizeof TA106_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA107_DN, sizeof TA107_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA107_EC_Q, sizeof TA107_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA108_DN, sizeof TA108_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA108_RSA_N, sizeof TA108_RSA_N,
-				(unsigned char *)TA108_RSA_E, sizeof TA108_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA109_DN, sizeof TA109_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA109_EC_Q, sizeof TA109_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA110_DN, sizeof TA110_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA110_RSA_N, sizeof TA110_RSA_N,
-				(unsigned char *)TA110_RSA_E, sizeof TA110_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA111_DN, sizeof TA111_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA111_RSA_N, sizeof TA111_RSA_N,
-				(unsigned char *)TA111_RSA_E, sizeof TA111_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA112_DN, sizeof TA112_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA112_RSA_N, sizeof TA112_RSA_N,
-				(unsigned char *)TA112_RSA_E, sizeof TA112_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA113_DN, sizeof TA113_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA113_EC_Q, sizeof TA113_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA114_DN, sizeof TA114_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA114_RSA_N, sizeof TA114_RSA_N,
-				(unsigned char *)TA114_RSA_E, sizeof TA114_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA115_DN, sizeof TA115_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp521r1,
-				(unsigned char *)TA115_EC_Q, sizeof TA115_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA116_DN, sizeof TA116_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA116_RSA_N, sizeof TA116_RSA_N,
-				(unsigned char *)TA116_RSA_E, sizeof TA116_RSA_E,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA117_DN, sizeof TA117_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA117_EC_Q, sizeof TA117_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA118_DN, sizeof TA118_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_EC,
-			{ .ec = {
-				BR_EC_secp384r1,
-				(unsigned char *)TA118_EC_Q, sizeof TA118_EC_Q,
-			} }
-		}
-	},
-	{
-		{ (unsigned char *)TA119_DN, sizeof TA119_DN },
-		BR_X509_TA_CA,
-		{
-			BR_KEYTYPE_RSA,
-			{ .rsa = {
-				(unsigned char *)TA119_RSA_N, sizeof TA119_RSA_N,
-				(unsigned char *)TA119_RSA_E, sizeof TA119_RSA_E,
-			} }
-		}
-	}
+// The table of roots, filled at start-up (xboxTlsRoots): the generated one
+// used C99 ".ec =" initializers, which Visual Studio 2010 doesn't accept.
+struct XboxRootDesc {
+	const unsigned char *dn; size_t dnLen; unsigned flags;
+	int ec; int curve;
+	const unsigned char *a; size_t aLen;   // EC: the point; RSA: the modulus
+	const unsigned char *b; size_t bLen;   // RSA: the exponent
+};
+
+static const XboxRootDesc kRootDesc[] = {
+	{ TA0_DN, sizeof TA0_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA0_EC_Q, sizeof TA0_EC_Q, 0, 0 },
+	{ TA1_DN, sizeof TA1_DN, BR_X509_TA_CA, 0, 0, TA1_RSA_N, sizeof TA1_RSA_N, TA1_RSA_E, sizeof TA1_RSA_E },
+	{ TA2_DN, sizeof TA2_DN, BR_X509_TA_CA, 0, 0, TA2_RSA_N, sizeof TA2_RSA_N, TA2_RSA_E, sizeof TA2_RSA_E },
+	{ TA3_DN, sizeof TA3_DN, BR_X509_TA_CA, 0, 0, TA3_RSA_N, sizeof TA3_RSA_N, TA3_RSA_E, sizeof TA3_RSA_E },
+	{ TA4_DN, sizeof TA4_DN, BR_X509_TA_CA, 0, 0, TA4_RSA_N, sizeof TA4_RSA_N, TA4_RSA_E, sizeof TA4_RSA_E },
+	{ TA5_DN, sizeof TA5_DN, BR_X509_TA_CA, 0, 0, TA5_RSA_N, sizeof TA5_RSA_N, TA5_RSA_E, sizeof TA5_RSA_E },
+	{ TA6_DN, sizeof TA6_DN, BR_X509_TA_CA, 0, 0, TA6_RSA_N, sizeof TA6_RSA_N, TA6_RSA_E, sizeof TA6_RSA_E },
+	{ TA7_DN, sizeof TA7_DN, BR_X509_TA_CA, 0, 0, TA7_RSA_N, sizeof TA7_RSA_N, TA7_RSA_E, sizeof TA7_RSA_E },
+	{ TA8_DN, sizeof TA8_DN, BR_X509_TA_CA, 0, 0, TA8_RSA_N, sizeof TA8_RSA_N, TA8_RSA_E, sizeof TA8_RSA_E },
+	{ TA9_DN, sizeof TA9_DN, BR_X509_TA_CA, 0, 0, TA9_RSA_N, sizeof TA9_RSA_N, TA9_RSA_E, sizeof TA9_RSA_E },
+	{ TA10_DN, sizeof TA10_DN, BR_X509_TA_CA, 0, 0, TA10_RSA_N, sizeof TA10_RSA_N, TA10_RSA_E, sizeof TA10_RSA_E },
+	{ TA11_DN, sizeof TA11_DN, BR_X509_TA_CA, 0, 0, TA11_RSA_N, sizeof TA11_RSA_N, TA11_RSA_E, sizeof TA11_RSA_E },
+	{ TA12_DN, sizeof TA12_DN, BR_X509_TA_CA, 0, 0, TA12_RSA_N, sizeof TA12_RSA_N, TA12_RSA_E, sizeof TA12_RSA_E },
+	{ TA13_DN, sizeof TA13_DN, BR_X509_TA_CA, 0, 0, TA13_RSA_N, sizeof TA13_RSA_N, TA13_RSA_E, sizeof TA13_RSA_E },
+	{ TA14_DN, sizeof TA14_DN, BR_X509_TA_CA, 0, 0, TA14_RSA_N, sizeof TA14_RSA_N, TA14_RSA_E, sizeof TA14_RSA_E },
+	{ TA15_DN, sizeof TA15_DN, BR_X509_TA_CA, 0, 0, TA15_RSA_N, sizeof TA15_RSA_N, TA15_RSA_E, sizeof TA15_RSA_E },
+	{ TA16_DN, sizeof TA16_DN, BR_X509_TA_CA, 0, 0, TA16_RSA_N, sizeof TA16_RSA_N, TA16_RSA_E, sizeof TA16_RSA_E },
+	{ TA17_DN, sizeof TA17_DN, BR_X509_TA_CA, 0, 0, TA17_RSA_N, sizeof TA17_RSA_N, TA17_RSA_E, sizeof TA17_RSA_E },
+	{ TA18_DN, sizeof TA18_DN, BR_X509_TA_CA, 0, 0, TA18_RSA_N, sizeof TA18_RSA_N, TA18_RSA_E, sizeof TA18_RSA_E },
+	{ TA19_DN, sizeof TA19_DN, BR_X509_TA_CA, 0, 0, TA19_RSA_N, sizeof TA19_RSA_N, TA19_RSA_E, sizeof TA19_RSA_E },
+	{ TA20_DN, sizeof TA20_DN, BR_X509_TA_CA, 0, 0, TA20_RSA_N, sizeof TA20_RSA_N, TA20_RSA_E, sizeof TA20_RSA_E },
+	{ TA21_DN, sizeof TA21_DN, BR_X509_TA_CA, 0, 0, TA21_RSA_N, sizeof TA21_RSA_N, TA21_RSA_E, sizeof TA21_RSA_E },
+	{ TA22_DN, sizeof TA22_DN, BR_X509_TA_CA, 0, 0, TA22_RSA_N, sizeof TA22_RSA_N, TA22_RSA_E, sizeof TA22_RSA_E },
+	{ TA23_DN, sizeof TA23_DN, BR_X509_TA_CA, 0, 0, TA23_RSA_N, sizeof TA23_RSA_N, TA23_RSA_E, sizeof TA23_RSA_E },
+	{ TA24_DN, sizeof TA24_DN, BR_X509_TA_CA, 0, 0, TA24_RSA_N, sizeof TA24_RSA_N, TA24_RSA_E, sizeof TA24_RSA_E },
+	{ TA25_DN, sizeof TA25_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA25_EC_Q, sizeof TA25_EC_Q, 0, 0 },
+	{ TA26_DN, sizeof TA26_DN, BR_X509_TA_CA, 0, 0, TA26_RSA_N, sizeof TA26_RSA_N, TA26_RSA_E, sizeof TA26_RSA_E },
+	{ TA27_DN, sizeof TA27_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA27_EC_Q, sizeof TA27_EC_Q, 0, 0 },
+	{ TA28_DN, sizeof TA28_DN, BR_X509_TA_CA, 0, 0, TA28_RSA_N, sizeof TA28_RSA_N, TA28_RSA_E, sizeof TA28_RSA_E },
+	{ TA29_DN, sizeof TA29_DN, BR_X509_TA_CA, 0, 0, TA29_RSA_N, sizeof TA29_RSA_N, TA29_RSA_E, sizeof TA29_RSA_E },
+	{ TA30_DN, sizeof TA30_DN, BR_X509_TA_CA, 0, 0, TA30_RSA_N, sizeof TA30_RSA_N, TA30_RSA_E, sizeof TA30_RSA_E },
+	{ TA31_DN, sizeof TA31_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA31_EC_Q, sizeof TA31_EC_Q, 0, 0 },
+	{ TA32_DN, sizeof TA32_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA32_EC_Q, sizeof TA32_EC_Q, 0, 0 },
+	{ TA33_DN, sizeof TA33_DN, BR_X509_TA_CA, 0, 0, TA33_RSA_N, sizeof TA33_RSA_N, TA33_RSA_E, sizeof TA33_RSA_E },
+	{ TA34_DN, sizeof TA34_DN, BR_X509_TA_CA, 0, 0, TA34_RSA_N, sizeof TA34_RSA_N, TA34_RSA_E, sizeof TA34_RSA_E },
+	{ TA35_DN, sizeof TA35_DN, BR_X509_TA_CA, 0, 0, TA35_RSA_N, sizeof TA35_RSA_N, TA35_RSA_E, sizeof TA35_RSA_E },
+	{ TA36_DN, sizeof TA36_DN, BR_X509_TA_CA, 0, 0, TA36_RSA_N, sizeof TA36_RSA_N, TA36_RSA_E, sizeof TA36_RSA_E },
+	{ TA37_DN, sizeof TA37_DN, BR_X509_TA_CA, 0, 0, TA37_RSA_N, sizeof TA37_RSA_N, TA37_RSA_E, sizeof TA37_RSA_E },
+	{ TA38_DN, sizeof TA38_DN, BR_X509_TA_CA, 0, 0, TA38_RSA_N, sizeof TA38_RSA_N, TA38_RSA_E, sizeof TA38_RSA_E },
+	{ TA39_DN, sizeof TA39_DN, BR_X509_TA_CA, 0, 0, TA39_RSA_N, sizeof TA39_RSA_N, TA39_RSA_E, sizeof TA39_RSA_E },
+	{ TA40_DN, sizeof TA40_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA40_EC_Q, sizeof TA40_EC_Q, 0, 0 },
+	{ TA41_DN, sizeof TA41_DN, BR_X509_TA_CA, 0, 0, TA41_RSA_N, sizeof TA41_RSA_N, TA41_RSA_E, sizeof TA41_RSA_E },
+	{ TA42_DN, sizeof TA42_DN, BR_X509_TA_CA, 0, 0, TA42_RSA_N, sizeof TA42_RSA_N, TA42_RSA_E, sizeof TA42_RSA_E },
+	{ TA43_DN, sizeof TA43_DN, BR_X509_TA_CA, 0, 0, TA43_RSA_N, sizeof TA43_RSA_N, TA43_RSA_E, sizeof TA43_RSA_E },
+	{ TA44_DN, sizeof TA44_DN, BR_X509_TA_CA, 0, 0, TA44_RSA_N, sizeof TA44_RSA_N, TA44_RSA_E, sizeof TA44_RSA_E },
+	{ TA45_DN, sizeof TA45_DN, BR_X509_TA_CA, 1, BR_EC_secp256r1, TA45_EC_Q, sizeof TA45_EC_Q, 0, 0 },
+	{ TA46_DN, sizeof TA46_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA46_EC_Q, sizeof TA46_EC_Q, 0, 0 },
+	{ TA47_DN, sizeof TA47_DN, BR_X509_TA_CA, 0, 0, TA47_RSA_N, sizeof TA47_RSA_N, TA47_RSA_E, sizeof TA47_RSA_E },
+	{ TA48_DN, sizeof TA48_DN, BR_X509_TA_CA, 0, 0, TA48_RSA_N, sizeof TA48_RSA_N, TA48_RSA_E, sizeof TA48_RSA_E },
+	{ TA49_DN, sizeof TA49_DN, BR_X509_TA_CA, 0, 0, TA49_RSA_N, sizeof TA49_RSA_N, TA49_RSA_E, sizeof TA49_RSA_E },
+	{ TA50_DN, sizeof TA50_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA50_EC_Q, sizeof TA50_EC_Q, 0, 0 },
+	{ TA51_DN, sizeof TA51_DN, BR_X509_TA_CA, 0, 0, TA51_RSA_N, sizeof TA51_RSA_N, TA51_RSA_E, sizeof TA51_RSA_E },
+	{ TA52_DN, sizeof TA52_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA52_EC_Q, sizeof TA52_EC_Q, 0, 0 },
+	{ TA53_DN, sizeof TA53_DN, BR_X509_TA_CA, 0, 0, TA53_RSA_N, sizeof TA53_RSA_N, TA53_RSA_E, sizeof TA53_RSA_E },
+	{ TA54_DN, sizeof TA54_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA54_EC_Q, sizeof TA54_EC_Q, 0, 0 },
+	{ TA55_DN, sizeof TA55_DN, BR_X509_TA_CA, 0, 0, TA55_RSA_N, sizeof TA55_RSA_N, TA55_RSA_E, sizeof TA55_RSA_E },
+	{ TA56_DN, sizeof TA56_DN, BR_X509_TA_CA, 0, 0, TA56_RSA_N, sizeof TA56_RSA_N, TA56_RSA_E, sizeof TA56_RSA_E },
+	{ TA57_DN, sizeof TA57_DN, BR_X509_TA_CA, 0, 0, TA57_RSA_N, sizeof TA57_RSA_N, TA57_RSA_E, sizeof TA57_RSA_E },
+	{ TA58_DN, sizeof TA58_DN, BR_X509_TA_CA, 0, 0, TA58_RSA_N, sizeof TA58_RSA_N, TA58_RSA_E, sizeof TA58_RSA_E },
+	{ TA59_DN, sizeof TA59_DN, BR_X509_TA_CA, 0, 0, TA59_RSA_N, sizeof TA59_RSA_N, TA59_RSA_E, sizeof TA59_RSA_E },
+	{ TA60_DN, sizeof TA60_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA60_EC_Q, sizeof TA60_EC_Q, 0, 0 },
+	{ TA61_DN, sizeof TA61_DN, BR_X509_TA_CA, 0, 0, TA61_RSA_N, sizeof TA61_RSA_N, TA61_RSA_E, sizeof TA61_RSA_E },
+	{ TA62_DN, sizeof TA62_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA62_EC_Q, sizeof TA62_EC_Q, 0, 0 },
+	{ TA63_DN, sizeof TA63_DN, BR_X509_TA_CA, 0, 0, TA63_RSA_N, sizeof TA63_RSA_N, TA63_RSA_E, sizeof TA63_RSA_E },
+	{ TA64_DN, sizeof TA64_DN, BR_X509_TA_CA, 1, BR_EC_secp256r1, TA64_EC_Q, sizeof TA64_EC_Q, 0, 0 },
+	{ TA65_DN, sizeof TA65_DN, BR_X509_TA_CA, 0, 0, TA65_RSA_N, sizeof TA65_RSA_N, TA65_RSA_E, sizeof TA65_RSA_E },
+	{ TA66_DN, sizeof TA66_DN, BR_X509_TA_CA, 0, 0, TA66_RSA_N, sizeof TA66_RSA_N, TA66_RSA_E, sizeof TA66_RSA_E },
+	{ TA67_DN, sizeof TA67_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA67_EC_Q, sizeof TA67_EC_Q, 0, 0 },
+	{ TA68_DN, sizeof TA68_DN, BR_X509_TA_CA, 0, 0, TA68_RSA_N, sizeof TA68_RSA_N, TA68_RSA_E, sizeof TA68_RSA_E },
+	{ TA69_DN, sizeof TA69_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA69_EC_Q, sizeof TA69_EC_Q, 0, 0 },
+	{ TA70_DN, sizeof TA70_DN, BR_X509_TA_CA, 0, 0, TA70_RSA_N, sizeof TA70_RSA_N, TA70_RSA_E, sizeof TA70_RSA_E },
+	{ TA71_DN, sizeof TA71_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA71_EC_Q, sizeof TA71_EC_Q, 0, 0 },
+	{ TA72_DN, sizeof TA72_DN, BR_X509_TA_CA, 0, 0, TA72_RSA_N, sizeof TA72_RSA_N, TA72_RSA_E, sizeof TA72_RSA_E },
+	{ TA73_DN, sizeof TA73_DN, BR_X509_TA_CA, 0, 0, TA73_RSA_N, sizeof TA73_RSA_N, TA73_RSA_E, sizeof TA73_RSA_E },
+	{ TA74_DN, sizeof TA74_DN, BR_X509_TA_CA, 0, 0, TA74_RSA_N, sizeof TA74_RSA_N, TA74_RSA_E, sizeof TA74_RSA_E },
+	{ TA75_DN, sizeof TA75_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA75_EC_Q, sizeof TA75_EC_Q, 0, 0 },
+	{ TA76_DN, sizeof TA76_DN, BR_X509_TA_CA, 0, 0, TA76_RSA_N, sizeof TA76_RSA_N, TA76_RSA_E, sizeof TA76_RSA_E },
+	{ TA77_DN, sizeof TA77_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA77_EC_Q, sizeof TA77_EC_Q, 0, 0 },
+	{ TA78_DN, sizeof TA78_DN, BR_X509_TA_CA, 0, 0, TA78_RSA_N, sizeof TA78_RSA_N, TA78_RSA_E, sizeof TA78_RSA_E },
+	{ TA79_DN, sizeof TA79_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA79_EC_Q, sizeof TA79_EC_Q, 0, 0 },
+	{ TA80_DN, sizeof TA80_DN, BR_X509_TA_CA, 0, 0, TA80_RSA_N, sizeof TA80_RSA_N, TA80_RSA_E, sizeof TA80_RSA_E },
+	{ TA81_DN, sizeof TA81_DN, BR_X509_TA_CA, 1, BR_EC_secp256r1, TA81_EC_Q, sizeof TA81_EC_Q, 0, 0 },
+	{ TA82_DN, sizeof TA82_DN, BR_X509_TA_CA, 0, 0, TA82_RSA_N, sizeof TA82_RSA_N, TA82_RSA_E, sizeof TA82_RSA_E },
+	{ TA83_DN, sizeof TA83_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA83_EC_Q, sizeof TA83_EC_Q, 0, 0 },
+	{ TA84_DN, sizeof TA84_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA84_EC_Q, sizeof TA84_EC_Q, 0, 0 },
+	{ TA85_DN, sizeof TA85_DN, BR_X509_TA_CA, 0, 0, TA85_RSA_N, sizeof TA85_RSA_N, TA85_RSA_E, sizeof TA85_RSA_E },
+	{ TA86_DN, sizeof TA86_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA86_EC_Q, sizeof TA86_EC_Q, 0, 0 },
+	{ TA87_DN, sizeof TA87_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA87_EC_Q, sizeof TA87_EC_Q, 0, 0 },
+	{ TA88_DN, sizeof TA88_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA88_EC_Q, sizeof TA88_EC_Q, 0, 0 },
+	{ TA89_DN, sizeof TA89_DN, BR_X509_TA_CA, 0, 0, TA89_RSA_N, sizeof TA89_RSA_N, TA89_RSA_E, sizeof TA89_RSA_E },
+	{ TA90_DN, sizeof TA90_DN, BR_X509_TA_CA, 0, 0, TA90_RSA_N, sizeof TA90_RSA_N, TA90_RSA_E, sizeof TA90_RSA_E },
+	{ TA91_DN, sizeof TA91_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA91_EC_Q, sizeof TA91_EC_Q, 0, 0 },
+	{ TA92_DN, sizeof TA92_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA92_EC_Q, sizeof TA92_EC_Q, 0, 0 },
+	{ TA93_DN, sizeof TA93_DN, BR_X509_TA_CA, 0, 0, TA93_RSA_N, sizeof TA93_RSA_N, TA93_RSA_E, sizeof TA93_RSA_E },
+	{ TA94_DN, sizeof TA94_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA94_EC_Q, sizeof TA94_EC_Q, 0, 0 },
+	{ TA95_DN, sizeof TA95_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA95_EC_Q, sizeof TA95_EC_Q, 0, 0 },
+	{ TA96_DN, sizeof TA96_DN, BR_X509_TA_CA, 0, 0, TA96_RSA_N, sizeof TA96_RSA_N, TA96_RSA_E, sizeof TA96_RSA_E },
+	{ TA97_DN, sizeof TA97_DN, BR_X509_TA_CA, 0, 0, TA97_RSA_N, sizeof TA97_RSA_N, TA97_RSA_E, sizeof TA97_RSA_E },
+	{ TA98_DN, sizeof TA98_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA98_EC_Q, sizeof TA98_EC_Q, 0, 0 },
+	{ TA99_DN, sizeof TA99_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA99_EC_Q, sizeof TA99_EC_Q, 0, 0 },
+	{ TA100_DN, sizeof TA100_DN, BR_X509_TA_CA, 0, 0, TA100_RSA_N, sizeof TA100_RSA_N, TA100_RSA_E, sizeof TA100_RSA_E },
+	{ TA101_DN, sizeof TA101_DN, BR_X509_TA_CA, 0, 0, TA101_RSA_N, sizeof TA101_RSA_N, TA101_RSA_E, sizeof TA101_RSA_E },
+	{ TA102_DN, sizeof TA102_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA102_EC_Q, sizeof TA102_EC_Q, 0, 0 },
+	{ TA103_DN, sizeof TA103_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA103_EC_Q, sizeof TA103_EC_Q, 0, 0 },
+	{ TA104_DN, sizeof TA104_DN, BR_X509_TA_CA, 0, 0, TA104_RSA_N, sizeof TA104_RSA_N, TA104_RSA_E, sizeof TA104_RSA_E },
+	{ TA105_DN, sizeof TA105_DN, BR_X509_TA_CA, 0, 0, TA105_RSA_N, sizeof TA105_RSA_N, TA105_RSA_E, sizeof TA105_RSA_E },
+	{ TA106_DN, sizeof TA106_DN, BR_X509_TA_CA, 0, 0, TA106_RSA_N, sizeof TA106_RSA_N, TA106_RSA_E, sizeof TA106_RSA_E },
+	{ TA107_DN, sizeof TA107_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA107_EC_Q, sizeof TA107_EC_Q, 0, 0 },
+	{ TA108_DN, sizeof TA108_DN, BR_X509_TA_CA, 0, 0, TA108_RSA_N, sizeof TA108_RSA_N, TA108_RSA_E, sizeof TA108_RSA_E },
+	{ TA109_DN, sizeof TA109_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA109_EC_Q, sizeof TA109_EC_Q, 0, 0 },
+	{ TA110_DN, sizeof TA110_DN, BR_X509_TA_CA, 0, 0, TA110_RSA_N, sizeof TA110_RSA_N, TA110_RSA_E, sizeof TA110_RSA_E },
+	{ TA111_DN, sizeof TA111_DN, BR_X509_TA_CA, 0, 0, TA111_RSA_N, sizeof TA111_RSA_N, TA111_RSA_E, sizeof TA111_RSA_E },
+	{ TA112_DN, sizeof TA112_DN, BR_X509_TA_CA, 0, 0, TA112_RSA_N, sizeof TA112_RSA_N, TA112_RSA_E, sizeof TA112_RSA_E },
+	{ TA113_DN, sizeof TA113_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA113_EC_Q, sizeof TA113_EC_Q, 0, 0 },
+	{ TA114_DN, sizeof TA114_DN, BR_X509_TA_CA, 0, 0, TA114_RSA_N, sizeof TA114_RSA_N, TA114_RSA_E, sizeof TA114_RSA_E },
+	{ TA115_DN, sizeof TA115_DN, BR_X509_TA_CA, 1, BR_EC_secp521r1, TA115_EC_Q, sizeof TA115_EC_Q, 0, 0 },
+	{ TA116_DN, sizeof TA116_DN, BR_X509_TA_CA, 0, 0, TA116_RSA_N, sizeof TA116_RSA_N, TA116_RSA_E, sizeof TA116_RSA_E },
+	{ TA117_DN, sizeof TA117_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA117_EC_Q, sizeof TA117_EC_Q, 0, 0 },
+	{ TA118_DN, sizeof TA118_DN, BR_X509_TA_CA, 1, BR_EC_secp384r1, TA118_EC_Q, sizeof TA118_EC_Q, 0, 0 },
+	{ TA119_DN, sizeof TA119_DN, BR_X509_TA_CA, 0, 0, TA119_RSA_N, sizeof TA119_RSA_N, TA119_RSA_E, sizeof TA119_RSA_E },
 };
 
 #define TAs_NUM   120
+
+static br_x509_trust_anchor TAs[TAs_NUM];
+
+static void xboxTlsRoots()
+{
+	static bool done = false;
+	if (done)
+		return;
+	for (int i = 0; i < TAs_NUM; i++) {
+		const XboxRootDesc &d = kRootDesc[i];
+		br_x509_trust_anchor &t = TAs[i];
+		memset(&t, 0, sizeof(t));
+		t.dn.data = (unsigned char *)d.dn;
+		t.dn.len = d.dnLen;
+		t.flags = d.flags;
+		if (d.ec) {
+			t.pkey.key_type = BR_KEYTYPE_EC;
+			t.pkey.key.ec.curve = d.curve;
+			t.pkey.key.ec.q = (unsigned char *)d.a;
+			t.pkey.key.ec.qlen = d.aLen;
+		} else {
+			t.pkey.key_type = BR_KEYTYPE_RSA;
+			t.pkey.key.rsa.n = (unsigned char *)d.a;
+			t.pkey.key.rsa.nlen = d.aLen;
+			t.pkey.key.rsa.e = (unsigned char *)d.b;
+			t.pkey.key.rsa.elen = d.bLen;
+		}
+	}
+	done = true;
+}

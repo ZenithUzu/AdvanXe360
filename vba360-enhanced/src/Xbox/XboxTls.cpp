@@ -100,6 +100,7 @@ void randomSeed(unsigned char *seed, int len)
 
 XboxTls *xboxTlsOpen(unsigned long long sock, const std::string &host, std::string &err)
 {
+  xboxTlsRoots();   // the root certificates table, built once
   XboxTls *t = new XboxTls;
   t->sock = sock;
   br_ssl_client_init_full(&t->sc, &t->xc, TAs, TAs_NUM);
