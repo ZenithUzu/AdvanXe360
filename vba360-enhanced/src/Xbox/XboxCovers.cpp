@@ -1,6 +1,7 @@
 // Box art downloader (see XboxCovers.h).
 #include "XboxCovers.h"
 #include "fex/fex.h"
+#include "XboxTls.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -462,18 +463,19 @@ Sock connectTo(unsigned long ip, int port)
   return s;
 }
 
-// "http://host[:port]/path" -> parts. False for anything else (https...).
-bool splitUrl(const std::string &url, std::string &host, int &port, std::string &path)
+// "http[s]://host[:port]/path" -> parts. False for anything else.
+bool splitUrl(const std::string &url, std::string &host, int &port, std::string &path, bool &https)
 {
-  const std::string pre = "http://";
-  if (lowerAscii(url.substr(0, pre.size())) != pre)
+  std::string l = lowerAscii(url.substr(0, 8));
+  https = l == "https://";
+  if (!https && l.substr(0, 7) != "http://")
     return false;
-  std::string rest = url.substr(pre.size());
+  std::string rest = url.substr(https ? 8 : 7);
   size_t slash = rest.find('/');
   std::string hp = slash == std::string::npos ? rest : rest.substr(0, slash);
   path = slash == std::string::npos ? "/" : rest.substr(slash);
   size_t colon = hp.find(':');
-  port = 80;
+  port = https ? 443 : 80;
   if (colon != std::string::npos) {
     port = atoi(hp.c_str() + colon + 1);
     hp = hp.substr(0, colon);
@@ -514,16 +516,21 @@ std::string unchunk(const std::string &body)
   return out;
 }
 
-// GET a URL into body. err: "" or a short reason ("https", "dns", "connect",
-// "http 404"...). Follows plain-HTTP redirects.
-bool httpGet(const std::string &url0, std::string &body, std::string &err)
+} // namespace
+
+// GET (post empty) or POST a URL into body; http:// or https:// (TLS by
+// BearSSL, see XboxTls.h). err: "" or a short reason ("dns", "connect",
+// "tls 62", "http 404"...). Follows redirects.
+bool httpRequest(const std::string &url0, const std::string &post, std::string &body, std::string &err,
+                 const std::string &userAgent)
 {
   std::string url = url0;
   for (int hop = 0; hop < 4; hop++) {
     std::string host, path;
     int port;
-    if (!splitUrl(url, host, port, path)) {
-      err = lowerAscii(url.substr(0, 8)) == "https://" ? "https" : "url";
+    bool https;
+    if (!splitUrl(url, host, port, path, https)) {
+      err = "url";
       return false;
     }
     unsigned long ip;
@@ -534,11 +541,23 @@ bool httpGet(const std::string &url0, std::string &body, std::string &err)
       err = "connect";
       return false;
     }
-    std::string req = "GET " + path + " HTTP/1.0\r\nHost: " + host +
-                      "\r\nUser-Agent: AdvanXe360\r\nConnection: close\r\n\r\n";
-    if (send(s, req.c_str(), (int)req.size(), 0) != (int)req.size()) {
+    XboxTls *tls = 0;
+    if (https && !(tls = xboxTlsOpen((unsigned long long)s, host, err))) {
       closeSock(s);
-      err = "send";
+      return false;
+    }
+    std::string req = (post.empty() ? "GET " : "POST ") + path + " HTTP/1.0\r\nHost: " + host +
+                      "\r\nUser-Agent: " + (userAgent.empty() ? std::string("AdvanXe360") : userAgent) +
+                      "\r\nConnection: close\r\n";
+    if (!post.empty())
+      req += "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: " + intStr((int)post.size()) + "\r\n";
+    req += "\r\n" + post;
+    bool sent = tls ? xboxTlsWrite(tls, req.c_str(), (int)req.size())
+                    : send(s, req.c_str(), (int)req.size(), 0) == (int)req.size();
+    if (!sent) {
+      err = tls ? "tls " + intStr(xboxTlsError(tls)) : "send";
+      xboxTlsClose(tls);
+      closeSock(s);
       return false;
     }
     std::string data;
@@ -546,18 +565,25 @@ bool httpGet(const std::string &url0, std::string &body, std::string &err)
     char *buf = &chunk[0];
     for (;;) {
       if (g_cancel) {
+        xboxTlsClose(tls);
         closeSock(s);
         err = "cancel";
         return false;
       }
-      int n = recv(s, buf, (int)chunk.size(), 0);
+      int n = tls ? xboxTlsRead(tls, buf, (int)chunk.size()) : recv(s, buf, (int)chunk.size(), 0);
       if (n <= 0)
         break;
       data.append(buf, n);
       if (data.size() > 48 * 1024 * 1024)   // the cheat database is the biggest file
         break;
     }
+    int tlsErr = tls ? xboxTlsError(tls) : 0;
+    xboxTlsClose(tls);
     closeSock(s);
+    if (data.empty() && tlsErr) {
+      err = "tls " + intStr(tlsErr);   // the handshake or the certificate check failed
+      return false;
+    }
     size_t he = data.find("\r\n\r\n");
     if (data.compare(0, 5, "HTTP/") != 0 || he == std::string::npos) {
       err = data.empty() ? "empty" : "reply";
@@ -573,7 +599,7 @@ bool httpGet(const std::string &url0, std::string &body, std::string &err)
         return false;
       }
       if (loc[0] == '/')
-        loc = "http://" + host + (port != 80 ? ":" + intStr(port) : std::string()) + loc;
+        loc = (https ? "https://" : "http://") + host + (port != (https ? 443 : 80) ? ":" + intStr(port) : std::string()) + loc;
       url = loc;
       continue;
     }
@@ -589,6 +615,15 @@ bool httpGet(const std::string &url0, std::string &body, std::string &err)
   err = "redirects";
   return false;
 }
+
+bool xboxNetStart(std::string &err) { return netStart(err); }
+
+bool httpGet(const std::string &url, std::string &body, std::string &err)
+{
+  return httpRequest(url, "", body, err, "");
+}
+
+namespace {
 
 const char *kSystemFolder[UI_COVER_SYSTEMS] = {
   "Nintendo - Game Boy Advance", "Nintendo - Game Boy", "Nintendo - Game Boy Color" };

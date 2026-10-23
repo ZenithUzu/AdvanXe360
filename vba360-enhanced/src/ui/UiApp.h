@@ -40,7 +40,7 @@ enum UiMenuId
   MENU_QUICK = 1, MENU_SETTINGS_VIDEO, MENU_SETTINGS_AUDIO, MENU_SETTINGS_EMU,
   MENU_SETTINGS_SAVES, MENU_SETTINGS_UI, MENU_CONTROLS, MENU_GAME_OPTIONS,
   MENU_CHEATS, MENU_ABOUT, MENU_SETTINGS_ROOT, MENU_CLOCK, MENU_SETTINGS_LOOK,
-  MENU_SETTINGS_KINECT
+  MENU_SETTINGS_KINECT, MENU_SETTINGS_RA
 };
 
 class UiApp
@@ -187,7 +187,8 @@ private:
   int m_handStartIn;
   int m_handSwipe, m_swipeCooldown, m_handHist;   // m_handHist: frames in m_rawX/Y
   int m_rawX[8], m_rawY[8];   // frames until the Kinect is started (its message shows first); -1 = not waiting
-  int m_cheatDownload;   // frames until the online cheat search runs (0 = none)
+  int m_cheatDownload;
+  int m_netTest;         // frames until the HTTPS test runs (0 = none)   // frames until the online cheat search runs (0 = none)
   // Sensor being mapped by moving the right stick (item id, 0 = none).
   int m_stickCapture;
   int m_stickCaptureFrames;

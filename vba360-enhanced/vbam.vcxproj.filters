@@ -329,6 +329,9 @@
     <ClCompile Include="src\Xbox\XboxCovers.cpp">
       <Filter>Source Files\Xbox</Filter>
     </ClCompile>
+    <ClCompile Include="src\Xbox\XboxTls.cpp">
+      <Filter>Source Files\Xbox</Filter>
+    </ClCompile>
     <ClCompile Include="src\Xbox\XboxMusic.cpp">
       <Filter>Source Files\Xbox</Filter>
     </ClCompile>
@@ -491,6 +494,9 @@
       <Filter>Source Files\sdl</Filter>
     </ClInclude>
     <ClInclude Include="src\Xbox\XboxCovers.h">
+      <Filter>Source Files\Xbox</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Xbox\XboxTls.h">
       <Filter>Source Files\Xbox</Filter>
     </ClInclude>
     <ClInclude Include="src\Xbox\XboxMusic.h">

@@ -589,6 +589,34 @@ public:
   }
 
   virtual std::string archiveRomName(const std::string &archive) { return archiveInnerRom(archive); }
+  virtual bool netTest(std::string &report)
+  {
+    std::string err;
+    if (!xboxNetStart(err)) {
+      report = g_cfg.language ? "No network (" + err + ")" : "Sin red (" + err + ")";
+      return false;
+    }
+    static const char *const names[2] = { "RetroAchievements", "GitHub" };
+    static const char *const urls[2] = {
+      "https://retroachievements.org/dorequest.php?r=latestclient&e=0",
+      "https://raw.githubusercontent.com/libretro/libretro-database/master/README.md" };
+    bool all = true;
+    report.clear();
+    for (int i = 0; i < 2; i++) {
+      std::string body;
+      err.clear();
+      DWORD t0 = GetTickCount();
+      bool ok = httpRequest(urls[i], "", body, err, "");
+      char line[160];
+      sprintf(line, "%s: %s (%.1f s, %u bytes)", names[i], ok ? "OK" : err.c_str(), (GetTickCount() - t0) / 1000.0,
+              (unsigned)body.size());
+      xboxLog("HTTPS test: %s", line);
+      report += (i ? " | " : "") + std::string(line);
+      all = all && ok;
+    }
+    return all;
+  }
+
   virtual bool handCursor(int &x, int &y) { return kinectHand(x, y); }
   virtual void handStop() { kinectStop(); }
 

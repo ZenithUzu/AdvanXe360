@@ -48,4 +48,10 @@ void coversRun(const std::vector<UiCoverItem> &items, const std::string &server)
 bool cheatsFetch(const std::string &romName, const std::string &gameCode, const char *systemFolder,
                  const std::string &zipPath, const std::string &outPath, std::string &err);
 
+// Network for the rest of the emulator (RetroAchievements...).
+bool xboxNetStart(std::string &err);
+// GET (post empty) or POST; http:// or https://. userAgent "" = AdvanXe360.
+bool httpRequest(const std::string &url, const std::string &post, std::string &body, std::string &err,
+                 const std::string &userAgent);
+
 #endif

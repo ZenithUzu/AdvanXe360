@@ -29,7 +29,7 @@ enum
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
-  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_KINECT, U_KINECT_HANDS, U_KINECT_CAMERA, U_EFFECT,
+  U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_RA_TEST, U_KINECT, U_KINECT_HANDS, U_KINECT_CAMERA, U_EFFECT,
   U_BG_VIS, U_PANELS, U_ACCENT, U_COVERS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL, U_MUSIC_SONG,
   C_RESET = 1, C_ACTION_BASE = 100,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
@@ -144,7 +144,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
-    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_netTest(0), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
     m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
@@ -361,6 +361,11 @@ void UiApp::update(unsigned int held)
 
   if (m_toastFrames > 0)
     m_toastFrames--;
+  if (m_netTest > 0 && --m_netTest == 0) {
+    std::string report;
+    m_host.netTest(report);
+    toast(report, 600);
+  }
   if (m_cheatDownload > 0 && --m_cheatDownload == 0) {
     std::string err;
     int n = m_host.downloadCheats(m_cheatRom, err);
@@ -674,6 +679,15 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_SETTINGS_UI, ITEM_SUBMENU, tr("Interfaz e idioma", "Interface & language"));
     m.add(MENU_SETTINGS_LOOK, ITEM_SUBMENU, tr("Apariencia", "Appearance"));
     m.add(MENU_SETTINGS_KINECT, ITEM_SUBMENU, "Kinect");
+    m.add(MENU_SETTINGS_RA, ITEM_SUBMENU, "RetroAchievements");
+    break;
+
+  case MENU_SETTINGS_RA:
+    m.title = "RetroAchievements";
+    m.subtitle = tr("En pruebas: primero, que la consola hable HTTPS", "Testing: first, the console speaking HTTPS");
+    m.add(U_RA_TEST, ITEM_ACTION, tr("Probar conexi\xf3n segura", "Test secure connection"), "",
+          tr("Se conecta por HTTPS a RetroAchievements y a GitHub y dice si funcion\xf3 (tambi\xe9n queda en vba360.log).",
+             "Connects over HTTPS to RetroAchievements and GitHub and tells whether it worked (also in vba360.log)."));
     break;
 
   case MENU_SETTINGS_KINECT: {
@@ -1089,6 +1103,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
         { "Portadas", "Box art", "libretro-thumbnails (libretro)",
           "Las descarga de thumbnails.libretro.com; hechas por la comunidad de libretro.",
           "Downloaded from thumbnails.libretro.com; made by the libretro community." },
+        { "Conexi\xf3n segura (HTTPS)", "Secure connection (HTTPS)", "BearSSL (Thomas Pornin)",
+          "Cifrado TLS para hablar con RetroAchievements y GitHub, licencia MIT. Ra\xed""ces de Mozilla.",
+          "TLS to talk to RetroAchievements and GitHub, MIT license. Mozilla's root certificates." },
         { "Base de trucos", "Cheat database", "libretro-database (libretro), superfw-cheats (davidgfnet)",
           "Trucos de GB, GBC y GBA (CC BY-SA 4.0) y de GBA de SuperFW, en cheats\\libretro-cheats.zip.",
           "GB, GBC and GBA cheats (CC BY-SA 4.0) and SuperFW's GBA cheats, in cheats\\libretro-cheats.zip." },
@@ -1456,6 +1473,13 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
 
   case MENU_SETTINGS_ROOT:
     openMenu(id);
+    return;
+
+  case MENU_SETTINGS_RA:
+    if (id == U_RA_TEST) {
+      toast(tr("Conectando por HTTPS...", "Connecting over HTTPS..."), 600);
+      m_netTest = 4;   // shown first, then the (blocking) test
+    }
     return;
 
   case MENU_SETTINGS_UI:

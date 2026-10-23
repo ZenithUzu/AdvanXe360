@@ -90,6 +90,8 @@ public:
   // when no hand is up. handStop turns the skeleton tracking off.
   virtual bool handCursor(int &x, int &y) { return false; }
   virtual void handStop() {}
+  // Connects over HTTPS to RetroAchievements and GitHub; report: what happened.
+  virtual bool netTest(std::string &report) { report = "-"; return false; }
   // The ROM inside a .zip / .7z (its name in the archive), "" if none.
   virtual std::string archiveRomName(const std::string &archive) { return ""; }
   // True when a .bps/.ups/.ips patch was applied to the running game.
