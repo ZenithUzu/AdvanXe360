@@ -950,7 +950,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(E_REWIND, ITEM_OPTION, tr("Rebobinar", "Rewind"), onOff[m_cfg.rewind],
           std::string(tr("Guarda los \xfaltimos segundos para volver atr\xe1s manteniendo ",
                          "Keeps the last seconds to go back to by holding ")) +
-              uiButtonName(*this, m_cfg.map[ACT_REWIND]) + tr(". Usa algo de memoria y CPU.", ". Uses some memory and CPU."))
+              uiButtonName(*this, m_cfg.map[ACT_REWIND]) + tr(". Usa CPU: si un juego se pone lento, desact\xedvalo.",
+                                                     ". Uses CPU: if a game slows down, turn it off."))
         .choice = m_cfg.rewind;
     break;
   }

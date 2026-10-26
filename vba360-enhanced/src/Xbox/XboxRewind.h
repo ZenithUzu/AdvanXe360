@@ -12,7 +12,7 @@
 // Starts over (a new game, a state loaded): forgets every saved step.
 // stateSize: room for one state; budget: bytes for the steps.
 void rewindReset(size_t stateSize, size_t budget);
-// The newest state (stateSize bytes; the tail past the state must be zero).
+// The newest state: the whole stateSize buffer (bytes past the state included).
 void rewindPush(const unsigned char *state);
 // Steps back once: state gets the previous one (stateSize bytes). False when
 // there is nothing older (state then holds the oldest one left, if any).

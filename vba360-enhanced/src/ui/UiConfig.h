@@ -142,7 +142,7 @@ struct UiConfig
   // Emulation
   int ffSpeed;           // index into uiFastForwardSpeeds
   int ffToggle;          // 0 = hold, 1 = toggle
-  int rewind;            // keep the last seconds to go back to (ACT_REWIND)
+  int rewind;            // keep the last seconds to go back to (ACT_REWIND); off by default: it costs CPU
   int useBios;
   int gsaV3;             // treat 16-digit codes as GameShark v3 / Action Replay
   int sunLevel;          // Boktai solar sensor: 0 = dark ... 10 = full sun

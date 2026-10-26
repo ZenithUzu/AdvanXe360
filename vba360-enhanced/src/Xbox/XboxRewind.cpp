@@ -12,10 +12,15 @@ std::deque<std::vector<unsigned char> > g_steps;     // newest last: cur XOR the
 size_t g_size = 0, g_budget = 0, g_used = 0;
 bool g_have = false;
 
-void putU32(std::vector<unsigned char> &out, size_t v)
+std::vector<unsigned char> g_scratch;   // one step being encoded (reused: no allocation per byte)
+
+unsigned char *putU32(unsigned char *o, size_t v)
 {
-  for (int i = 0; i < 4; i++)
-    out.push_back((unsigned char)(v >> (i * 8)));
+  o[0] = (unsigned char)v;
+  o[1] = (unsigned char)(v >> 8);
+  o[2] = (unsigned char)(v >> 16);
+  o[3] = (unsigned char)(v >> 24);
+  return o + 4;
 }
 
 size_t getU32(const unsigned char *p)
@@ -24,10 +29,13 @@ size_t getU32(const unsigned char *p)
 }
 
 // a XOR b as runs: [zeros (4 bytes)][count (4 bytes)][that many bytes]...
-// A changed run ends at 8 unchanged bytes in a row.
-void encodeXor(const unsigned char *a, const unsigned char *b, size_t n, std::vector<unsigned char> &out)
+// A changed run ends at 8 unchanged bytes in a row. Into g_scratch (worst
+// case n + 8 bytes per run); returns its length.
+size_t encodeXor(const unsigned char *a, const unsigned char *b, size_t n)
 {
-  out.clear();
+  if (g_scratch.size() < n + n / 2 + 16)
+    g_scratch.resize(n + n / 2 + 16);
+  unsigned char *o = &g_scratch[0];
   size_t i = 0;
   while (i < n) {
     size_t z = i;
@@ -42,12 +50,13 @@ void encodeXor(const unsigned char *a, const unsigned char *b, size_t n, std::ve
     }
     if (same == 8)
       end -= 8;
-    putU32(out, z - i);
-    putU32(out, end - z);
+    o = putU32(o, z - i);
+    o = putU32(o, end - z);
     for (size_t k = z; k < end; k++)
-      out.push_back((unsigned char)(a[k] ^ b[k]));
+      *o++ = (unsigned char)(a[k] ^ b[k]);
     i = end;
   }
+  return (size_t)(o - &g_scratch[0]);
 }
 
 void applyXor(unsigned char *s, size_t n, const std::vector<unsigned char> &d)
@@ -84,10 +93,9 @@ void rewindPush(const unsigned char *state)
     g_have = true;
     return;
   }
-  g_steps.push_back(std::vector<unsigned char>());
-  encodeXor(state, &g_cur[0], g_size, g_steps.back());
-  std::vector<unsigned char>(g_steps.back()).swap(g_steps.back());   // no spare capacity kept
-  g_used += g_steps.back().size();
+  size_t len = encodeXor(state, &g_cur[0], g_size);
+  g_steps.push_back(std::vector<unsigned char>(g_scratch.begin(), g_scratch.begin() + len));   // one allocation, exact size
+  g_used += len;
   memcpy(&g_cur[0], state, g_size);
   while (g_used > g_budget && !g_steps.empty()) {   // full: the oldest go
     g_used -= g_steps.front().size();

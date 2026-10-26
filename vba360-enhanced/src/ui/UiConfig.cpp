@@ -125,7 +125,7 @@ struct ConfigReader
     else if (k == "audio_latency") c.audioLatency = clampInt(v, 0, uiAudioLatencyCount - 1, c.audioLatency);
     else if (k == "ff_speed") c.ffSpeed = clampInt(v, 0, uiFastForwardSpeedCount - 1, c.ffSpeed);
     else if (k == "ff_toggle") c.ffToggle = clampInt(v, 0, 1, c.ffToggle);
-    else if (k == "rewind") c.rewind = clampInt(v, 0, 1, c.rewind);
+    else if (k == "rewind_on") c.rewind = clampInt(v, 0, 1, c.rewind);   // ("rewind" was on by default: ignored)
     else if (k == "use_bios") c.useBios = clampInt(v, 0, 1, c.useBios);
     else if (k == "gsa_v3") c.gsaV3 = clampInt(v, 0, 1, c.gsaV3);
     else if (k == "sun_level") c.sunLevel = clampInt(v, 0, 10, c.sunLevel);
@@ -184,7 +184,7 @@ UiConfig::UiConfig()
     filter(FILTER_SMOOTH), stretch(SIZE_ORIGINAL), border(0), borderFit(FIT_CENTER),
     screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), gbPrinter(0), gbaColor(0), frameBlend(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1), volume(VOLUME_DEFAULT), audioLatency(0),
-    ffSpeed(1), ffToggle(0), rewind(1), useBios(0), gsaV3(0), sunLevel(7),
+    ffSpeed(1), ffToggle(0), rewind(0), useBios(0), gsaV3(0), sunLevel(7),
     sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
     autoSaveState(0), autoLoadState(0), stateSlot(1), saveBackups(1)
@@ -273,7 +273,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "gba_color=%d\nframe_blend=%d\nsave_backups=%d\n", gbaColor, frameBlend, saveBackups);
   fprintf(f, "sound=%d\nmute_fast_forward=%d\nvolume=%d\naudio_latency=%d\n", sound, muteFastForward, volume, audioLatency);
   fprintf(f, "ff_speed=%d\nff_toggle=%d\nuse_bios=%d\ngsa_v3=%d\nsun_level=%d\n", ffSpeed, ffToggle, useBios, gsaV3, sunLevel);
-  fprintf(f, "rewind=%d\n", rewind);
+  fprintf(f, "rewind_on=%d\n", rewind);
   fprintf(f, "sensor_sensitivity=%d\nsensor_deadzone=%d\n", sensorSens, sensorDeadzone);
   for (int i = 0; i < SENS_COUNT; i++)
     fprintf(f, "%s=%d\n", kSensorKeys[i], sensorMap[i]);
