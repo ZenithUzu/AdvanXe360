@@ -222,6 +222,8 @@ private:
 
   // Menu background image (Settings > Interface), loaded once per name.
   std::string m_bgName;
+  std::string m_bgWanted;   // the image chosen last, loaded once it stays chosen a moment
+  int m_bgWantedAt;
   std::vector<UiColor> m_bgPixels;
   // The finished background (colors or image + veil), drawn once and then
   // copied every frame.

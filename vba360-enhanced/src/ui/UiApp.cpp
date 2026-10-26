@@ -148,7 +148,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
     m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_netTest(0), m_updateCheck(0), m_raWaiting(false), m_raLastState(-1), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_cheatEditIndex(-1), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
+    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_cheatEditIndex(-1), m_bgWantedAt(0), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
 
@@ -420,6 +420,8 @@ void UiApp::update(unsigned int held)
   }
   updateStickCapture();
   m_frame++;
+  if (m_cfg.menuBackground != m_bgName && m_dirtyFrames < 1)
+    m_dirtyFrames = 1;   // a background image waiting to load: keep drawing
 
   // Redraw while buttons are held or just released, while a message, a
   // capture or a blinking cursor is on screen, and twice a second anyway.
@@ -573,7 +575,14 @@ void UiApp::drawBackground(UiCanvas &c)
   }
   // Optional image from backgrounds\, under a veil of the theme's colors so
   // the text stays readable whatever the picture is.
-  if (m_cfg.menuBackground != m_bgName) {
+  // Going through the images in the list: each one took a full decode and
+  // resize (seconds for big photos, the console seemed to hang). The old one
+  // stays until one has been chosen for a third of a second.
+  if (m_cfg.menuBackground != m_bgWanted) {
+    m_bgWanted = m_cfg.menuBackground;
+    m_bgWantedAt = m_frame;
+  }
+  if (m_cfg.menuBackground != m_bgName && (m_frame - m_bgWantedAt >= 20 || m_bgCache.empty())) {   // (at start: at once)
     m_bgName = m_cfg.menuBackground;
     m_bgPixels.clear();
     if (!m_bgName.empty() &&
@@ -591,7 +600,7 @@ void UiApp::drawBackground(UiCanvas &c)
   if (c.width() == UI_W && c.height() == UI_H) {
     m_bgCache.assign(c.pixels(), c.pixels() + UI_W * UI_H);
     m_bgCacheTheme = m_cfg.menuTheme;
-    m_bgCacheName = m_cfg.menuBackground;
+    m_bgCacheName = m_bgName;   // the one drawn (the chosen one may be waiting)
     m_bgCacheVeil = m_cfg.bgVisibility;
     // The decoded image stays (3.6 MB): changing the theme or the veil then
     // redraws it at once instead of reading and resizing the file again.
