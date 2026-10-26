@@ -25,6 +25,7 @@ public:
   int width() const { return m_w; }
   int height() const { return m_h; }
   const UiColor *pixels() const { return m_px; }
+  UiColor *pixels() { return m_px; }
   UiColor *pixelsRW() { return m_px; }
 
   void setClip(int x, int y, int w, int h);

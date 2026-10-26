@@ -270,7 +270,6 @@ void buildPopup(const Popup &p)
   UiCanvas c;
   c.create(POP_H + g_popupBoxW, POP_H);
   c.fillRect(0, 0, c.width(), c.height(), 0xFF000000);
-  c.fillRect(POP_H, 0, g_popupBoxW, POP_H, 0xF0161616);   // RetroArch's dark backdrop
   std::vector<UiColor> px;
   if (!p.badge.empty() && fileExists(p.badge) && xboxLoadImagePixels(p.badge.c_str(), POP_H, POP_H, px, true))
     c.blitAlpha(&px[0], POP_H, POP_H, 0, 0);
@@ -278,6 +277,17 @@ void buildPopup(const Popup &p)
     c.fillGradient(0, 0, POP_H, POP_H, 0xFF3A3F55, 0xFF1C1F2B);   // no badge (yet): a plain square
   c.drawTextFit(UI_FONT_SMALL, POP_H + 20, 12, g_popupBoxW - 40, p.title.c_str(), 0xFF878787);
   c.drawTextFit(UI_FONT_BODY, POP_H + 20, 38, g_popupBoxW - 40, p.subtitle.c_str(), 0xFFF0F0F0);
+  // RetroArch's see-through backdrop: the box lets the game show through,
+  // its letters stay solid (the brighter a pixel, the more opaque).
+  UiColor *px2 = c.pixels();
+  for (int y = 0; y < POP_H; y++)
+    for (int x = POP_H; x < c.width(); x++) {
+      UiColor &q = px2[y * c.width() + x];
+      unsigned r = q >> 16 & 0xFF, g = q >> 8 & 0xFF, b = q & 0xFF;
+      unsigned lum = r > g ? (r > b ? r : b) : (g > b ? g : b);
+      unsigned a = 0xB8 + lum * (0xFF - 0xB8) / 255;
+      q = (a << 24) | (q & 0xFFFFFF);
+    }
   xboxOverlaySet(&c);
   if (p.sound && g_cfg.raSound)
     xboxPlaySound(uiJoinPath(uiJoinPath(xboxEmulatorDir(), "sounds"), "unlock.wav"));
@@ -312,7 +322,7 @@ void tickPopup()
     return;
   }
   int shown = POP_H + (int)(g_popupBoxW * unfold);
-  int x = (1280 - shown) / 2;   // centered at the top, as RetroArch puts it
+  int x = POP_MARGIN;   // top left corner, where RetroArch puts it
   int y = -POP_H + (int)((POP_H + POP_MARGIN) * slide);
   xboxOverlayPlace(x, y, shown);
 #endif
@@ -324,12 +334,10 @@ const char *tr(const char *es, const char *en) { return g_cfg.language ? en : es
 
 void RC_CCONV onEvent(const rc_client_event_t *e, rc_client_t *client)
 {
-  char buf[256];
   switch (e->type) {
   case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED: {
     const rc_client_achievement_t *a = e->achievement;
-    sprintf(buf, tr("Logro desbloqueado (%u puntos)", "Achievement unlocked (%u points)"), (unsigned)a->points);
-    popup(buf, a->title ? a->title : "", badgeFile(a->badge_name), true);
+    popup(tr("Logro desbloqueado", "Achievement unlocked"), a->title ? a->title : "", badgeFile(a->badge_name), true);
     CHEEVOS_LOG("RetroAchievements: unlocked %u \"%s\"", (unsigned)a->id, a->title ? a->title : "");
     break;
   }
