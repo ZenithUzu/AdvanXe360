@@ -397,9 +397,15 @@ void applySampler()
   pDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 }
 
+void resetFrameTiming();
+
 void applySoundFlags()
 {
   bool ff = xboxFastForwardActive();
+  // Back to normal speed: the first throttled frames look slow to the auto
+  // frame skip, which then skipped frames for a second or two. Measure afresh.
+  if (soundNoThrottle && !ff)
+    resetFrameTiming();
   soundMuted = !g_cfg.sound || (ff && g_cfg.muteFastForward);
   soundNoThrottle = ff;
   soundVolumePercent = uiVolumeLevels[g_cfg.volume];
@@ -981,6 +987,9 @@ bool padDown(unsigned int pads, int action)
 }
 
 } // namespace
+
+// For the achievement pop-ups (XboxCheevos.cpp), which make one frame slower.
+void xboxResetFrameTiming() { resetFrameTiming(); }
 
 UiHost &xboxHost()
 {

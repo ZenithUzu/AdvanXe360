@@ -256,6 +256,22 @@ void xboxPlaySound(const std::string &path)
   IXAudio2 *engine = XboxSDL_AudioEngine();
   if (!engine)
     return;
+  // The same sound again (every achievement): just replay it, without reading
+  // the file or making a voice (both stall the game for a moment).
+  static std::string loaded;
+  if (g_sfxVoice && !g_sfx.empty() && path == loaded) {
+    g_sfxVoice->Stop(0);
+    g_sfxVoice->FlushSourceBuffers();
+    XAUDIO2_BUFFER again;
+    memset(&again, 0, sizeof(again));
+    again.AudioBytes = (UINT32)g_sfx.size();
+    again.pAudioData = &g_sfx[0];
+    again.Flags = XAUDIO2_END_OF_STREAM;
+    g_sfxVoice->SubmitSourceBuffer(&again);
+    g_sfxVoice->Start(0);
+    return;
+  }
+  loaded = path;
   if (g_sfxVoice) {
     g_sfxVoice->Stop(0);
     g_sfxVoice->FlushSourceBuffers();

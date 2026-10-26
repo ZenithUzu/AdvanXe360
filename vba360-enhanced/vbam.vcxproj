@@ -586,7 +586,6 @@
     <ClCompile Include="src\Xbox\Storage.cpp" />
     <ClCompile Include="src\ui\UiApp.cpp" />
     <ClCompile Include="src\ui\UiCanvas.cpp" />
-    <ClCompile Include="src\ui\UiPopupXbox.cpp" />
     <ClCompile Include="src\ui\UiCheatParse.cpp" />
     <ClCompile Include="src\ui\UiConfig.cpp" />
     <ClCompile Include="src\ui\UiCartArt.cpp" />
@@ -714,7 +713,6 @@
     <ClInclude Include="src\Xbox\Storage.h" />
     <ClInclude Include="src\ui\UiApp.h" />
     <ClInclude Include="src\ui\UiCanvas.h" />
-    <ClInclude Include="src\ui\UiPopupXbox.h" />
     <ClInclude Include="src\ui\UiCheatParse.h" />
     <ClInclude Include="src\ui\UiConfig.h" />
     <ClInclude Include="src\ui\UiGlyphs.h" />

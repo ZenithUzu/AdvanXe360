@@ -126,11 +126,14 @@ void drawGameBackground()
 }
 
 // The pop-up over the game (achievements): its picture, and where it goes.
-// Two pictures, so an animated pop-up can redraw one while the GPU shows the other.
+// Made once, big enough for any pop-up, and never freed: making or freeing a
+// texture mid-game stalls until the GPU is idle (the hitch each pop-up gave).
+// Two of them, so a new pop-up never waits for the GPU to let go of the old one.
+enum { OVERLAY_TEX_W = 1024, OVERLAY_TEX_H = 128 };
 IDirect3DTexture9 *g_overlay[2] = { 0, 0 };
 DWORD g_overlayFence[2] = { 0, 0 };
 int g_overlayCur = 0;
-int g_overlayW = 0, g_overlayH = 0;
+int g_overlayW = 0, g_overlayH = 0;   // the pop-up's size inside the texture
 int g_overlayX = 0, g_overlayY = 0, g_overlayShown = 0;   // shown: how many columns, from the left
 
 // Called by libSDLx360 after the game picture, right before the frame shows.
@@ -139,12 +142,12 @@ void drawGameOverlay()
   if (!g_overlay[g_overlayCur] || !g_vs || g_overlayShown <= 0)
     return;
   float x0 = g_overlayX - 0.5f, y0 = g_overlayY - 0.5f;
-  float w = (float)g_overlayShown, h = (float)g_overlayH, u1 = w / g_overlayW;
+  float w = (float)g_overlayShown, h = (float)g_overlayH, u1 = w / OVERLAY_TEX_W, v1 = h / OVERLAY_TEX_H;
   UiVertex v[4] = {
     { x0,     y0,     0, 1, 0,  0 },
     { x0 + w, y0,     0, 1, u1, 0 },
-    { x0,     y0 + h, 0, 1, 0,  1 },
-    { x0 + w, y0 + h, 0, 1, u1, 1 }
+    { x0,     y0 + h, 0, 1, 0,  v1 },
+    { x0 + w, y0 + h, 0, 1, u1, v1 }
   };
   setQuadStates();
   pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);   // its edges may be see-through
@@ -172,43 +175,32 @@ void xboxOverlaySet(const UiCanvas *canvas)
   if (!pDevice || (!g_vs && !xboxUiRendererInit()))
     return;
   XBOX_OverlayHook = drawGameOverlay;
-  int w = canvas ? canvas->width() : 0, h = canvas ? canvas->height() : 0;
-  if (w <= 0 || h <= 0 || w != g_overlayW || h != g_overlayH) {
-    g_overlayShown = 0;
-    if (g_overlay[0]) {
-      pDevice->SetTexture(0, NULL);
-      pDevice->BlockUntilIdle();   // the GPU may still be drawing the old ones
-      for (int i = 0; i < 2; i++) {
-        g_overlay[i]->Release();
-        g_overlay[i] = 0;
-        g_overlayFence[i] = 0;
-      }
-    }
-    g_overlayW = g_overlayH = 0;
-    if (w <= 0 || h <= 0)
-      return;
+  g_overlayShown = 0;
+  if (!canvas || canvas->width() <= 0 || canvas->height() <= 0)
+    return;   // hidden; the textures stay for the next one
+  if (!g_overlay[0])
     for (int i = 0; i < 2; i++)
-      if (FAILED(pDevice->CreateTexture(w, h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT, &g_overlay[i], NULL))) {
+      if (FAILED(pDevice->CreateTexture(OVERLAY_TEX_W, OVERLAY_TEX_H, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT,
+                                        &g_overlay[i], NULL))) {
         if (i)
           g_overlay[0]->Release();
         g_overlay[0] = g_overlay[1] = 0;
         return;
       }
-    g_overlayW = w;
-    g_overlayH = h;
-  }
-  // Same size (a new frame of the animation): into the picture not on screen,
-  // once the GPU is done with it.
+  int w = canvas->width() < OVERLAY_TEX_W ? canvas->width() : OVERLAY_TEX_W;
+  int h = canvas->height() < OVERLAY_TEX_H ? canvas->height() : OVERLAY_TEX_H;
   int next = g_overlayCur ^ 1;
   if (g_overlayFence[next])
-    pDevice->BlockOnFence(g_overlayFence[next]);
+    pDevice->BlockOnFence(g_overlayFence[next]);   // shown frames ago: no real wait
   D3DLOCKED_RECT lr;
-  if (SUCCEEDED(g_overlay[next]->LockRect(0, &lr, NULL, 0))) {
-    for (int y = 0; y < h; y++)
-      memcpy((BYTE *)lr.pBits + y * lr.Pitch, canvas->pixels() + y * w, w * 4);
-    g_overlay[next]->UnlockRect(0);
-    g_overlayCur = next;
-  }
+  if (FAILED(g_overlay[next]->LockRect(0, &lr, NULL, 0)))
+    return;
+  for (int y = 0; y < h; y++)
+    memcpy((BYTE *)lr.pBits + y * lr.Pitch, canvas->pixels() + y * canvas->width(), w * 4);
+  g_overlay[next]->UnlockRect(0);
+  g_overlayCur = next;
+  g_overlayW = w;
+  g_overlayH = h;
 }
 
 void xboxOverlayPlace(int x, int y, int shownWidth)

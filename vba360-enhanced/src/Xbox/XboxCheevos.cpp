@@ -21,7 +21,6 @@
 
 #include "../ui/UiHost.h"
 #include "../ui/UiCanvas.h"
-#include "../ui/UiPopupXbox.h"
 #include "../ui/UiConfig.h"
 #include "XboxCovers.h"
 
@@ -38,6 +37,7 @@ extern u8 flashSaveMemory[0x20000];
 std::string xboxEmulatorDir();
 bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out, bool smooth);
 void xboxOverlaySet(const UiCanvas *canvas);
+void xboxResetFrameTiming();
 void xboxOverlayPlace(int x, int y, int shownWidth);
 void xboxPlaySound(const std::string &path);
 #define CHEEVOS_LOG xboxLog
@@ -235,25 +235,19 @@ struct Popup
 {
   std::string title, subtitle, badge;   // badge: its file
   bool sound;
-  unsigned points;                      // an achievement's (0: not one)
 };
 std::deque<Popup> g_popups;
 bool g_popupOn = false;
 int g_popupFrame = 0;
 int g_popupBoxW = 0;                    // width of the box right of the badge
-bool g_popupXbox = false;               // this one in the Xbox One style (redrawn every frame)
-UiCanvas g_xboxPop;
-std::string g_xboxLine1, g_xboxLine2;
 
 // RetroArch's timing: slide in, unfold, 4 seconds, fold, slide out (60 frames a second).
 enum { POP_H = 84, POP_SLIDE = 18, POP_UNFOLD = 18, POP_HOLD = 240, POP_MARGIN = 24 };
 const int kPopTotal = POP_SLIDE + POP_UNFOLD + POP_HOLD + POP_UNFOLD + POP_SLIDE;
 
-void popup(const std::string &title, const std::string &subtitle, const std::string &badge, bool sound,
-           unsigned points = 0)
+void popup(const std::string &title, const std::string &subtitle, const std::string &badge, bool sound)
 {
   Popup p;
-  p.points = points;
   p.title = title;
   p.subtitle = subtitle;
   p.badge = badge;
@@ -267,22 +261,6 @@ void popup(const std::string &title, const std::string &subtitle, const std::str
 void buildPopup(const Popup &p)
 {
 #ifdef _XBOX
-  if (p.sound && g_cfg.raSound)
-    xboxPlaySound(uiJoinPath(uiJoinPath(xboxEmulatorDir(), "sounds"), "unlock.wav"));
-  g_popupXbox = g_cfg.raPopupStyle == 1;
-  if (g_popupXbox) {   // drawn frame by frame in tickPopup()
-    g_xboxLine1 = p.title;
-    g_xboxLine2 = p.subtitle;
-    if (p.points) {
-      char pts[24];
-      sprintf(pts, "%u pts - ", p.points);
-      g_xboxLine2 = pts + g_xboxLine2;
-    }
-    int w, h;
-    uiXboxPopupSize(g_xboxLine1.c_str(), g_xboxLine2.c_str(), w, h);
-    g_xboxPop.create(w, h);
-    return;
-  }
   UiCanvas probe;
   probe.create(4, 4);
   int tw = probe.textWidth(UI_FONT_SMALL, p.title.c_str());
@@ -312,6 +290,9 @@ void buildPopup(const Popup &p)
       q = (a << 24) | (q & 0xFFFFFF);
     }
   xboxOverlaySet(&c);
+  if (p.sound && g_cfg.raSound)
+    xboxPlaySound(uiJoinPath(uiJoinPath(xboxEmulatorDir(), "sounds"), "unlock.wav"));
+  xboxResetFrameTiming();   // this frame was slower: don't let auto frame skip react to it
 #else
   (void)p;
 #endif
@@ -331,17 +312,6 @@ void tickPopup()
     g_popupFrame = 0;
   }
   int f = g_popupFrame++;
-  if (g_popupXbox) {
-    if (f >= uiXboxPopupFrames()) {
-      xboxOverlaySet(0);
-      g_popupOn = false;
-      return;
-    }
-    uiDrawXboxPopup(g_xboxPop, f, g_xboxLine1.c_str(), g_xboxLine2.c_str());
-    xboxOverlaySet(&g_xboxPop);
-    xboxOverlayPlace((1280 - g_xboxPop.width()) / 2, 720 - g_xboxPop.height() - 40, g_xboxPop.width());   // bottom center, like the console's
-    return;
-  }
   float slide, unfold;
   if (f < POP_SLIDE) { slide = easeOut((float)f / POP_SLIDE); unfold = 0; }
   else if ((f -= POP_SLIDE) < POP_UNFOLD) { slide = 1; unfold = easeOut((float)f / POP_UNFOLD); }
@@ -369,8 +339,7 @@ void RC_CCONV onEvent(const rc_client_event_t *e, rc_client_t *client)
   switch (e->type) {
   case RC_CLIENT_EVENT_ACHIEVEMENT_TRIGGERED: {
     const rc_client_achievement_t *a = e->achievement;
-    popup(tr("Logro desbloqueado", "Achievement unlocked"), a->title ? a->title : "", badgeFile(a->badge_name), true,
-          a->points);
+    popup(tr("Logro desbloqueado", "Achievement unlocked"), a->title ? a->title : "", badgeFile(a->badge_name), true);
     CHEEVOS_LOG("RetroAchievements: unlocked %u \"%s\"", (unsigned)a->id, a->title ? a->title : "");
     break;
   }
