@@ -48,6 +48,14 @@ extern char xboxLoadMessage[256];
 void xboxPollEvents();
 // GBA joypad bits for the core (with remapping and turbo).
 u32 xboxReadJoypad();
+// Rewind: call instead of a frame of emulation; true when it went back one
+// (the button held, Settings > Emulation > Rewind on). Start: a game started,
+// a state loaded or the game reset (the saved steps no longer apply).
+bool xboxRewindStep();
+void xboxRewindStart();
+extern bool xboxRewinding;   // going backwards now: no achievements checked
+// Kirby Tilt 'n' Tumble's jump (ACT_SHAKE): extra tilt, once a frame.
+double xboxShakeY();
 // Fast forward: true when this frame should not be presented.
 bool xboxSkipFrame();
 bool xboxFastForwardActive();

@@ -11,6 +11,7 @@
 #include "XboxHost.h"
 #include "XboxCovers.h"
 #include "XboxCheevos.h"
+#include "XboxRewind.h"
 #include "fex/fex.h"
 #include <zlib.h>   // crc32: Game Boy cheats found by the ROM's CRC
 #include <map>
@@ -466,6 +467,8 @@ void applySampler()
 }
 
 void resetFrameTiming();
+static bool g_rwHeld = false;   // the rewind button is held (xboxPollEvents)
+static int g_shakeFrames = 0;   // frames left of a console flick (ACT_SHAKE)
 
 void applySoundFlags()
 {
@@ -474,7 +477,7 @@ void applySoundFlags()
   // frame skip, which then skipped frames for a second or two. Measure afresh.
   if (soundNoThrottle && !ff)
     resetFrameTiming();
-  soundMuted = !g_cfg.sound || (ff && g_cfg.muteFastForward);
+  soundMuted = !g_cfg.sound || (ff && g_cfg.muteFastForward) || xboxRewinding;   // backwards: no sound
   soundNoThrottle = ff;
   soundVolumePercent = uiVolumeLevels[g_cfg.volume];
   soundBufferMs = uiAudioLatencyMs[g_cfg.audioLatency];
@@ -626,6 +629,7 @@ public:
       return false;
     sdlReadState(slot);
     cheevosReset();
+    xboxRewindStart();   // the steps saved led to another moment of the game
     return true;
   }
 
@@ -799,6 +803,7 @@ public:
   {
     emulator.emuReset();
     cheevosReset();
+    xboxRewindStart();
   }
 
   virtual const UiColor *gameFrame(int &w, int &h, int &pitch)
@@ -1440,6 +1445,78 @@ void xboxOnGameStarted()
     cheevosGameStarted(CHEEVOS_GBA, rom, (unsigned)xboxGbaRomSize);
   else
     cheevosGameStarted(gambatteIsCgb() ? CHEEVOS_GBC : CHEEVOS_GB, gbRom, (unsigned)gbRomSize);
+  xboxRewindStart();
+}
+
+// --- Rewind (XboxRewind.h) ------------------------------------------------------
+// A step is saved every REWIND_EVERY frames into REWIND_BUDGET bytes (seconds
+// to minutes: only what changed is kept). Held, one step goes back every
+// REWIND_SHOW frames: about 3x the game's speed, shown at 30 frames a second.
+enum { REWIND_STATE = 1 << 20, REWIND_BUDGET = 32 << 20, REWIND_EVERY = 6, REWIND_SHOW = 2 };
+static std::vector<unsigned char> g_rwBuf;
+static int g_rwFrame = 0;
+static bool g_rwOk = false;   // on, and this core's state fits in REWIND_STATE
+static int g_rwSetting = -1;  // Settings > Emulation > Rewind when it started
+bool xboxRewinding = false;
+
+void xboxRewindStart()
+{
+  g_rwFrame = 0;
+  g_rwSetting = g_cfg.rewind;
+  g_rwOk = g_cfg.rewind && emulator.emuWriteMemState && emulator.emuReadMemState;
+  if (g_rwOk) {
+    g_rwBuf.assign(REWIND_STATE, 0);
+    rewindReset(REWIND_STATE, REWIND_BUDGET);
+  } else {
+    rewindReset(0, 0);
+    std::vector<unsigned char>().swap(g_rwBuf);   // off: its memory back
+  }
+}
+
+bool xboxRewindStep()
+{
+  if (g_rwSetting != g_cfg.rewind)
+    xboxRewindStart();   // turned on / off in the menu
+  if (!g_rwOk || !g_rwHeld || !rewindHasState()) {   // (nothing saved yet: nothing to go back to)
+    if (xboxRewinding) {   // let go: the game goes on from here
+      xboxRewinding = false;
+      applySoundFlags();
+      resetFrameTiming();
+      cheevosReset();   // its memory jumped: achievements wait for fresh conditions
+    }
+    if (g_rwOk && ++g_rwFrame >= REWIND_EVERY) {
+      g_rwFrame = 0;
+      memset(&g_rwBuf[0], 0, REWIND_STATE);   // the tail past the state must be zero
+      if (emulator.emuWriteMemState((char *)&g_rwBuf[0], REWIND_STATE)) {
+        rewindPush(&g_rwBuf[0]);
+      } else {
+        g_rwOk = false;
+        xboxLog("Rewind off: this game's state needs more than %d bytes", (int)REWIND_STATE);
+      }
+    }
+    return false;
+  }
+  if (!xboxRewinding) {
+    xboxRewinding = true;
+    applySoundFlags();
+    g_rwFrame = 0;
+  }
+  // One step back every REWIND_SHOW frames; in between the same moment again
+  // (its picture), so it never runs forward.
+  if (g_rwFrame++ % REWIND_SHOW == 0)
+    rewindPop(&g_rwBuf[0]);   // at the oldest step it stays there
+  emulator.emuReadMemState((char *)&g_rwBuf[0], REWIND_STATE);
+  emulator.emuMain(emulator.emuCount);
+  return true;
+}
+
+// Kirby Tilt 'n' Tumble's jump: the console flicked up, then back (added to
+// the tilt for 8 frames). Read once a frame by the Game Boy core.
+double xboxShakeY()
+{
+  if (g_shakeFrames <= 0)
+    return 0;
+  return g_shakeFrames-- > 4 ? 1.8 : -1.8;
 }
 
 void xboxOnGameExiting()
@@ -1496,6 +1573,7 @@ void xboxPollEvents()
     if (pads == 0)
       g_waitRelease = false;
     g_prevPads = pads;
+    g_rwHeld = false;   // buttons held from the menu don't count
     return;
   }
   unsigned int pressed = pads & ~g_prevPads;
@@ -1516,6 +1594,11 @@ void xboxPollEvents()
     }
   }
   applySoundFlags();
+
+  // Rewind (held) and the console flick (Kirby Tilt 'n' Tumble's jump).
+  g_rwHeld = padDown(pads, ACT_REWIND);
+  if (ctlMap()[ACT_SHAKE] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(ctlMap()[ACT_SHAKE])))
+    g_shakeFrames = 8;
 
   // Quick save / load
   if (ctlMap()[ACT_QUICK_SAVE] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(ctlMap()[ACT_QUICK_SAVE]))) {
