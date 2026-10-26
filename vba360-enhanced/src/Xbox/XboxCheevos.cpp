@@ -335,8 +335,8 @@ const int kPopTotal = POP_SLIDE + POP_UNFOLD + POP_HOLD + POP_UNFOLD + POP_SLIDE
 void popup(const std::string &title, const std::string &subtitle, const std::string &badge, bool sound)
 {
   Popup p;
-  p.title = title;
-  p.subtitle = subtitle;
+  p.title = uiUtf8ToLatin1(title);   // the site's texts are UTF-8, the fonts Latin-1
+  p.subtitle = uiUtf8ToLatin1(subtitle);
   p.badge = badge;
   p.sound = sound;
   if (g_popups.size() < 8)
@@ -644,6 +644,23 @@ void cheevosIdle()
     rc_client_idle(g_client);
 }
 
+std::string cheevosGameTitle()
+{
+  const rc_client_game_t *g = g_client && g_console >= 0 ? rc_client_get_game_info(g_client) : 0;
+  if (!g || !g->id || !g->title)
+    return std::string();
+  std::string t = g->title;
+  // A version the site knows but doesn't support: its server names the game
+  // "Unsupported Game Version (<the game>)".
+  static const char pre[] = "Unsupported Game Version (";
+  const size_t n = sizeof(pre) - 1;
+  if (t.compare(0, n, pre) == 0 && t.size() > n + 1 && t[t.size() - 1] == ')')
+    t = t.substr(n, t.size() - n - 1);
+  if (!t.empty() && t[0] == '~')
+    return std::string();   // ~Hack~, ~Homebrew~...: the original game's cheats don't fit it
+  return t;
+}
+
 void cheevosReset()
 {
   if (g_client && g_console >= 0)
@@ -676,7 +693,7 @@ void cheevosInfo(UiRaInfo &out)
     const rc_client_game_t *g = rc_client_get_game_info(g_client);
     rc_client_user_game_summary_t s;
     rc_client_get_user_game_summary(g_client, &s);
-    out.game = g && g->title ? g->title : "";
+    out.game = g && g->title ? uiUtf8ToLatin1(g->title) : "";
     out.unlocked = (int)s.num_unlocked_achievements;
     out.total = (int)s.num_core_achievements;
     out.points = (int)s.points_unlocked;
@@ -697,8 +714,8 @@ void cheevosList(std::vector<UiRaAchievement> &out)
     for (uint32_t i = 0; i < list->buckets[b].num_achievements; i++) {
       const rc_client_achievement_t *a = list->buckets[b].achievements[i];
       UiRaAchievement e;
-      e.title = a->title ? a->title : "";
-      e.description = a->description ? a->description : "";
+      e.title = a->title ? uiUtf8ToLatin1(a->title) : "";
+      e.description = a->description ? uiUtf8ToLatin1(a->description) : "";
       e.progress = a->measured_progress;
       e.points = (int)a->points;
       e.unlocked = a->unlocked != 0;

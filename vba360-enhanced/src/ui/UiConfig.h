@@ -227,6 +227,10 @@ std::string uiJoinPath(const std::string &dir, const std::string &name);
 std::string uiParentDir(const std::string &path);   // "" at a drive root
 std::string uiFileName(const std::string &path);
 std::string uiStripExtension(const std::string &name);
+// UTF-8 text (from the internet: RetroAchievements...) for the menu's Latin-1
+// fonts: "Pok\xc3\xa9mon" -> "Pok\xe9mon"; characters past Latin-1 become '?'.
+// Bytes that aren't UTF-8 stay as they are (text already in Latin-1).
+std::string uiUtf8ToLatin1(const std::string &s);
 #define UI_APP_VERSION "0.5.0"   // compared with the latest GitHub release ("v0.5.0")
 // "v0.6.0" newer than "0.5.0"? (numbers compared one by one; a leading v is ignored)
 bool uiVersionNewer(const std::string &a, const std::string &b);

@@ -433,6 +433,26 @@ bool uiVersionNewer(const std::string &a, const std::string &b)
   return false;
 }
 
+std::string uiUtf8ToLatin1(const std::string &s)
+{
+  std::string out;
+  for (size_t i = 0; i < s.size();) {
+    unsigned char c = (unsigned char)s[i];
+    int len = c >= 0xF0 && c < 0xF8 ? 4 : c >= 0xE0 ? 3 : c >= 0xC2 && c < 0xE0 ? 2 : 1;
+    bool seq = len > 1 && i + len <= s.size();
+    for (int k = 1; k < len && seq; k++)
+      seq = ((unsigned char)s[i + k] & 0xC0) == 0x80;
+    if (!seq) {   // ASCII, or not UTF-8: as it is
+      out += s[i++];
+      continue;
+    }
+    unsigned cp = len == 2 ? ((c & 0x1F) << 6) | ((unsigned char)s[i + 1] & 0x3F) : 0x100;
+    out += cp < 0x100 ? (char)cp : '?';
+    i += len;
+  }
+  return out;
+}
+
 std::string uiStripExtension(const std::string &name)
 {
   size_t dot = name.find_last_of('.');
