@@ -25,6 +25,11 @@
 namespace gambatte
 {
 
+   // AdvanXe360: the menu's custom game time (Settings > Game clock), in
+   // seconds added to the console's clock; rtcNow() is the time the game sees.
+   extern long rtcTimeOffset;
+   uint64_t rtcNow();
+
    struct SaveState;
 
    class Rtc
