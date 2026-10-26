@@ -48,6 +48,11 @@ void coversRun(const std::vector<UiCoverItem> &items, const std::string &server)
 bool cheatsFetch(const std::string &romName, const std::string &gameCode, const char *systemFolder,
                  const std::string &zipPath, const std::string &outPath, std::string &err);
 
+// The pack's index (_gamecodes.txt in zipPath) for key: a GBA game code
+// ("BPRE") or a Game Boy / Color ROM's CRC ("CRC:9F7FDD53"). Returns
+// "<system folder>/<file>.cht", "-" (a known game with no cheats) or "".
+std::string cheatsIndexLookup(const std::string &zipPath, const std::string &key);
+
 // The newest cheats from GitHub (HTTPS): libretro's database (by name) and,
 // for GBA, SuperFW's (by the 4-letter game code). chtTexts: RetroArch .cht
 // texts found. err: "nomatch" (online, nothing for this game) or a network one.

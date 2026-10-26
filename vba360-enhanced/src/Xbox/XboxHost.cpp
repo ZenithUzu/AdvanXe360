@@ -12,6 +12,7 @@
 #include "XboxCovers.h"
 #include "XboxCheevos.h"
 #include "fex/fex.h"
+#include <zlib.h>   // crc32: Game Boy cheats found by the ROM's CRC
 #include <map>
 #include "../gb/gbGambatteBridge.h"
 namespace gambatte { extern long rtcTimeOffset; }   // gambatte/src/mem/rtc.cpp: the custom game time
@@ -256,6 +257,45 @@ std::string archiveInnerRom(const std::string &archive)
   }
   cache[archive] = found;
   return found;
+}
+
+// CRC-32 of a Game Boy / Color ROM (the file, or the ROM inside a .zip / .7z),
+// as libretro's game lists give it: finds the game's cheats whatever the file
+// is called.
+bool romCrc32(const std::string &rom, unsigned long &crc)
+{
+  std::string data;
+  std::string inner = archiveInnerRom(rom);
+  std::string ext = uiExtension(rom);
+  if (ext == ".zip" || ext == ".7z" || ext == ".rar") {
+    fex_t *fe = 0;
+    if (inner.empty() || fex_open(&fe, rom.c_str()) || !fe)
+      return false;
+    while (!fex_done(fe)) {
+      if (inner == fex_name(fe)) {
+        const void *p = 0;
+        if (!fex_data(fe, &p) && p)
+          data.assign((const char *)p, fex_size(fe));
+        break;
+      }
+      if (fex_next(fe))
+        break;
+    }
+    fex_close(fe);
+  } else {
+    FILE *f = fopen(rom.c_str(), "rb");
+    if (!f)
+      return false;
+    char buf[64 * 1024];
+    size_t got;
+    while ((got = fread(buf, 1, sizeof(buf), f)) > 0 && data.size() < 16 * 1024 * 1024)
+      data.append(buf, got);
+    fclose(f);
+  }
+  if (data.empty())
+    return false;
+  crc = crc32(0L, (const Bytef *)data.data(), (uInt)data.size());
+  return true;
 }
 
 // A cheat code compared without spaces, '+' or case ("8200055C+0000" = "8200055c 0000").
@@ -868,6 +908,28 @@ public:
       fclose(f);
     }
     std::string name = uiStripExtension(uiFileName(rom));
+    std::string pack = uiJoinPath(dir, "libretro-cheats.zip"), packErr = "nopack";
+    // Game Boy / Color: the ROM's CRC in the pack's index gives the game's own
+    // cheat file (its region and language), whatever the ROM is called.
+    std::string folder = sys;
+    unsigned long crc = 0;
+    if (romIsGb(rom) && pathExists(pack) && romCrc32(rom, crc)) {
+      char key[16];
+      sprintf(key, "CRC:%08lX", crc);
+      std::string file = cheatsIndexLookup(pack, key);
+      size_t slash = file.find('/');
+      if (file == "-") {   // a known game, but its version has no cheats: don't guess by name
+        xboxLog("Cheats for %s: %s, a known game with no cheats", name.c_str(), key);
+        err = "nomatch";
+        return -1;
+      }
+      if (slash != std::string::npos && file.size() > slash + 5) {
+        folder = file.substr(0, slash);
+        name = file.substr(slash + 1, file.size() - slash - 5);   // without ".cht"
+      }
+      xboxLog("Cheats for %s: %s -> %s", uiFileName(rom).c_str(), key, file.empty() ? "(not in the index)" : name.c_str());
+    }
+    sys = folder.c_str();
     // 1. GitHub (HTTPS): the newest codes of libretro's database and SuperFW's.
     std::vector<std::string> texts;
     std::string netErr;
@@ -884,7 +946,6 @@ public:
     }
     // 2. The pack that comes with the emulator (works offline; finds GBA games
     //    in any language by their code).
-    std::string pack = uiJoinPath(dir, "libretro-cheats.zip"), packErr = "nopack";
     bool inPack = pathExists(pack) && cheatsFetch(name, code, sys, pack, got, packErr);
     if (inPack) {
       n += importCheatFile(rom, got);
