@@ -400,8 +400,14 @@ void UiApp::update(unsigned int held)
   if (m_cheatDownload > 0 && --m_cheatDownload == 0) {
     std::string err;
     int n = m_host.downloadCheats(m_cheatRom, err);
-    char buf[128];
-    if (n > 0)
+    char buf[256] = "";
+    if (n > 0 && err.compare(0, 6, "other:") == 0)
+      // Codes of another version of the game (RetroAchievements recognised it):
+      // they came in off; some may not work in this one.
+      sprintf(buf, tr("%d c\xf3""digos de %.120s (otra versi\xf3n): apagados, pueden no funcionar",
+                      "%d codes from %.120s (another version): off, they may not work"),
+              n, uiUtf8ToLatin1(err.substr(6)).c_str());
+    else if (n > 0)
       sprintf(buf, tr("%d c\xf3""digos agregados de internet", "%d codes added from the internet"), n);
     else if (n == 0)
       strcpy(buf, tr("Ya ten\xed""as todos los trucos de la base para este juego", "You already have every cheat from the database for this game"));

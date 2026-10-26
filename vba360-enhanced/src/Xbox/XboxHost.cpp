@@ -912,22 +912,36 @@ public:
     // Game Boy / Color: the ROM's CRC in the pack's index gives the game's own
     // cheat file (its region and language), whatever the ROM is called.
     std::string folder = sys;
+    bool otherVersion = false;
     unsigned long crc = 0;
     if (romIsGb(rom) && pathExists(pack) && romCrc32(rom, crc)) {
       char key[16];
       sprintf(key, "CRC:%08lX", crc);
       std::string file = cheatsIndexLookup(pack, key);
       size_t slash = file.find('/');
-      if (file == "-") {   // a known game, but its version has no cheats: don't guess by name
-        xboxLog("Cheats for %s: %s, a known game with no cheats", name.c_str(), key);
-        err = "nomatch";
-        return -1;
-      }
       if (slash != std::string::npos && file.size() > slash + 5) {
         folder = file.substr(0, slash);
         name = file.substr(slash + 1, file.size() - slash - 5);   // without ".cht"
+      } else {
+        // No cheats of its own (another language, a fan translation): the
+        // game RetroAchievements recognised in the ROM, if it's running.
+        // Its cheats are for another version: they come in turned off.
+        std::string title = rom == g_rom ? cheevosGameTitle() : std::string();
+        size_t bar = title.find(" | ");   // "Pokemon Red Version | Pokemon Blue Version"
+        if (bar != std::string::npos)
+          title = title.substr(0, bar);
+        if (!title.empty()) {
+          name = title;
+          otherVersion = true;
+        } else if (file == "-") {   // a known game whose version has no cheats: don't guess by name
+          xboxLog("Cheats for %s: %s, a known game with no cheats", name.c_str(), key);
+          err = "nomatch";
+          return -1;
+        }
       }
-      xboxLog("Cheats for %s: %s -> %s", uiFileName(rom).c_str(), key, file.empty() ? "(not in the index)" : name.c_str());
+      xboxLog("Cheats for %s: %s -> %s%s", uiFileName(rom).c_str(), key,
+              file.empty() && !otherVersion ? "(not in the index)" : name.c_str(),
+              otherVersion ? " (RetroAchievements: another version's cheats)" : "");
     }
     sys = folder.c_str();
     // 1. GitHub (HTTPS): the newest codes of libretro's database and SuperFW's.
@@ -941,14 +955,14 @@ public:
         continue;
       fwrite(texts[i].data(), 1, texts[i].size(), t);
       fclose(t);
-      n += importCheatFile(rom, got);   // codes the game already has are skipped
+      n += importCheats(rom, got, otherVersion);   // codes the game already has are skipped
       DeleteFile(got.c_str());
     }
     // 2. The pack that comes with the emulator (works offline; finds GBA games
     //    in any language by their code).
     bool inPack = pathExists(pack) && cheatsFetch(name, code, sys, pack, got, packErr);
     if (inPack) {
-      n += importCheatFile(rom, got);
+      n += importCheats(rom, got, otherVersion);
       DeleteFile(got.c_str());
     }
     xboxLog("Cheats for %s: online %s (%d files), pack %s, %d new codes", name.c_str(), online ? "found" : netErr.c_str(),
@@ -957,10 +971,18 @@ public:
       err = netErr == "nomatch" || packErr == "nomatch" ? "nomatch" : "net";
       return -1;
     }
+    if (otherVersion)
+      err = "other:" + name;   // the menu warns: another version's codes, all off
     return n;
   }
 
   virtual int importCheatFile(const std::string &rom, const std::string &path)
+  {
+    return importCheats(rom, path, false);
+  }
+
+  // allOff: every cheat starts off (codes made for another version of the game).
+  int importCheats(const std::string &rom, const std::string &path, bool allOff)
   {
     std::vector<UiCheatEntry> entries;
     if (!uiParseCheatFile(path, !romIsGb(rom), entries))
@@ -992,7 +1014,7 @@ public:
       c.desc = safeDesc(c.desc);
       // Imported cheats start off unless the file says otherwise: turning
       // dozens of codes on at once tends to crash games.
-      c.enabled = entries[i].enabled && blank.empty();
+      c.enabled = entries[i].enabled && blank.empty() && !allOff;
       c.type = CT_AUTO;
       for (size_t k = 0; k < entries[i].codes.size(); k++) {
         if (k) c.code += " ";

@@ -28,6 +28,12 @@ void cheevosGameExited();
 // achievements wait for fresh conditions instead of firing by mistake.
 void cheevosReset();
 
+// The running game as RetroAchievements identified it, by its ROM's hash:
+// its title ("Pokemon Crystal Version"), also for versions it knows but
+// doesn't support (other languages, fan translations). "" when there is no
+// game, or it's a hack or homebrew ("~Hack~ ..."). For finding cheats.
+std::string cheevosGameTitle();
+
 void cheevosLogin(const std::string &user, const std::string &password);
 void cheevosLogout();
 void cheevosInfo(UiRaInfo &out);
