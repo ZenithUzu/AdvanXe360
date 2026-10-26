@@ -26,15 +26,19 @@
 
 #ifdef _XBOX
 #include <xtl.h>
-#include "XboxHost.h"
 #include "XboxLog.h"
 #include "../gb/gbGambatteBridge.h"
+// Not XboxHost.h: it brings VBA-M's own int32_t & co. (common/Types.h),
+// which clash with the <stdint.h> ones rcheevos uses. What's needed from it:
 typedef unsigned char u8;
 extern u8 *internalRAM;
 extern u8 *workRAM;
 extern u8 flashSaveMemory[0x20000];
 std::string xboxEmulatorDir();
 bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out, bool smooth);
+void xboxOverlaySet(const UiCanvas *canvas);
+void xboxOverlayPlace(int x, int y, int shownWidth);
+void xboxPlaySound(const std::string &path);
 #define CHEEVOS_LOG xboxLog
 #else
 #define CHEEVOS_LOG(...) ((void)0)
