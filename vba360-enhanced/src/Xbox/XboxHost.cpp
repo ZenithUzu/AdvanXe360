@@ -1618,9 +1618,19 @@ void xboxPollEvents()
   // In-game menu: only the configured button (right stick click by
   // default). Start + Select belong to the game (soft reset in many titles).
   int menuButton = ctlMap()[ACT_MENU];
-  if (menuButton >= PAD_BUTTON_COUNT)
-    menuButton = PAD_RS;   // the menu must always be reachable
-  if (menuButton < PAD_BUTTON_COUNT && (pressed & PAD_BIT(menuButton)))
+  if (menuButton >= PAD_BUTTON_COUNT) {
+    // Unassigned: the right stick click still opens it (the menu must always
+    // be reachable), unless that button was given to something else.
+    menuButton = PAD_RS;
+    for (int a = 0; a < ACT_COUNT; a++)
+      if (a != ACT_MENU && ctlMap()[a] == PAD_RS)
+        menuButton = PAD_NONE;
+  }
+  // Both stick clicks at once always open it too: a way out whatever the
+  // buttons were given to.
+  const unsigned sticks = PAD_BIT(PAD_LS) | PAD_BIT(PAD_RS);
+  bool bothSticks = (pads & sticks) == sticks && (pressed & sticks);
+  if ((menuButton < PAD_BUTTON_COUNT && (pressed & PAD_BIT(menuButton))) || bothSticks)
     runInGameMenu();
 }
 

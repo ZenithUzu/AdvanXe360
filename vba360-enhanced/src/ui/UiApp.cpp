@@ -1309,8 +1309,8 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
     UiMenuItem &it = m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a),
                            uiButtonName(*this, ctlMap()[a]));
     if (a == ACT_MENU)
-      it.help = tr("Sin asignar, el clic del stick derecho lo sigue abriendo.",
-                   "Unassigned, the right stick click still opens it.");
+      it.help = tr("Sin asignar: clic del stick derecho (si est\xe1 libre). Los dos sticks a la vez siempre lo abren.",
+                   "Unassigned: right stick click (if free). Both stick clicks at once always open it.");
     else if (a == ACT_REWIND)
       it.help = tr("Mantenlo y el juego va hacia atr\xe1s. Se activa en Emulaci\xf3n.",
                    "Hold it and the game goes backwards. Turned on under Emulation.");
@@ -1829,10 +1829,8 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     } else if (id >= C_ACTION_BASE) {
       int a = id - C_ACTION_BASE;
       int *map = ctlMap();
-      // cycle through every button plus "unassigned"
+      // cycle through every button plus "unassigned" (any action, the menu too)
       map[a] = wrapIndex(map[a], delta, PAD_BUTTON_COUNT + 1);
-      if (a == ACT_MENU && map[a] == PAD_NONE)
-        map[a] = wrapIndex(map[a], delta, PAD_BUTTON_COUNT + 1);
       if (m_ctlForGame && !m_quietChange)
         m_gameCfg.save(gameConfigPath(m_gameCfgRom));
     }
