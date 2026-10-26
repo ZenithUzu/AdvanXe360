@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <algorithm>
+#include <map>
 
 #ifdef _XBOX
 #include <xtl.h>
@@ -992,4 +993,199 @@ bool cheatsFetch(const std::string &romName, const std::string &gameCode, const 
   }
   fex_close(fe);
   return ok;
+}
+
+// --- Cheats straight from GitHub (HTTPS) ----------------------------------------
+//
+// The newest codes, one game at a time: GitHub's API lists the console's
+// files (names only, a few KB), the matching one is downloaded. libretro's
+// database by name; SuperFW's (GBA) by the game code in the ROM's header.
+
+// The values of "key":"..." in a JSON text, in order (GitHub's listings).
+std::vector<std::string> jsonStrings(const std::string &json, const char *key)
+{
+  std::vector<std::string> out;
+  std::string pat = std::string("\"") + key + "\"";
+  size_t p = 0;
+  while ((p = json.find(pat, p)) != std::string::npos) {
+    p += pat.size();
+    while (p < json.size() && (json[p] == ' ' || json[p] == ':'))
+      p++;
+    if (p >= json.size() || json[p] != '"')
+      continue;
+    std::string v;
+    for (p++; p < json.size() && json[p] != '"'; p++) {
+      char c = json[p];
+      if (c == '\\' && p + 1 < json.size()) {
+        char e = json[++p];
+        if (e == 'n') v += '\n';
+        else if (e == 't') v += '\t';
+        else if (e == 'u' && p + 4 < json.size()) {
+          unsigned long u = strtoul(json.substr(p + 1, 4).c_str(), 0, 16);
+          v += u < 0x100 ? (char)u : '?';
+          p += 4;
+        } else v += e;   // \" \\ \/
+      } else {
+        v += c;
+      }
+    }
+    out.push_back(v);
+  }
+  return out;
+}
+
+namespace {
+
+std::string urlPath(const std::string &s)
+{
+  static const char hex[] = "0123456789ABCDEF";
+  std::string o;
+  for (size_t i = 0; i < s.size(); i++) {
+    unsigned char c = (unsigned char)s[i];
+    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~' || c == '/')
+      o += (char)c;
+    else {
+      o += '%';
+      o += hex[c >> 4];
+      o += hex[c & 15];
+    }
+  }
+  return o;
+}
+
+std::string quote(const std::string &s)
+{
+  std::string o;
+  for (size_t i = 0; i < s.size(); i++)
+    o += s[i] == '"' ? '\'' : s[i];
+  return o;
+}
+
+// Names (without .cht) of libretro's cheat files for a console; kept for the
+// session (GitHub allows 60 listings an hour).
+bool libretroNames(const std::string &system, std::vector<std::string> &names, std::string &err)
+{
+  static std::map<std::string, std::vector<std::string> > cache;
+  std::map<std::string, std::vector<std::string> >::iterator it = cache.find(system);
+  if (it != cache.end()) {
+    names = it->second;
+    return true;
+  }
+  std::string body;
+  if (!httpRequest("https://api.github.com/repos/libretro/libretro-database/contents/cht", "", body, err, ""))
+    return false;
+  // The folder's entry: its "name", then its "sha" (the tree to list).
+  std::string key = "\"name\":\"" + system + "\"";
+  size_t at = body.find(key);
+  if (at == std::string::npos) {
+    err = "nomatch";
+    return false;
+  }
+  std::vector<std::string> sha = jsonStrings(body.substr(at, 600), "sha");
+  if (sha.empty()) {
+    err = "reply";
+    return false;
+  }
+  if (!httpRequest("https://api.github.com/repos/libretro/libretro-database/git/trees/" + sha[0], "", body, err, ""))
+    return false;
+  std::vector<std::string> paths = jsonStrings(body, "path");
+  names.clear();
+  for (size_t i = 0; i < paths.size(); i++)
+    if (paths[i].size() > 4 && lowerAscii(paths[i].substr(paths[i].size() - 4)) == ".cht")
+      names.push_back(paths[i].substr(0, paths[i].size() - 4));
+  cache[system] = names;
+  return true;
+}
+
+} // namespace
+
+// SuperFW's JSON ({"codes":[{"title":..,"code":"8200055C+0000 ..."}]}) as a
+// RetroArch .cht.
+std::string superfwToCht(const std::string &json)
+{
+  size_t c = json.find("\"codes\"");
+  if (c == std::string::npos)
+    return "";
+  std::string rest = json.substr(c);
+  std::vector<std::string> titles = jsonStrings(rest, "title"), codes = jsonStrings(rest, "code");
+  size_t n = titles.size() < codes.size() ? titles.size() : codes.size();
+  std::string out = "cheats = " + intStr((int)n) + "\n\n";
+  for (size_t i = 0; i < n; i++) {
+    std::string code;
+    for (size_t k = 0; k < codes[i].size(); k++)
+      code += codes[i][k] == ' ' ? '+' : codes[i][k];
+    std::string idx = intStr((int)i);
+    out += "cheat" + idx + "_desc = \"" + quote(titles[i]) + "\"\ncheat" + idx + "_code = \"" + code +
+           "\"\ncheat" + idx + "_enable = false\n\n";
+  }
+  return n ? out : "";
+}
+
+// "A8B-A9B - Medabots.json" is for game codes starting A8B or A9B; "ADIE - ..." for ADIE only.
+bool superfwFileFor(const std::string &file, const std::string &code)
+{
+  size_t dash = file.find(" - ");
+  if (dash == std::string::npos || code.size() < 3)
+    return false;
+  std::string prefix = file.substr(0, dash);
+  size_t p = 0;
+  while (p <= prefix.size()) {
+    size_t e = prefix.find('-', p);
+    std::string tok = prefix.substr(p, e == std::string::npos ? std::string::npos : e - p);
+    if (tok.size() >= 3 && tok.size() <= code.size() && code.compare(0, tok.size(), tok) == 0)
+      return true;
+    if (e == std::string::npos)
+      break;
+    p = e + 1;
+  }
+  return false;
+}
+
+bool cheatsFetchOnline(const std::string &romName, const std::string &gameCode, const char *systemFolder,
+                       std::vector<std::string> &chtTexts, std::string &err)
+{
+  chtTexts.clear();
+  g_cancel = false;
+  if (!netStart(err))
+    return false;
+  bool reached = false;
+  // libretro: by name.
+  std::vector<std::string> names;
+  std::string e1;
+  if (libretroNames(systemFolder, names, e1)) {
+    reached = true;
+    int m = coversBestMatch(romName, names);
+    if (m < 0) {
+      std::string want = compactTitle(romName);
+      for (size_t i = 0; i < names.size() && m < 0 && !want.empty(); i++)
+        if (compactTitle(names[i]) == want)
+          m = (int)i;
+    }
+    std::string body;
+    if (m >= 0 && httpRequest("https://raw.githubusercontent.com/libretro/libretro-database/master/cht/" +
+                                  urlPath(std::string(systemFolder) + "/" + names[m] + ".cht"), "", body, e1, ""))
+      chtTexts.push_back(body);
+  }
+  // SuperFW (GBA): by the game code.
+  if (gameCode.size() == 4) {
+    static std::vector<std::string> files;
+    std::string body, e2;
+    if (files.empty() &&
+        httpRequest("https://api.github.com/repos/davidgfnet/superfw-cheats/contents/cheats", "", body, e2, ""))
+      files = jsonStrings(body, "name");
+    reached = reached || !files.empty();
+    for (size_t i = 0; i < files.size(); i++)
+      if (superfwFileFor(files[i], gameCode) &&
+          httpRequest("https://raw.githubusercontent.com/davidgfnet/superfw-cheats/master/cheats/" + urlPath(files[i]),
+                      "", body, e2, "")) {
+        std::string cht = superfwToCht(body);
+        if (!cht.empty())
+          chtTexts.push_back(cht);
+        break;
+      }
+  }
+  if (!chtTexts.empty())
+    return true;
+  err = reached ? "nomatch" : (e1.empty() ? "net" : e1);
+  return false;
 }

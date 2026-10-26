@@ -799,10 +799,35 @@ public:
         code.assign(c, 4);
       fclose(f);
     }
-    if (!cheatsFetch(uiStripExtension(uiFileName(rom)), code, sys, uiJoinPath(dir, "libretro-cheats.zip"), got, err))
+    std::string name = uiStripExtension(uiFileName(rom));
+    // 1. GitHub (HTTPS): the newest codes of libretro's database and SuperFW's.
+    std::vector<std::string> texts;
+    std::string netErr;
+    bool online = cheatsFetchOnline(name, code, sys, texts, netErr);
+    int n = 0;
+    for (size_t i = 0; i < texts.size(); i++) {
+      FILE *t = fopen(got.c_str(), "wb");
+      if (!t)
+        continue;
+      fwrite(texts[i].data(), 1, texts[i].size(), t);
+      fclose(t);
+      n += importCheatFile(rom, got);   // codes the game already has are skipped
+      DeleteFile(got.c_str());
+    }
+    // 2. The pack that comes with the emulator (works offline; finds GBA games
+    //    in any language by their code).
+    std::string pack = uiJoinPath(dir, "libretro-cheats.zip"), packErr = "nopack";
+    bool inPack = pathExists(pack) && cheatsFetch(name, code, sys, pack, got, packErr);
+    if (inPack) {
+      n += importCheatFile(rom, got);
+      DeleteFile(got.c_str());
+    }
+    xboxLog("Cheats for %s: online %s (%d files), pack %s, %d new codes", name.c_str(), online ? "found" : netErr.c_str(),
+            (int)texts.size(), inPack ? "found" : packErr.c_str(), n);
+    if (!online && !inPack) {
+      err = netErr == "nomatch" || packErr == "nomatch" ? "nomatch" : "net";
       return -1;
-    int n = importCheatFile(rom, got);
-    DeleteFile(got.c_str());
+    }
     return n;
   }
 

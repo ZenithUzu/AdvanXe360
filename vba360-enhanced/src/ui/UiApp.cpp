@@ -395,8 +395,8 @@ void UiApp::update(unsigned int held)
       strcpy(buf, tr("Ya ten\xed""as todos los trucos de la base para este juego", "You already have every cheat from the database for this game"));
     else
       strcpy(buf, err == "nomatch" ? tr("No hay trucos para este juego en la base", "No cheats for this game in the database")
-                                   : tr("Falta cheats\\libretro-cheats.zip (est\xe1 en el .zip del emulador)",
-                                        "cheats\\libretro-cheats.zip is missing (it's in the emulator's .zip)"));
+                                   : tr("Sin internet y sin la base local (cheats\\libretro-cheats.zip)",
+                                        "No internet and no local database (cheats\\libretro-cheats.zip)"));
     toast(buf);
     rebuildMenus();
   }
@@ -1457,8 +1457,8 @@ void UiApp::buildCheatsMenu(UiMenuScreen &m)
                         : std::string(tr("Formato: ", "Format: ")) + example);
 
   m.add(CH_ONLINE, ITEM_ACTION, tr("Buscar trucos en internet", "Find cheats online"), "",
-        tr("Busca el juego en cheats\\libretro-cheats.zip (viene con el emulador); si no est\xe1, intenta descargarlo.",
-           "Looks the game up in cheats\\libretro-cheats.zip (comes with the emulator); if it's missing, tries to download it."));
+        tr("Lo m\xe1s nuevo de GitHub (libretro y SuperFW) y la base que viene con el emulador; sin internet, solo esa.",
+           "The newest from GitHub (libretro and SuperFW) and the database that comes with the emulator; offline, just that one."));
 
   // Text lists the player dropped next to the ROM or in cheats\.
   std::string base = uiStripExtension(m.arg);

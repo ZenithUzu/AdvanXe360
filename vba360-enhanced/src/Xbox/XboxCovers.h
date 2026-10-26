@@ -48,6 +48,17 @@ void coversRun(const std::vector<UiCoverItem> &items, const std::string &server)
 bool cheatsFetch(const std::string &romName, const std::string &gameCode, const char *systemFolder,
                  const std::string &zipPath, const std::string &outPath, std::string &err);
 
+// The newest cheats from GitHub (HTTPS): libretro's database (by name) and,
+// for GBA, SuperFW's (by the 4-letter game code). chtTexts: RetroArch .cht
+// texts found. err: "nomatch" (online, nothing for this game) or a network one.
+bool cheatsFetchOnline(const std::string &romName, const std::string &gameCode, const char *systemFolder,
+                       std::vector<std::string> &chtTexts, std::string &err);
+// Helpers (tested on PC): "key":"value" strings of a JSON text; SuperFW's
+// JSON as a .cht; whether a SuperFW file name is for a game code.
+std::vector<std::string> jsonStrings(const std::string &json, const char *key);
+std::string superfwToCht(const std::string &json);
+bool superfwFileFor(const std::string &file, const std::string &code);
+
 // Network for the rest of the emulator (RetroAchievements...).
 bool xboxNetStart(std::string &err);
 // GET (post empty) or POST; http:// or https://. userAgent "" = AdvanXe360.
