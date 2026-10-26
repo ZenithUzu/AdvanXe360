@@ -17,6 +17,7 @@
 //
 
 #include "huc3.h"
+#include "rtc.h"   // rtcNow(): the game clock with the custom time
 #include "../savestate.h"
 #include "gambatte_log.h"
 
@@ -39,7 +40,10 @@ HuC3Chip::HuC3Chip()
 }
 
 void HuC3Chip::doLatch() {
-	uint64_t tmp = (halted_ ? haltTime_ : std::time(0)) - baseTime_;
+	const uint64_t unixtime = halted_ ? haltTime_ : rtcNow();
+	if (baseTime_ > unixtime)   // custom time set back before it started
+		baseTime_ = unixtime;
+	uint64_t tmp = unixtime - baseTime_;
     
     unsigned minute = (tmp / 60) % 1440;
     unsigned day = (tmp / 86400) & 0xFFF;
@@ -181,7 +185,7 @@ void HuC3Chip::write(unsigned p, unsigned data) {
 void HuC3Chip::updateTime() {
     unsigned minute = (writingTime_ & 0xFFF) % 1440;
     unsigned day = (writingTime_ & 0xFFF000) >> 12;
-    baseTime_ = std::time(0) - minute*60 - day*86400;
+    baseTime_ = rtcNow() - minute*60 - day*86400;
     haltTime_ = baseTime_;
     
 }

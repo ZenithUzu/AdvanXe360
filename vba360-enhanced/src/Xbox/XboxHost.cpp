@@ -14,6 +14,7 @@
 #include "fex/fex.h"
 #include <map>
 #include "../gb/gbGambatteBridge.h"
+namespace gambatte { extern long rtcTimeOffset; }   // gambatte/src/mem/rtc.cpp: the custom game time
 
 // Kinect as the Game Boy Camera. nuiapi.lib needs st.lib (skeleton tracking,
 // head detector) even if only the color camera is used. Define
@@ -1736,7 +1737,8 @@ void xboxApplySettings()
   applySoundFlags();
   applyBorder();
   applyGbPalette();
-  rtcSetTimeOffset(g_cfg.clockMode ? g_cfg.clockOffset : 0);
+  rtcSetTimeOffset(g_cfg.clockMode ? g_cfg.clockOffset : 0);   // GBA
+  gambatte::rtcTimeOffset = g_cfg.clockMode ? g_cfg.clockOffset : 0;   // GB / GBC (Pokemon Gold, Silver, Crystal...)
   XBOX_ScreenEffect = videoEffect();
   XBOX_ShaderFilter = shaderFilterFor(xboxVideoFilter());
   showSpeed = videoShowFps() ? 2 : 0;

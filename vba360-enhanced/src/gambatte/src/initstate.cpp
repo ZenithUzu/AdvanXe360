@@ -19,6 +19,7 @@
 #include "initstate.h"
 #include "counterdef.h"
 #include "savestate.h"
+#include "mem/rtc.h"   // rtcNow()
 #include "sound/sound_unit.h"
 #include <algorithm>
 #include <cstring>
@@ -1336,7 +1337,7 @@ void gambatte::setInitState(SaveState &state, bool const cgb, bool const gbaCgbM
 	state.spu.ch4.nr4 = 0;
 	state.spu.ch4.master = false;
 
-	state.rtc.baseTime = std::time(0);
+	state.rtc.baseTime = rtcNow();
 	state.rtc.haltTime = state.rtc.baseTime;
 	state.rtc.dataDh = 0;
 	state.rtc.dataDl = 0;
@@ -1345,7 +1346,7 @@ void gambatte::setInitState(SaveState &state, bool const cgb, bool const gbaCgbM
 	state.rtc.dataS = 0;
 	state.rtc.lastLatchData = false;
 
-	state.huc3.baseTime = std::time(0);
+	state.huc3.baseTime = rtcNow();
 	state.huc3.haltTime = state.huc3.baseTime;
 	state.huc3.dataTime = 0;
 	state.huc3.writingTime = 0;

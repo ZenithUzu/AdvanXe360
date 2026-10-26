@@ -792,8 +792,8 @@ void UiApp::buildMenu(UiMenuScreen &m)
 
   case MENU_CLOCK: {
     m.title = tr("Reloj de los juegos", "Game clock");
-    m.subtitle = tr("Para juegos de GBA con reloj (Pok\xe9mon Rub\xed/Zafiro/Esmeralda, Boktai...)",
-                    "For GBA games with a clock (Pokemon Ruby/Sapphire/Emerald, Boktai...)");
+    m.subtitle = tr("Juegos con reloj: Pok\xe9mon Rub\xed/Zafiro/Esmeralda, Oro/Plata/Cristal, Boktai...",
+                    "Games with a clock: Pokemon Ruby/Sapphire/Emerald, Gold/Silver/Crystal, Boktai...");
     const char *modes[2] = { tr("Hora de la consola", "Console time"), tr("Personalizada", "Custom") };
     m.add(K_MODE, ITEM_OPTION, tr("Hora", "Time"), modes[m_cfg.clockMode],
           tr("Personalizada: elige fecha y hora; despu\xe9s el reloj sigue avanzando.",
