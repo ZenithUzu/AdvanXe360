@@ -1036,7 +1036,7 @@ void xboxCreateFolders()
 {
   static const char *dirs[] = { "saves", "states", "cheats", "screenshots", "thumbs", "config", "bios", "borders", "backgrounds",
                                 "cheats\\gba", "cheats\\gb",
-                                "saves\\backups", "covers", "music", "carts" };
+                                "saves\\backups", "covers", "music", "carts", "sounds", "cheevos", "cheevos\\badges" };
   for (size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++)
     ensureDir(uiJoinPath(xboxEmulatorDir(), dirs[i]));
 }
