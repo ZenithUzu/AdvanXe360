@@ -30,6 +30,8 @@ void setInput(unsigned (*getButtons)());   // A=1 B=2 Select=4 Start=8 Right Lef
 void setBootloader(bool (*get)(bool isCgb, unsigned char *data, unsigned size));
 // Link port device (Game Boy Printer), or 0 for nothing plugged in.
 // Game Boy Camera: fills a 128x112 grayscale picture when the game takes one.
+// One byte of the running game as RetroAchievements addresses it (0 if none).
+unsigned char peek(unsigned address);
 void setCamera(void (*capture)(unsigned char *gray128x112));
 void setSerialDevice(unsigned char (*send)(unsigned char));
 void setRumble(void (*set)(bool on));   // rumble cartridges

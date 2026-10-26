@@ -53,5 +53,9 @@ bool xboxNetStart(std::string &err);
 // GET (post empty) or POST; http:// or https://. userAgent "" = AdvanXe360.
 bool httpRequest(const std::string &url, const std::string &post, std::string &body, std::string &err,
                  const std::string &userAgent);
+// The same, for APIs: true whenever a server answered, with its status code
+// and text (err also says "http 401"...); false only when nothing came back.
+bool httpRequestStatus(const std::string &url, const std::string &post, std::string &body, int &status,
+                       std::string &err, const std::string &userAgent);
 
 #endif

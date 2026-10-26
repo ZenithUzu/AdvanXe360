@@ -80,7 +80,17 @@ Filter xboxSelectedFilter();
 int xboxVideoFilter();
 // Game Boy Printer: saves the printed picture to screenshots\ as a .bmp.
 void xboxGbPrint(const unsigned char *data, int palette);
-bool xboxPointSampler();   // the game picture needs point sampling (sharp, Scale2x/3x)
+bool xboxPointSampler();
+// A picture over the game (achievement pop-ups): its pixels (0 = none), then
+// where it goes each frame and how many of its columns show (it unfolds).
+class UiCanvas;
+void xboxOverlaySet(const UiCanvas *canvas);
+void xboxOverlayPlace(int x, int y, int shownWidth);
+// A short sound in the menus or the game: a 16-bit .wav, or a little chime
+// when path is "" or the file can't be read.
+void xboxPlaySound(const std::string &path);
+// Size of the GBA ROM that was loaded (after patches), for RetroAchievements.
+extern int xboxGbaRomSize;   // the game picture needs point sampling (sharp, Scale2x/3x)
 // Show FPS (per-game value when the game has a custom picture).
 int xboxShowFps();
 

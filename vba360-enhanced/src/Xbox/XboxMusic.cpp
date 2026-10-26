@@ -49,6 +49,7 @@ bool musicParseWav(const unsigned char *buf, long len, WavInfo &out)
 
 #include <xtl.h>
 #include <xaudio2.h>
+#include <math.h>
 
 #include "../ui/UiApp.h"
 
@@ -223,6 +224,89 @@ void xboxMusicStop()
 {
   closeSong();
   g_lastMode = -1;
+}
+
+// --- Short sounds (achievement unlocked) ------------------------------------
+
+namespace {
+IXAudio2SourceVoice *g_sfxVoice = 0;
+std::vector<unsigned char> g_sfx;   // kept until the next sound: the voice reads it while playing
+int g_sfxRate = 0, g_sfxChannels = 0;
+
+// A little two-note chime (mono, 44.1 kHz), for when there's no sound file.
+void makeChime(std::vector<unsigned char> &out)
+{
+  const int rate = 44100, n = rate * 45 / 100;
+  out.resize(n * 2);
+  for (int i = 0; i < n; i++) {
+    float t = (float)i / rate;
+    float f = i < n / 3 ? 1046.5f : 1568.0f;   // C6, then G6
+    float local = i < n / 3 ? t : t - (float)(n / 3) / rate;
+    float env = expf(-local * 9.0f) * (local < 0.004f ? local / 0.004f : 1.0f);
+    float v = sinf(6.2831853f * f * t) * 0.55f + sinf(6.2831853f * f * 2 * t) * 0.15f;
+    int s = (int)(v * env * 20000.0f);
+    out[i * 2] = (unsigned char)((s >> 8) & 0xFF);   // big-endian, as the console plays it
+    out[i * 2 + 1] = (unsigned char)(s & 0xFF);
+  }
+}
+}
+
+void xboxPlaySound(const std::string &path)
+{
+  IXAudio2 *engine = XboxSDL_AudioEngine();
+  if (!engine)
+    return;
+  if (g_sfxVoice) {
+    g_sfxVoice->Stop(0);
+    g_sfxVoice->FlushSourceBuffers();
+    g_sfxVoice->DestroyVoice();
+    g_sfxVoice = 0;
+  }
+  g_sfx.clear();
+  g_sfxRate = 44100;
+  g_sfxChannels = 1;
+  FILE *f = path.empty() ? 0 : fopen(path.c_str(), "rb");
+  if (f) {
+    std::vector<unsigned char> file;
+    unsigned char buf[4096];
+    size_t got;
+    while ((got = fread(buf, 1, sizeof(buf), f)) > 0 && file.size() < 4 * 1024 * 1024)
+      file.insert(file.end(), buf, buf + got);
+    fclose(f);
+    WavInfo w;
+    if (!file.empty() && musicParseWav(&file[0], (long)file.size(), w) &&
+        w.dataStart + w.dataBytes <= (long)file.size()) {
+      g_sfx.assign(file.begin() + w.dataStart, file.begin() + w.dataStart + (w.dataBytes & ~1L));
+      for (size_t i = 0; i + 1 < g_sfx.size(); i += 2) {   // .wav is little-endian
+        unsigned char t = g_sfx[i];
+        g_sfx[i] = g_sfx[i + 1];
+        g_sfx[i + 1] = t;
+      }
+      g_sfxRate = w.rate;
+      g_sfxChannels = w.channels;
+    }
+  }
+  if (g_sfx.empty())
+    makeChime(g_sfx);
+  WAVEFORMATEX fmt;
+  memset(&fmt, 0, sizeof(fmt));
+  fmt.wFormatTag = WAVE_FORMAT_PCM;
+  fmt.nChannels = (WORD)g_sfxChannels;
+  fmt.nSamplesPerSec = (DWORD)g_sfxRate;
+  fmt.wBitsPerSample = 16;
+  fmt.nBlockAlign = (WORD)(g_sfxChannels * 2);
+  fmt.nAvgBytesPerSec = fmt.nSamplesPerSec * fmt.nBlockAlign;
+  if (FAILED(engine->CreateSourceVoice(&g_sfxVoice, &fmt))) {
+    g_sfxVoice = 0;
+    return;
+  }
+  XAUDIO2_BUFFER b;
+  memset(&b, 0, sizeof(b));
+  b.AudioBytes = (UINT32)g_sfx.size();
+  b.pAudioData = &g_sfx[0];
+  b.Flags = XAUDIO2_END_OF_STREAM;
+  g_sfxVoice->SubmitSourceBuffer(&b);
+  g_sfxVoice->Start(0);
 }
 
 #endif // _XBOX

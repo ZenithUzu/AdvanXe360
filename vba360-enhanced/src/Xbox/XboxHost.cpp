@@ -10,6 +10,7 @@
 
 #include "XboxHost.h"
 #include "XboxCovers.h"
+#include "XboxCheevos.h"
 #include "fex/fex.h"
 #include <map>
 #include "../gb/gbGambatteBridge.h"
@@ -78,6 +79,7 @@ extern bool wasPaused;                 // sdl/SDL.cpp: skip one frame-skip measu
 extern u32 autoFrameSkipLastTime;
 extern u32 throttleLastTime;
 extern u8 *rom;
+int xboxGbaRomSize = 0;
 extern u16 systemGbPalette[24];         // sdl/SDL.cpp
 extern u16 gbPalette[128];              // gb/gbGlobals.cpp
 extern int gbPaletteOption;
@@ -549,6 +551,7 @@ public:
     if (!pathExists(xboxStatePath(slot)))
       return false;
     sdlReadState(slot);
+    cheevosReset();
     return true;
   }
 
@@ -705,6 +708,7 @@ public:
   virtual void resetGame()
   {
     emulator.emuReset();
+    cheevosReset();
   }
 
   virtual const UiColor *gameFrame(int &w, int &h, int &pitch)
@@ -857,7 +861,14 @@ public:
   virtual void applySettings()
   {
     applySoundFlags();
+    cheevosStart();   // RetroAchievements turned on / off
   }
+
+  virtual void raPump() { cheevosIdle(); }   // menus: network replies, and the paused game
+  virtual void raInfo(UiRaInfo &out) { cheevosInfo(out); }
+  virtual void raLogin(const std::string &user, const std::string &password) { cheevosLogin(user, password); }
+  virtual void raLogout() { cheevosLogout(); }
+  virtual void raAchievements(std::vector<UiRaAchievement> &out) { cheevosList(out); }
 };
 
 XboxHost g_host;
@@ -1239,10 +1250,18 @@ void xboxOnGameStarted()
   resetFrameTiming();
   g_settleFrames = 30;
   systemScreenMessage(g_cfg.language ? "Menu: right stick click" : "Menu: clic stick derecho");
+  // RetroAchievements: find the game (by the ROM in memory, after patches).
+  extern u8 *gbRom;
+  extern int gbRomSize;
+  if (cartridgeType == 0)
+    cheevosGameStarted(CHEEVOS_GBA, rom, (unsigned)xboxGbaRomSize);
+  else
+    cheevosGameStarted(gambatteIsCgb() ? CHEEVOS_GBC : CHEEVOS_GB, gbRom, (unsigned)gbRomSize);
 }
 
 void xboxOnGameExiting()
 {
+  cheevosGameExited();
   xboxCartridgeRumble(false);
   if (g_ui)
     g_ui->saveAll();   // keeps the sunlight level changed with the stick

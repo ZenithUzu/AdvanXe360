@@ -56,6 +56,7 @@ public:
    void *rombank1_ptr() const { return mem_.rombank1_ptr(); }
    void *zeropage_ptr() const { return mem_.zeropage_ptr(); }
    void *oamram_ptr() const { return mem_.oamram_ptr(); }
+   unsigned char peek(unsigned p) const { return mem_.peek(p); }   // VBA360: RetroAchievements
 #endif
 
 	void setVideoBuffer(video_pixel_t *videoBuf, std::ptrdiff_t pitch) {

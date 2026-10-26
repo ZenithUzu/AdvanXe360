@@ -62,6 +62,26 @@ public:
    void *rombank1_ptr() const { return cart_.romdata(0) + 0x4000; }
    void *zeropage_ptr() const { return (void*)(ioamhram_ + 0x0180); }
    void *oamram_ptr() const { return (void*)ioamhram_; }
+   // VBA360: what the CPU sees at p, for RetroAchievements, without the side
+   // effects of a real read (I/O registers give their stored value). 0x10000-
+   // 0x15FFF: the Game Boy Color's work RAM banks 2-7, where rcheevos puts them.
+   unsigned char peek(unsigned p) const {
+      if (p >= 0x10000)
+         return isCgb() && p < 0x16000 ? cart_.wramdata(0)[0x2000 + (p - 0x10000)] : 0;
+      if (p >= 0xFE00)
+         return ioamhram_[p - 0xFE00];
+      if (p >= 0xE000)
+         p -= 0x2000;   // echo of work RAM
+      if (p >= 0xC000)
+         return cart_.wramdata(p >> 12 & 1)[p & 0xFFF];
+      if (const unsigned char *rm = cart_.rmem(p >> 12))
+         return rm[p];
+      if (p >= 0x8000 && p < 0xA000)
+         return cart_.vrambankptr()[p];
+      if (p >= 0xA000 && cart_.rsrambankptr())
+         return cart_.rsrambankptr()[p];
+      return 0xFF;
+   }
 #else
    void loadSavedata() { cart_.loadSavedata(); }
    void saveSavedata() { cart_.saveSavedata(); }

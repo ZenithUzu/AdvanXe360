@@ -237,6 +237,10 @@ void *GB::zeropage_ptr() const {
 void *GB::oamram_ptr() const {
  return p_->cpu.oamram_ptr();
 }
+
+unsigned char GB::peek(unsigned address) const {
+ return p_->cpu.peek(address);
+}
 #endif
 
 }

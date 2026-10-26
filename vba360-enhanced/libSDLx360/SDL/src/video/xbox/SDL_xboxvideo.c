@@ -105,6 +105,9 @@ struct private_yuvhwdata {
 /* Set by the emulator to draw a border image behind the game picture
    (NULL = black bars). */
 void (*XBOX_BackgroundHook)(void) = NULL;
+/* Called after the game picture, before it is shown: the emulator draws
+   its pop-ups (achievements) over the game there. */
+void (*XBOX_OverlayHook)(void) = NULL;
 
 /* Set by the emulator: where the game picture goes on the 1280x720 screen
    (left, top, right, bottom), used when XBOX_UseCustomRect is non-zero. */
@@ -771,6 +774,8 @@ static int XBOX_RenderSurface(_THIS, SDL_Surface *surface)
 	else
 		IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0L);
     IDirect3DDevice9_DrawPrimitive(D3D_Device,  D3DPT_TRIANGLESTRIP, 0, 2 ); 
+	if (XBOX_OverlayHook)
+		XBOX_OverlayHook();
 	IDirect3DDevice9_Present(D3D_Device,NULL,NULL,NULL,NULL);
 
 	return (1);
@@ -851,6 +856,8 @@ static void XBOX_UpdateRects(_THIS, int numrects, SDL_Rect *rects)
 	else
 		IDirect3DDevice9_Clear(D3D_Device, 0, NULL, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0L);
 	IDirect3DDevice9_DrawPrimitive(D3D_Device,  D3DPT_TRIANGLESTRIP, 0, 2 ); 
+	if (XBOX_OverlayHook)
+		XBOX_OverlayHook();
 	IDirect3DDevice9_Present(D3D_Device,NULL,NULL,NULL,NULL);
 
 
@@ -1069,6 +1076,8 @@ int XBOX_DisplayYUVOverlay(_THIS, SDL_Overlay *overlay, SDL_Rect *src, SDL_Rect 
 	IDirect3DTexture9_UnlockRect(surface, 0);
 
 	IDirect3DDevice9_DrawPrimitive(D3D_Device,  D3DPT_TRIANGLESTRIP, 0, 2 ); 
+	if (XBOX_OverlayHook)
+		XBOX_OverlayHook();
 	IDirect3DDevice9_Present(D3D_Device,NULL,NULL,NULL,NULL);	 
 
 	return 0;

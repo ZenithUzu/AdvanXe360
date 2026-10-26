@@ -60,6 +60,7 @@
 
 #include "../Xbox/Main.h"
 #include "../Xbox/XboxHost.h"
+#include "../Xbox/XboxCheevos.h"
 #include "../Xbox/XboxLog.h"   // last: stdout prints go to vba360.log
 
 #ifndef _WIN32
@@ -1699,6 +1700,7 @@ int gba_main(char *path, char *fname)
         // against (FLASH1M_V, SRAM_V, EEPROM_V, SIIRTC_V...). Pokemon hacks
         // need 128KB flash + RTC; the old 64KB default broke their saves.
         utilGBAFindSave(rom, size);
+        xboxGbaRomSize = size;   // RetroAchievements hashes the ROM as it is in memory
         sdlApplyPerImagePreferences();
         // Options chosen for this ROM file win over everything else.
         xboxApplyGameOverrides(true);
@@ -1966,6 +1968,7 @@ void drawSpeed(u8 *screen, int pitch, int x, int y)
 
 void systemDrawScreen()
 {
+  cheevosFrame();   // RetroAchievements: every emulated frame, drawn or skipped
   if (xboxSkipFrame())
     return;
   xboxBlendFrame();

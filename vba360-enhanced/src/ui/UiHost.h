@@ -41,6 +41,26 @@ struct UiCoverItem
   int systems[UI_COVER_SYSTEMS];   // UI_COVER_* to look in, in order; -1 ends
 };
 
+// RetroAchievements, for the menus.
+enum { UI_RA_OFF = 0, UI_RA_LOGGED_OUT, UI_RA_LOGGING_IN, UI_RA_LOGGED_IN, UI_RA_FAILED };
+struct UiRaInfo
+{
+  int state;               // UI_RA_*
+  std::string user;        // the account's name
+  std::string message;     // why the login failed, or the last notice
+  std::string game;        // the running game's title on RetroAchievements ("" none)
+  int unlocked, total;     // achievements of that game
+  int points, pointsTotal;
+  UiRaInfo() : state(UI_RA_OFF), unlocked(0), total(0), points(0), pointsTotal(0) {}
+};
+struct UiRaAchievement
+{
+  std::string title, description, progress;   // progress: "12/50" or ""
+  int points;
+  bool unlocked;
+  UiRaAchievement() : points(0), unlocked(false) {}
+};
+
 struct UiCoverStatus
 {
   bool running;           // the job is still working
@@ -90,6 +110,12 @@ public:
   // when no hand is up. handStop turns the skeleton tracking off.
   virtual bool handCursor(int &x, int &y) { return false; }
   virtual void handStop() {}
+  // RetroAchievements: raPump every menu frame (network replies: login...).
+  virtual void raPump() {}
+  virtual void raInfo(UiRaInfo &out) { out = UiRaInfo(); }
+  virtual void raLogin(const std::string &user, const std::string &password) {}
+  virtual void raLogout() {}
+  virtual void raAchievements(std::vector<UiRaAchievement> &out) { out.clear(); }
   // Connects over HTTPS to RetroAchievements and GitHub; report: what happened.
   virtual bool netTest(std::string &report) { report = "-"; return false; }
   // The ROM inside a .zip / .7z (its name in the archive), "" if none.

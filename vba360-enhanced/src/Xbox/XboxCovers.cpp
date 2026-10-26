@@ -521,9 +521,10 @@ std::string unchunk(const std::string &body)
 // GET (post empty) or POST a URL into body; http:// or https:// (TLS by
 // BearSSL, see XboxTls.h). err: "" or a short reason ("dns", "connect",
 // "tls 62", "http 404"...). Follows redirects.
-bool httpRequest(const std::string &url0, const std::string &post, std::string &body, std::string &err,
-                 const std::string &userAgent)
+bool httpRequestStatus(const std::string &url0, const std::string &post, std::string &body, int &status,
+                       std::string &err, const std::string &userAgent)
 {
+  status = 0;
   std::string url = url0;
   for (int hop = 0; hop < 4; hop++) {
     std::string host, path;
@@ -591,7 +592,7 @@ bool httpRequest(const std::string &url0, const std::string &post, std::string &
     }
     std::string head = data.substr(0, he + 2);
     size_t sp = head.find(' ');
-    int status = sp == std::string::npos ? 0 : atoi(head.c_str() + sp + 1);
+    status = sp == std::string::npos ? 0 : atoi(head.c_str() + sp + 1);
     if (status >= 300 && status < 400) {
       std::string loc = headerValue(head, "location");
       if (loc.empty()) {
@@ -603,16 +604,28 @@ bool httpRequest(const std::string &url0, const std::string &post, std::string &
       url = loc;
       continue;
     }
-    if (status != 200) {
-      err = "http " + intStr(status);
-      return false;
-    }
+    // Any other answer is the server's: its text matters too (an API saying
+    // "wrong password" with a 401...).
     body = data.substr(he + 4);
     if (lowerAscii(headerValue(head, "transfer-encoding")).find("chunked") != std::string::npos)
       body = unchunk(body);
+    if (status != 200)
+      err = "http " + intStr(status);
     return true;
   }
   err = "redirects";
+  return false;
+}
+
+bool httpRequest(const std::string &url, const std::string &post, std::string &body, std::string &err,
+                 const std::string &userAgent)
+{
+  int status;
+  if (!httpRequestStatus(url, post, body, status, err, userAgent))
+    return false;
+  if (status == 200)
+    return true;
+  body.clear();
   return false;
 }
 

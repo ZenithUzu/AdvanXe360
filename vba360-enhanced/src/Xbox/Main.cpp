@@ -10,6 +10,7 @@
 #include "Storage.h"
 #include "XboxHost.h"
 #include "XboxMusic.h"
+#include "XboxCheevos.h"
 #define XBOX_LOG_NO_REDIRECT
 #include "XboxLog.h"
 
@@ -73,6 +74,7 @@ VOID __cdecl main()
   UiApp ui(xboxHost(), g_cfg);
   g_cfg.load(ui.configPath());
   g_ui = &ui;
+  cheevosStart();   // RetroAchievements: logs in with the saved token
   ui.loadLists();
   ui.openHome();
 

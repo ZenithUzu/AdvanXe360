@@ -100,6 +100,9 @@ struct UiConfig
   int listView;                 // UiListView
   int bgEffect;                 // UiBgEffect bits (0 = none)
   int startScreen;              // 0 = library, 1 = file browser
+  int raEnabled;                // RetroAchievements on (softcore)
+  std::string raUser, raToken;  // the account, and the token the site gave at login (not the password)
+  int raSound;                  // a sound with each achievement
   int kinect;                   // Kinect connected: 0 = never touched, 1 = its features below can be used
   int kinectHands;              // move through the Library with your hand (Kinect)
   int kinectCamera;             // the Game Boy Camera sees through the Kinect

@@ -147,6 +147,8 @@ public:
    void *rombank1_ptr() const;
    void *zeropage_ptr() const;
    void *oamram_ptr() const;
+   // VBA360: one byte as the CPU sees it, for RetroAchievements (see Memory::peek).
+   unsigned char peek(unsigned address) const;
 #endif
 
 private:

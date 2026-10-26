@@ -109,6 +109,7 @@ void unload()
 }
 
 bool loaded() { return gb != 0; }
+unsigned char peek(unsigned address) { return gb ? gb->peek(address) : 0; }
 bool isCgb() { return gb && gb->isCgb(); }
 void reset() { if (gb) gb->reset(); }
 
