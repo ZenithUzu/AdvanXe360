@@ -206,7 +206,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>src;../zlib;../libPNG/src;../libSDLx360/SDL/include;dependencies/File_Extractor-1.0.0;dependencies/BearSSL/inc;dependencies/rcheevos/include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;_XBOX;C_CORE;NO_DEBUGGER;SDL;VERSION=1.0;WORDS_BIGENDIAN;HAVE_ZLIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_XBOX;C_CORE;XBOX_NO_KINECT;NO_DEBUGGER;SDL;VERSION=1.0;WORDS_BIGENDIAN;HAVE_ZLIB</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -285,7 +285,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>src;../zlib;../libPNG/src;../libSDLx360/SDL/include;dependencies/File_Extractor-1.0.0;dependencies/BearSSL/inc;dependencies/rcheevos/include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_XBOX;C_CORE;NO_DEBUGGER;SDL;VERSION=1.0;WORDS_BIGENDIAN;BLIP_BUFFER_FAST=1;FINAL_VERSION;SPEEDHAX;HAVE_ZLIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_XBOX;C_CORE;XBOX_NO_KINECT;NO_DEBUGGER;SDL;VERSION=1.0;WORDS_BIGENDIAN;BLIP_BUFFER_FAST=1;FINAL_VERSION;SPEEDHAX;HAVE_ZLIB</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -317,7 +317,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>src;../zlib;../libPNG/src;../libSDLx360/SDL/include;dependencies/File_Extractor-1.0.0;dependencies/BearSSL/inc;dependencies/rcheevos/include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_XBOX;LTCG;C_CORE;NO_DEBUGGER;SDL;VERSION=1.0;WORDS_BIGENDIAN;BLIP_BUFFER_FAST=1;FINAL_VERSION;HAVE_ZLIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_XBOX;LTCG;C_CORE;XBOX_NO_KINECT;NO_DEBUGGER;SDL;VERSION=1.0;WORDS_BIGENDIAN;BLIP_BUFFER_FAST=1;FINAL_VERSION;HAVE_ZLIB</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>

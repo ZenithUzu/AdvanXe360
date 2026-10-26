@@ -87,7 +87,9 @@ struct ConfigReader
     else if (k == "list_view") c.listView = clampInt(v, 0, LIST_VIEW_COUNT - 1, c.listView);
     else if (k == "bg_effect") c.bgEffect = clampInt(v, 0, UI_EFFECT_COUNT - 1, c.bgEffect);
     else if (k == "start_screen") c.startScreen = clampInt(v, 0, 1, c.startScreen);
+#ifndef XBOX_NO_KINECT   // the build without Kinect: always off, whatever the file says
     else if (k == "kinect") c.kinect = clampInt(v, 0, 1, c.kinect);
+#endif
     else if (k == "ra_enabled") c.raEnabled = clampInt(v, 0, 1, c.raEnabled);
     else if (k == "ra_user") c.raUser = v;
     else if (k == "ra_token") c.raToken = v;

@@ -708,7 +708,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_CLOCK, ITEM_SUBMENU, tr("Reloj de los juegos", "Game clock"));
     m.add(MENU_SETTINGS_UI, ITEM_SUBMENU, tr("Interfaz e idioma", "Interface & language"));
     m.add(MENU_SETTINGS_LOOK, ITEM_SUBMENU, tr("Apariencia", "Appearance"));
+#ifndef XBOX_NO_KINECT
     m.add(MENU_SETTINGS_KINECT, ITEM_SUBMENU, "Kinect");
+#endif
     m.add(MENU_SETTINGS_RA, ITEM_SUBMENU, "RetroAchievements");
     break;
 
