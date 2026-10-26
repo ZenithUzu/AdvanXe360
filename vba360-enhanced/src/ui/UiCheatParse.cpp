@@ -236,6 +236,50 @@ bool uiSaveCheatStore(const std::string &path, const std::vector<UiStoredCheat> 
   return true;
 }
 
+bool uiCheatHasBlank(const std::string &code)
+{
+  for (size_t i = 0; i < code.size(); i++)
+    if (code[i] == '?' || code[i] == 'X' || code[i] == 'x')
+      return true;
+  return false;
+}
+
+std::string uiCheatFillBlank(const std::string &code, const std::string &value)
+{
+  std::string out;
+  for (size_t i = 0; i < code.size();) {
+    if (code[i] != '?' && code[i] != 'X' && code[i] != 'x') {
+      out += code[i++];
+      continue;
+    }
+    size_t n = 0;
+    while (i + n < code.size() && (code[i + n] == '?' || code[i + n] == 'X' || code[i + n] == 'x'))
+      n++;
+    std::string v = value.size() > n ? value.substr(value.size() - n) : std::string(n - value.size(), '0') + value;
+    for (size_t k = 0; k < v.size(); k++)
+      v[k] = (char)toupper((unsigned char)v[k]);
+    out += v;
+    i += n;
+  }
+  return out;
+}
+
+// A code with a value to fill in: kept as written (blank) if it is a valid
+// code once filled, so the player can choose the value.
+static bool parseWithBlank(const std::string &text, bool gba, UiCheatEntry &e)
+{
+  std::vector<UiParsedCode> codes;
+  if (uiParseCheatCodes(text, gba, codes)) {
+    e.codes.insert(e.codes.end(), codes.begin(), codes.end());
+    return true;
+  }
+  if (!uiCheatHasBlank(text) || !uiParseCheatCodes(uiCheatFillBlank(text, "0"), gba, codes))
+    return false;
+  e.codes.insert(e.codes.end(), codes.begin(), codes.end());
+  e.blank += (e.blank.empty() ? "" : " ") + text;
+  return true;
+}
+
 bool uiParseCheatFile(const std::string &path, bool gba, std::vector<UiCheatEntry> &out)
 {
   FILE *f = fopen(path.c_str(), "r");
@@ -264,7 +308,7 @@ bool uiParseCheatFile(const std::string &path, bool gba, std::vector<UiCheatEntr
           if ((int)rarch.size() <= n)
             rarch.resize(n + 1);
           if (key == "desc") rarch[n].desc = val;
-          else if (key == "code") uiParseCheatCodes(val, gba, rarch[n].codes);
+          else if (key == "code") parseWithBlank(val, gba, rarch[n]);
           else if (key == "enable") rarch[n].enabled = val == "true" || val == "1";
         }
         continue;
@@ -274,14 +318,22 @@ bool uiParseCheatFile(const std::string &path, bool gba, std::vector<UiCheatEntr
       continue;   // "cheats = 12"
 
     // Plain text: a code line, or a description for the codes below it.
-    std::vector<UiParsedCode> codes;
-    if (uiParseCheatCodes(line, gba, codes)) {
+    UiCheatEntry probe;
+    if (parseWithBlank(line, gba, probe)) {
       if (!lastWasCode || out.empty()) {
         UiCheatEntry e;
         e.desc = pendingDesc;
         out.push_back(e);
       }
-      out.back().codes.insert(out.back().codes.end(), codes.begin(), codes.end());
+      UiCheatEntry &e = out.back();
+      // Once a cheat has a blank, all of it is kept as written (blank), the
+      // lines before included.
+      if (!probe.blank.empty() && e.blank.empty())
+        for (size_t k = 0; k < e.codes.size(); k++)
+          e.blank += (k ? " " : "") + e.codes[k].code;
+      if (!e.blank.empty() || !probe.blank.empty())
+        e.blank += (e.blank.empty() ? "" : " ") + (probe.blank.empty() ? line : probe.blank);
+      e.codes.insert(e.codes.end(), probe.codes.begin(), probe.codes.end());
       lastWasCode = true;
     } else {
       // Strip decorations like "[Infinite money]" or "Infinite money:"

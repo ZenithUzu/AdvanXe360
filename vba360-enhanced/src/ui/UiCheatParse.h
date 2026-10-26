@@ -43,9 +43,17 @@ struct UiCheatEntry
 {
   std::string desc;
   std::vector<UiParsedCode> codes;
+  std::string blank;   // the code as written when it has a value to fill in (see below)
   bool enabled;
   UiCheatEntry() : enabled(false) {}
 };
+
+// Codes from cheat lists that leave a value to the player ("33002708+00??"
+// score, "320091CF+00XX" item...): '?' and 'X' mark the digits to fill in.
+bool uiCheatHasBlank(const std::string &code);
+// Fills each run of blanks with value (hex), right-aligned and padded with
+// zeros to the run's length: "33002708+00??" with "E4" -> "33002708+00E4".
+std::string uiCheatFillBlank(const std::string &code, const std::string &value);
 
 // Splits a line like "82025BC4 0F42" or "A1B2C3D4 E5F60718 11223344 55667788"
 // into codes. Returns false if anything in it is not a valid code.

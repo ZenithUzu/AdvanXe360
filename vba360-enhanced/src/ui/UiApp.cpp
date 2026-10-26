@@ -46,7 +46,8 @@ enum
 {
   CONFIRM_QUIT = 1, CONFIRM_DELETE_CHEAT, CONFIRM_RESET_CONTROLS, CONFIRM_RESET_GAME,
   CONFIRM_DELETE_STATES, CONFIRM_RESET_ALL,
-  KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC, KEYBOARD_SEARCH, KEYBOARD_RA_USER, KEYBOARD_RA_PASS
+  KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC, KEYBOARD_SEARCH, KEYBOARD_RA_USER, KEYBOARD_RA_PASS,
+  KEYBOARD_CHEAT_VALUE, KEYBOARD_CHEAT_EDIT
 };
 
 const int kStateSlots = 9;   // slots 1..9 (0 is the automatic one)
@@ -147,7 +148,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
     m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_netTest(0), m_updateCheck(0), m_raWaiting(false), m_raLastState(-1), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
-    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
+    m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_cheatEditIndex(-1), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
 
@@ -1500,10 +1501,14 @@ void UiApp::buildCheatsMenu(UiMenuScreen &m)
     m.addInfo(tr("No hay trucos para este juego.", "No cheats for this game."));
   } else {
     m.addHeader(tr("TRUCOS DEL JUEGO", "GAME CHEATS"));
+    m.hints.push_back(tr("X:Editar", "X:Edit"));
     m.hints.push_back(tr("Y:Borrar", "Y:Delete"));
     for (size_t i = 0; i < cheats.size(); i++) {
-      UiMenuItem &it = m.add(CH_CHEAT_BASE + (int)i, ITEM_OPTION, cheats[i].desc,
-                             cheats[i].enabled ? tr("Activado", "On") : tr("Desactivado", "Off"));
+      // A code with a value left to the player (?? / XX): asked when turned on.
+      const char *state = uiCheatHasBlank(cheats[i].code) ? tr("Elegir valor", "Pick value")
+                          : cheats[i].enabled           ? tr("Activado", "On")
+                                                        : tr("Desactivado", "Off");
+      UiMenuItem &it = m.add(CH_CHEAT_BASE + (int)i, ITEM_OPTION, cheats[i].desc, state);
       it.help = cheats[i].code;
     }
   }
@@ -1848,6 +1853,13 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
       std::vector<UiCheatInfo> cheats;
       m_host.listCheats(m.arg, cheats);
       int i = id - CH_CHEAT_BASE;
+      if (i < (int)cheats.size() && uiCheatHasBlank(cheats[i].code)) {
+        m_cheatRom = m.arg;
+        m_cheatEditIndex = i;
+        openKeyboard(cheats[i].desc + tr(": valor en hexadecimal (ej. E4)", ": value in hexadecimal (e.g. E4)"), "",
+                     KEYBOARD_CHEAT_VALUE);
+        return;
+      }
       if (i < (int)cheats.size())
         m_host.setCheatEnabled(m.arg, i, !cheats[i].enabled);
     }
@@ -1977,6 +1989,16 @@ void UiApp::onMenuSecondary(UiMenuScreen &m, int id, int button)
     } else if (button == PAD_START) {
       openConfirm(tr("\xbfRestablecer todos los controles?", "Reset all controls?"), CONFIRM_RESET_CONTROLS, "");
     }
+  } else if (m.menuId == MENU_CHEATS && button == PAD_X && id >= CH_CHEAT_BASE) {
+    // Change the code: another value (an item, a score...) or a typo.
+    std::vector<UiCheatInfo> cheats;
+    m_host.listCheats(m.arg, cheats);
+    int i = id - CH_CHEAT_BASE;
+    if (i < (int)cheats.size()) {
+      m_cheatRom = m.arg;
+      m_cheatEditIndex = i;
+      openKeyboard(cheats[i].desc + tr(": editar c\xf3""digo", ": edit code"), cheats[i].code, KEYBOARD_CHEAT_EDIT);
+    }
   } else if (m.menuId == MENU_CHEATS && button == PAD_Y && id >= CH_CHEAT_BASE) {
     m_cheatRom = m.arg;
     openConfirm(tr("\xbf""Borrar este truco?", "Delete this cheat?"), CONFIRM_DELETE_CHEAT,
@@ -2005,7 +2027,8 @@ void UiApp::onMenuClosed(UiMenuScreen &m)
 void UiApp::openKeyboard(const std::string &title, const std::string &initial, int purpose)
 {
   bool account = purpose == KEYBOARD_RA_USER || purpose == KEYBOARD_RA_PASS;
-  push(new UiKeyboardScreen(title, initial, purpose, purpose != KEYBOARD_CHEAT, purpose == KEYBOARD_SEARCH,
+  bool hex = purpose == KEYBOARD_CHEAT || purpose == KEYBOARD_CHEAT_VALUE || purpose == KEYBOARD_CHEAT_EDIT;
+  push(new UiKeyboardScreen(title, initial, purpose, !hex, purpose == KEYBOARD_SEARCH,
                             account, purpose == KEYBOARD_RA_PASS));
 }
 
@@ -2150,6 +2173,41 @@ void UiApp::onKeyboardDone(int purpose, const std::string &text, bool accepted)
     m_host.raLogin(m_raUserTyped, text);   // the password goes to the site and is forgotten here
     m_raWaiting = true;
     toast(tr("Iniciando sesi\xf3n en RetroAchievements...", "Logging in to RetroAchievements..."), 600);
+    rebuildMenus();
+    return;
+  }
+  if (purpose == KEYBOARD_CHEAT_VALUE || purpose == KEYBOARD_CHEAT_EDIT) {
+    std::vector<UiCheatInfo> cheats;
+    m_host.listCheats(m_cheatRom, cheats);
+    if (m_cheatEditIndex < 0 || m_cheatEditIndex >= (int)cheats.size())
+      return;
+    std::string code;
+    if (purpose == KEYBOARD_CHEAT_VALUE) {
+      std::string v;
+      for (size_t i = 0; i < text.size(); i++)
+        if (text[i] != ' ')
+          v += text[i];
+      bool hexOnly = !v.empty() && v.size() <= 8;
+      for (size_t i = 0; i < v.size() && hexOnly; i++)
+        hexOnly = isxdigit((unsigned char)v[i]) != 0;
+      if (!hexOnly) {
+        toast(tr("Escribe un valor hexadecimal (0-9, A-F)", "Type a hexadecimal value (0-9, A-F)"));
+        return;
+      }
+      code = uiCheatFillBlank(cheats[m_cheatEditIndex].code, v);
+    } else {
+      for (size_t i = 0; i < text.size(); i++)   // single spaces, none at the ends
+        if (text[i] != ' ' || (!code.empty() && code[code.size() - 1] != ' '))
+          code += text[i];
+      while (!code.empty() && code[code.size() - 1] == ' ')
+        code.erase(code.size() - 1);
+    }
+    if (!m_host.editCheat(m_cheatRom, m_cheatEditIndex, code))
+      toast(tr("C\xf3""digo no v\xe1lido", "Invalid code"));
+    else if (uiCheatHasBlank(code))
+      toast(tr("Guardado; falta elegir su valor", "Saved; its value is still to pick"));
+    else
+      toast(tr("Truco actualizado y activado", "Cheat updated and enabled"));
     rebuildMenus();
     return;
   }
