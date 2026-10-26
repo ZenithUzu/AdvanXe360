@@ -114,7 +114,7 @@ void queueJob(Job *j)
     InitializeCriticalSection(&g_lock);
     g_wake = CreateEvent(NULL, FALSE, FALSE, NULL);
     g_thread = CreateThread(NULL, 64 * 1024, netThread, NULL, CREATE_SUSPENDED, NULL);
-    XSetThreadProcessor(g_thread, 2);   // away from the emulator's core
+    XSetThreadProcessor(g_thread, 5);   // away from the emulator and the sound (2): TLS is heavy math
     ResumeThread(g_thread);
   }
   EnterCriticalSection(&g_lock);

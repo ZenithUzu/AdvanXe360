@@ -2110,6 +2110,10 @@ void system10Frames(int rate)
         if(systemFrameSkip > 0)
           systemFrameSkip--;
       }
+    } else if(speed >= 90) {
+      // AdvanXe360: 90-97% is the audio wait's own jitter (it lets the game
+      // run in ~23 ms steps), not a slow game: it used to start skipping
+      // frames (45 fps) in games that run at full speed.
     } else {
       if(speed  < 80)
         frameskipadjust -= (90 - speed)/5;
