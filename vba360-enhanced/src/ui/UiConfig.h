@@ -227,6 +227,7 @@ std::string uiJoinPath(const std::string &dir, const std::string &name);
 std::string uiParentDir(const std::string &path);   // "" at a drive root
 std::string uiFileName(const std::string &path);
 std::string uiStripExtension(const std::string &name);
+#define UI_APP_VERSION "0.5.0"   // compared with the latest GitHub release ("v0.5.0")
 // "v0.6.0" newer than "0.5.0"? (numbers compared one by one; a leading v is ignored)
 bool uiVersionNewer(const std::string &a, const std::string &b);
 std::string uiExtension(const std::string &name);   // lower case, with dot
