@@ -689,23 +689,11 @@ bool CPUWriteState(const char *file)
 
 bool CPUWriteMemState(char *memory, int available)
 {
-  // Stored, not compressed ("w0"): only rewind uses it, and it keeps what
-  // changed between two states, which compression would scramble.
-  gzFile gzFile = utilMemGzOpen(memory, available, "w0");
-
-  if(gzFile == NULL) {
-    return false;
-  }
-
-  bool res = CPUWriteState(gzFile);
-
-  long pos = utilGzMemTell(gzFile)+8;
-
-  if(pos >= (available))
-    res = false;
-
+  // Plain bytes, no zlib: only rewind uses it, many times a second, and it
+  // keeps what changed between two states (compression would scramble that).
+  gzFile gzFile = utilMemRawOpen(memory, available);
+  bool res = CPUWriteState(gzFile) && !utilMemRawFull();
   utilGzClose(gzFile);
-
   return res;
 }
 
@@ -883,7 +871,7 @@ static bool CPUReadState(gzFile gzFile)
 
 bool CPUReadMemState(char *memory, int available)
 {
-  gzFile gzFile = utilMemGzOpen(memory, available, "r");
+  gzFile gzFile = utilMemRawOpen(memory, available);   // as CPUWriteMemState wrote it
 
   bool res = CPUReadState(gzFile);
 
