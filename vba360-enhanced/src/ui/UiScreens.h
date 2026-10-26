@@ -197,7 +197,7 @@ private:
   int m_layer;            // account: 0 abc, 1 ABC, 2 symbols
   int keyRows() const { return m_full ? 4 : 3; }
   void drawSearch(UiApp &app, UiCanvas &c);
-  int keyCols() const { return m_full ? 10 : 6; }
+  int keyCols() const { return m_account ? 10 : m_full ? 11 : 6; }
   const char *keyLabel(int r, int c) const;
 };
 

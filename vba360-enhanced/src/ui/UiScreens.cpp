@@ -1984,7 +1984,8 @@ const char *kKeys[4][6] = {
   { "C", "D", "E", "F", ":", "-" },
   { 0, 0, 0, 0, 0, 0 }   // bottom row: space / delete / OK (drawn specially)
 };
-const char *const kFullKeys[4] = { "ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ-'.&", "1234567890" };
+// Text (names, search): the Spanish alphabet, \xd1 (N with tilde) after N.
+const char *const kFullKeys[4] = { "ABCDEFGHIJK", "LMN\xd1OPQRSTU", "VWXYZ-'.&!?", "1234567890," };
 // User names and passwords (LT: the next layer).
 const char *const kAccountKeys[3][4] = {
   { "abcdefghij", "klmnopqrst", "uvwxyz-_.@", "1234567890" },
@@ -2168,7 +2169,8 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
     c.fillRect(x + 50 + tw, y + 78, 2, 28, UI_COL_ACCENT);
 
   int nc = keyCols(), last = keyRows();
-  int kw = m_full ? 52 : 84, kh = m_full ? 50 : 56, gap = m_full ? 6 : 8;
+  int gap = m_full ? 6 : 8, kh = m_full ? 50 : 56;
+  int kw = m_full ? (w - 64 - gap * (nc - 1)) / nc : 84;   // 10 or 11 keys fill the panel
   int gx = x + (w - (kw * nc + gap * (nc - 1))) / 2, gy = y + 140;
   for (int r = 0; r <= last; r++) {
     int cols = r == last ? 3 : nc;
