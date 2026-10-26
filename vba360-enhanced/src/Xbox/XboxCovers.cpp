@@ -995,6 +995,34 @@ bool cheatsFetch(const std::string &romName, const std::string &gameCode, const 
   return ok;
 }
 
+std::string cheatsIndexLookup(const std::string &zipPath, const std::string &key)
+{
+  std::string found;
+  fex_t *fe = 0;
+  if (key.empty() || fex_open(&fe, zipPath.c_str()) || !fe)
+    return found;
+  while (!fex_done(fe)) {
+    if (std::string(fex_name(fe)).find("_gamecodes.txt") != std::string::npos) {
+      const void *data = 0;
+      if (!fex_data(fe, &data) && data) {
+        std::string idx((const char *)data, fex_size(fe));
+        size_t at = 0;
+        while ((at = idx.find(key + "=", at)) != std::string::npos && at > 0 && idx[at - 1] != '\n')
+          at++;   // only at the start of a line
+        if (at != std::string::npos) {
+          size_t from = at + key.size() + 1, eol = idx.find_first_of("\r\n", from);
+          found = idx.substr(from, eol == std::string::npos ? std::string::npos : eol - from);
+        }
+      }
+      break;
+    }
+    if (fex_next(fe))
+      break;
+  }
+  fex_close(fe);
+  return found;
+}
+
 // --- Cheats straight from GitHub (HTTPS) ----------------------------------------
 //
 // The newest codes, one game at a time: GitHub's API lists the console's

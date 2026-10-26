@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <deque>
+#include <png.h>   // badges decoded on the network thread (libpng, already in the build)
 #include <map>
 
 #define RC_CLIENT_SUPPORTS_HASH   // as the rcheevos library is built (rcheevos.vcxproj)
@@ -59,6 +60,8 @@ std::string g_userAgent;
 
 // --- Network ------------------------------------------------------------------
 
+enum { BADGE_PX = 84 };   // a badge's size in the pop-up
+
 struct Job
 {
   std::string url, post;
@@ -67,10 +70,84 @@ struct Job
   void *callbackData;
   std::string body;
   int status;
-  Job() : callback(0), callbackData(0), status(0) {}
+  bool decode;                  // a badge: decode it into g_badgePx once saved
+  Job() : callback(0), callbackData(0), status(0), decode(false) {}
 };
 
 std::deque<Job *> g_todo, g_done;
+
+// --- Badge pictures, decoded ahead -------------------------------------------------
+// Decoding a badge (reading its file, D3DX) when its pop-up showed took
+// 15-40 ms: a stutter in the game. The network thread decodes each badge as
+// it arrives (or from the file saved before) into this cache, with libpng.
+std::map<std::string, std::vector<UiColor> > g_badgePx;   // by file; g_lock on the console
+
+// A PNG file as w x h pixels (0xAARRGGBB), scaled with bilinear filtering.
+bool decodePng(const std::string &path, int w, int h, std::vector<UiColor> &out)
+{
+  FILE *f = fopen(path.c_str(), "rb");
+  if (!f)
+    return false;
+  png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  png_infop info = png ? png_create_info_struct(png) : NULL;
+  std::vector<unsigned char> rgba;
+  std::vector<png_bytep> rows;
+  int sw = 0, sh = 0;
+  bool ok = false;
+  if (info && !setjmp(png_jmpbuf(png))) {
+    png_init_io(png, f);
+    png_read_info(png, info);
+    sw = (int)png_get_image_width(png, info);
+    sh = (int)png_get_image_height(png, info);
+    int type = png_get_color_type(png, info);
+    // Whatever it is, as 8-bit RGBA.
+    if (png_get_bit_depth(png, info) == 16)
+      png_set_strip_16(png);
+    if (type == PNG_COLOR_TYPE_PALETTE)
+      png_set_palette_to_rgb(png);
+    if (type == PNG_COLOR_TYPE_GRAY && png_get_bit_depth(png, info) < 8)
+      png_set_expand(png);
+    if (png_get_valid(png, info, PNG_INFO_tRNS))
+      png_set_tRNS_to_alpha(png);
+    if (type == PNG_COLOR_TYPE_GRAY || type == PNG_COLOR_TYPE_GRAY_ALPHA)
+      png_set_gray_to_rgb(png);
+    if (!(type & PNG_COLOR_MASK_ALPHA) && !png_get_valid(png, info, PNG_INFO_tRNS))
+      png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+    png_read_update_info(png, info);
+    if (sw > 0 && sh > 0 && sw <= 1024 && sh <= 1024 && png_get_rowbytes(png, info) == (png_size_t)sw * 4) {
+      rgba.resize((size_t)sw * sh * 4);
+      rows.resize(sh);
+      for (int y = 0; y < sh; y++)
+        rows[y] = &rgba[(size_t)y * sw * 4];
+      png_read_image(png, &rows[0]);
+      ok = true;
+    }
+  }
+  png_destroy_read_struct(png ? &png : NULL, info ? &info : NULL, NULL);
+  fclose(f);
+  if (!ok)
+    return false;
+  out.resize((size_t)w * h);
+  for (int y = 0; y < h; y++) {
+    float fy = (y + 0.5f) * sh / h - 0.5f;
+    int y0 = fy < 0 ? 0 : (int)fy, y1 = y0 + 1 < sh ? y0 + 1 : sh - 1;
+    float ty = fy < 0 ? 0 : fy - y0;
+    for (int x = 0; x < w; x++) {
+      float fx = (x + 0.5f) * sw / w - 0.5f;
+      int x0 = fx < 0 ? 0 : (int)fx, x1 = x0 + 1 < sw ? x0 + 1 : sw - 1;
+      float tx = fx < 0 ? 0 : fx - x0;
+      const unsigned char *a = &rgba[((size_t)y0 * sw + x0) * 4], *b = &rgba[((size_t)y0 * sw + x1) * 4];
+      const unsigned char *c = &rgba[((size_t)y1 * sw + x0) * 4], *d = &rgba[((size_t)y1 * sw + x1) * 4];
+      unsigned v[4];
+      for (int k = 0; k < 4; k++) {
+        float top = a[k] + (b[k] - a[k]) * tx, bottom = c[k] + (d[k] - c[k]) * tx;
+        v[k] = (unsigned)(top + (bottom - top) * ty + 0.5f);
+      }
+      out[(size_t)y * w + x] = (v[3] << 24) | (v[0] << 16) | (v[1] << 8) | v[2];
+    }
+  }
+  return true;
+}
 
 #ifdef _XBOX
 CRITICAL_SECTION g_lock;
@@ -90,7 +167,9 @@ DWORD WINAPI netThread(void *)
       if (!j)
         break;
       std::string err;
-      if (!xboxNetStart(err) || !httpRequestStatus(j->url, j->post, j->body, j->status, err, g_userAgent)) {
+      if (j->url.empty()) {
+        // a badge saved before: only to decode
+      } else if (!xboxNetStart(err) || !httpRequestStatus(j->url, j->post, j->body, j->status, err, g_userAgent)) {
         j->status = RC_API_SERVER_RESPONSE_RETRYABLE_CLIENT_ERROR;   // rc_client will try again
         j->body.clear();
         CHEEVOS_LOG("RetroAchievements: %s failed (%s)", j->saveTo.empty() ? "request" : "download", err.c_str());
@@ -101,6 +180,12 @@ DWORD WINAPI netThread(void *)
           fwrite(j->body.data(), 1, j->body.size(), f);
           fclose(f);
         }
+      }
+      std::vector<UiColor> px;
+      if (j->decode && decodePng(j->saveTo, BADGE_PX, BADGE_PX, px)) {
+        EnterCriticalSection(&g_lock);
+        g_badgePx[j->saveTo].swap(px);
+        LeaveCriticalSection(&g_lock);
       }
       EnterCriticalSection(&g_lock);
       g_done.push_back(j);
@@ -223,11 +308,11 @@ void fetchBadge(const std::string &name, const char *url)
     return;
   g_badgeAsked[name] = true;
   std::string path = badgeFile(name);
-  if (fileExists(path))
-    return;
   Job *j = new Job;
-  j->url = url;
+  if (!fileExists(path))
+    j->url = url;   // else: saved before, only decoded
   j->saveTo = path;
+  j->decode = true;
   queueJob(j);
 }
 
@@ -244,7 +329,7 @@ int g_popupFrame = 0;
 int g_popupBoxW = 0;                    // width of the box right of the badge
 
 // RetroArch's timing: slide in, unfold, 4 seconds, fold, slide out (60 frames a second).
-enum { POP_H = 84, POP_SLIDE = 18, POP_UNFOLD = 18, POP_HOLD = 240, POP_MARGIN = 24 };
+enum { POP_H = BADGE_PX, POP_SLIDE = 18, POP_UNFOLD = 18, POP_HOLD = 240, POP_MARGIN = 24 };
 const int kPopTotal = POP_SLIDE + POP_UNFOLD + POP_HOLD + POP_UNFOLD + POP_SLIDE;
 
 void popup(const std::string &title, const std::string &subtitle, const std::string &badge, bool sound)
@@ -284,7 +369,17 @@ void buildPopup(const Popup &p)
   c.create(POP_H + g_popupBoxW, POP_H);
   c.fillRect(0, 0, c.width(), c.height(), 0xFF000000);
   std::vector<UiColor> px;
-  if (!p.badge.empty() && fileExists(p.badge) && xboxLoadImagePixels(p.badge.c_str(), POP_H, POP_H, px, true))
+  bool decoded = false;   // by the network thread, ahead (see g_badgePx)
+  if (g_thread && !p.badge.empty()) {
+    EnterCriticalSection(&g_lock);
+    std::map<std::string, std::vector<UiColor> >::iterator it = g_badgePx.find(p.badge);
+    if (it != g_badgePx.end() && it->second.size() == (size_t)POP_H * POP_H) {
+      px = it->second;
+      decoded = true;
+    }
+    LeaveCriticalSection(&g_lock);
+  }
+  if (decoded || (!p.badge.empty() && fileExists(p.badge) && xboxLoadImagePixels(p.badge.c_str(), POP_H, POP_H, px, true)))
     c.blitAlpha(&px[0], POP_H, POP_H, 0, 0);
   else
     c.fillGradient(0, 0, POP_H, POP_H, 0xFF3A3F55, 0xFF1C1F2B);   // no badge (yet): a plain square
