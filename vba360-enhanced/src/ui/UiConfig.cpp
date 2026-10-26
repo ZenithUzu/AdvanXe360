@@ -418,6 +418,21 @@ std::string uiFileName(const std::string &path)
   return slash == std::string::npos ? path : path.substr(slash + 1);
 }
 
+bool uiVersionNewer(const std::string &a, const std::string &b)
+{
+  const char *p = a.c_str(), *q = b.c_str();
+  if (*p == 'v' || *p == 'V') p++;
+  if (*q == 'v' || *q == 'V') q++;
+  for (int i = 0; i < 4; i++) {
+    long x = strtol(p, (char **)&p, 10), y = strtol(q, (char **)&q, 10);
+    if (x != y)
+      return x > y;
+    if (*p == '.') p++;
+    if (*q == '.') q++;
+  }
+  return false;
+}
+
 std::string uiStripExtension(const std::string &name)
 {
   size_t dot = name.find_last_of('.');

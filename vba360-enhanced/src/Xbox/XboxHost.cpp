@@ -592,6 +592,22 @@ public:
   }
 
   virtual std::string archiveRomName(const std::string &archive) { return archiveInnerRom(archive); }
+  virtual bool latestRelease(std::string &tag, std::string &err)
+  {
+    std::string body;
+    if (!xboxNetStart(err) ||
+        !httpRequest("https://api.github.com/repos/ZenithUzu/AdvanXe360/releases/latest", "", body, err, ""))
+      return false;
+    std::vector<std::string> t = jsonStrings(body, "tag_name");
+    if (t.empty()) {
+      err = "reply";
+      return false;
+    }
+    tag = t[0];
+    xboxLog("Update check: latest release %s, this is %s", tag.c_str(), UI_APP_VERSION);
+    return true;
+  }
+
   virtual bool netTest(std::string &report)
   {
     std::string err;

@@ -21,6 +21,7 @@ enum
 {
   Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT, Q_RA,
+  AB_UPDATE = 900,
   RA_ENABLE = 1, RA_LOGIN, RA_LOGOUT, RA_SOUND, RA_STATUS, RA_GAME, RA_ITEM_BASE = 100,
 
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_PRINTER, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
@@ -145,7 +146,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
-    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_netTest(0), m_raWaiting(false), m_raLastState(-1), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_netTest(0), m_updateCheck(0), m_raWaiting(false), m_raLastState(-1), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
     m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
@@ -379,6 +380,16 @@ void UiApp::update(unsigned int held)
       m_raLastState = ra.state;
       rebuildMenus();
     }
+  }
+  if (m_updateCheck > 0 && --m_updateCheck == 0) {
+    std::string tag, err;
+    if (!m_host.latestRelease(tag, err))
+      toast(std::string(tr("No se pudo consultar GitHub (", "Couldn't ask GitHub (")) + err + ")");
+    else if (uiVersionNewer(tag, UI_APP_VERSION))
+      toast(std::string(tr("\xa1Hay una versi\xf3n nueva: ", "A new version is out: ")) + tag +
+            tr("! Est\xe1 en github.com/ZenithUzu/AdvanXe360/releases", "! It's at github.com/ZenithUzu/AdvanXe360/releases"), 600);
+    else
+      toast(std::string(tr("Tienes la \xfaltima versi\xf3n (", "You have the latest version (")) + UI_APP_VERSION + ")");
   }
   if (m_netTest > 0 && --m_netTest == 0) {
     std::string report;
@@ -1065,7 +1076,10 @@ void UiApp::buildMenu(UiMenuScreen &m)
 
   case MENU_ABOUT:
     m.title = tr("Acerca de", "About");
-    m.subtitle = tr(UI_APP_NAME " (antes VBA360 enhanced-ai)", UI_APP_NAME " (formerly VBA360 enhanced-ai)");
+    m.subtitle = tr(UI_APP_NAME " " UI_APP_VERSION " (antes VBA360 enhanced-ai)", UI_APP_NAME " " UI_APP_VERSION " (formerly VBA360 enhanced-ai)");
+    m.add(AB_UPDATE, ITEM_ACTION, tr("Buscar actualizaci\xf3n", "Check for updates"), "v" UI_APP_VERSION,
+          tr("Pregunta a GitHub por la \xfaltima versi\xf3n publicada (necesita internet).",
+             "Asks GitHub for the latest published version (needs internet)."));
     m.addInfo(tr("Emulador de Game Boy Advance, Game Boy y Game Boy Color para Xbox 360.",
                  "Game Boy Advance, Game Boy and Game Boy Color emulator for the Xbox 360."));
     m.addInfo(tr("Proyecto por pasatiempo, hecho con ayuda de IA. Licencia GPL.",
@@ -1552,6 +1566,13 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
 
   case MENU_RA_LIST:
     return;   // just to read: the description shows below
+
+  case MENU_ABOUT:
+    if (id == AB_UPDATE) {
+      toast(tr("Preguntando a GitHub...", "Asking GitHub..."), 600);
+      m_updateCheck = 4;   // shown first, then the (blocking) request
+    }
+    return;
 
   case MENU_SETTINGS_RA:
     if (id == RA_LOGIN) {

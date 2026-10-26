@@ -116,6 +116,8 @@ public:
   virtual void raLogin(const std::string &user, const std::string &password) {}
   virtual void raLogout() {}
   virtual void raAchievements(std::vector<UiRaAchievement> &out) { out.clear(); }
+  // The latest release on the emulator's GitHub ("v0.5.0"); false with err if it can't tell.
+  virtual bool latestRelease(std::string &tag, std::string &err) { err = "-"; return false; }
   // Connects over HTTPS to RetroAchievements and GitHub; report: what happened.
   virtual bool netTest(std::string &report) { report = "-"; return false; }
   // The ROM inside a .zip / .7z (its name in the archive), "" if none.

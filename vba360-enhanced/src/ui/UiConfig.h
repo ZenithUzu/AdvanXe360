@@ -227,6 +227,8 @@ std::string uiJoinPath(const std::string &dir, const std::string &name);
 std::string uiParentDir(const std::string &path);   // "" at a drive root
 std::string uiFileName(const std::string &path);
 std::string uiStripExtension(const std::string &name);
+// "v0.6.0" newer than "0.5.0"? (numbers compared one by one; a leading v is ignored)
+bool uiVersionNewer(const std::string &a, const std::string &b);
 std::string uiExtension(const std::string &name);   // lower case, with dot
 // A file name safe for FATX (max 42 chars): long names are shortened and
 // suffixed with a hash so different ROMs never collide.

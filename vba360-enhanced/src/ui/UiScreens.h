@@ -313,6 +313,7 @@ void uiDrawWater(UiCanvas &c, const UiColor *bg, int frame, int strength);
 
 // The emulator's name as the menus show it.
 #define UI_APP_NAME "AdvanXe360"
+#define UI_APP_VERSION "0.5.0"   // compared with the latest GitHub release ("v0.5.0")
 
 // Layout (1280x720, inside the TV safe area).
 enum

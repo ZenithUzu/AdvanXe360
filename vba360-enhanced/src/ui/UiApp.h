@@ -189,6 +189,7 @@ private:
   int m_rawX[8], m_rawY[8];
   int m_cheatDownload;   // frames until the online cheat search runs (0 = none)
   int m_netTest;         // frames until the HTTPS test runs (0 = none)
+  int m_updateCheck;     // frames until the update check runs (0 = none)
   bool m_raWaiting;      // a RetroAchievements login was sent: say how it went
   int m_raLastState;     // UI_RA_* last seen: the menus follow its changes
   std::string m_raUserTyped;
