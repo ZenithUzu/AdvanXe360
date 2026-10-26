@@ -478,12 +478,16 @@ UiHomeScreen::UiHomeScreen(UiApp &app, const std::string &selectRom)
     openDir(app, "", "");
 }
 
+// Lower case, Latin-1 letters too (\xd1 -> \xf1); names in UTF-8 (copied over
+// FTP) read as Latin-1 first, so searching what the keyboard types finds them.
 static std::string lowerAscii(const std::string &s)
 {
-  std::string r(s);
-  for (size_t i = 0; i < r.size(); i++)
-    if (r[i] >= 'A' && r[i] <= 'Z')
-      r[i] = (char)(r[i] - 'A' + 'a');
+  std::string r = uiUtf8ToLatin1(s);
+  for (size_t i = 0; i < r.size(); i++) {
+    unsigned char c = (unsigned char)r[i];
+    if ((c >= 'A' && c <= 'Z') || (c >= 0xC0 && c <= 0xDE && c != 0xD7))
+      r[i] = (char)(c + 0x20);
+  }
   return r;
 }
 

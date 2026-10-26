@@ -255,12 +255,32 @@ int UiCanvas::lineHeight(UiFontId font) const
   return g_fonts[font].lineHeight;
 }
 
+// One letter of text, moving p past it. UTF-8 (file names copied over FTP,
+// texts from the internet) gives its Latin-1 letter, or '?' past Latin-1;
+// any other byte already is Latin-1 (the menu's own texts): "Espa\xc3\xb1ol"
+// and "Espa\xf1ol" both draw "Espanol" with its tilde.
+static unsigned char nextChar(const unsigned char *&p)
+{
+  unsigned char c = *p;
+  int len = c >= 0xF0 && c < 0xF8 ? 4 : c >= 0xE0 && c < 0xF0 ? 3 : c >= 0xC2 && c < 0xE0 ? 2 : 1;
+  for (int k = 1; k < len; k++)
+    if ((p[k] & 0xC0) != 0x80) {   // not UTF-8 (the end of the text stops here too)
+      len = 1;
+      break;
+    }
+  p += len;
+  if (len == 1)
+    return c;
+  unsigned cp = ((c & 0x1F) << 6) | (p[-1] & 0x3F);
+  return len == 2 && cp < 0x100 ? (unsigned char)cp : '?';
+}
+
 int UiCanvas::textWidth(UiFontId font, const char *text) const
 {
   const FontInfo &f = g_fonts[font];
   int w = 0;
-  for (const unsigned char *p = (const unsigned char *)text; *p; p++)
-    w += glyphAdvance(f, *p);
+  for (const unsigned char *p = (const unsigned char *)text; *p;)
+    w += glyphAdvance(f, nextChar(p));
   return w;
 }
 
@@ -269,8 +289,8 @@ int UiCanvas::drawText(UiFontId font, int x, int y, const char *text, UiColor c)
   const FontInfo &f = g_fonts[font];
   int baseA = c >> 24;
   int pen = x;
-  for (const unsigned char *p = (const unsigned char *)text; *p; p++) {
-    int gi = f.index[*p];
+  for (const unsigned char *p = (const unsigned char *)text; *p;) {
+    int gi = f.index[nextChar(p)];
     if (gi < 0)
       gi = f.index['?'];
     if (gi < 0)
@@ -317,11 +337,12 @@ int UiCanvas::drawTextFit(UiFontId font, int x, int y, int maxWidth,
   int dots = glyphAdvance(f, '.') * 3;
   char buf[512];
   int n = 0, acc = 0;
-  for (const unsigned char *p = (const unsigned char *)text; *p && n < 500; p++) {
-    int adv = glyphAdvance(f, *p);
+  for (const unsigned char *p = (const unsigned char *)text; *p && n < 500;) {
+    unsigned char ch = nextChar(p);
+    int adv = glyphAdvance(f, ch);
     if (acc + adv + dots > maxWidth)
       break;
-    buf[n++] = (char)*p;
+    buf[n++] = (char)ch;   // as Latin-1: drawText reads it back the same
     acc += adv;
   }
   buf[n++] = '.';
