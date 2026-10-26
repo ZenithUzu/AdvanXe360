@@ -20,7 +20,8 @@ namespace {
 enum
 {
   Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
-  Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT,
+  Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT, Q_RA,
+  RA_ENABLE = 1, RA_LOGIN, RA_LOGOUT, RA_SOUND, RA_STATUS, RA_GAME, RA_ITEM_BASE = 100,
 
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_PRINTER, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   V_GBA_COLOR, V_BLEND,
@@ -44,7 +45,7 @@ enum
 {
   CONFIRM_QUIT = 1, CONFIRM_DELETE_CHEAT, CONFIRM_RESET_CONTROLS, CONFIRM_RESET_GAME,
   CONFIRM_DELETE_STATES, CONFIRM_RESET_ALL,
-  KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC, KEYBOARD_SEARCH
+  KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC, KEYBOARD_SEARCH, KEYBOARD_RA_USER, KEYBOARD_RA_PASS
 };
 
 const int kStateSlots = 9;   // slots 1..9 (0 is the automatic one)
@@ -144,7 +145,7 @@ UiApp::UiApp(UiHost &host, UiConfig &cfg)
   : fastForward(false), m_host(host), m_cfg(cfg), m_recents(30), m_favorites(500),
     m_inGame(false), m_prevHeld(0), m_repeatTimer(0), m_frame(0),
     m_request(UI_REQ_NONE), m_toastFrames(0), m_handOn(false), m_handUsed(false), m_handWasOn(false), m_handX(UI_W / 2), m_handY(UI_H / 2),
-    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_netTest(0), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
+    m_handTarget(-1), m_handFrames(0), m_handStartIn(-1), m_netTest(0), m_raWaiting(false), m_raLastState(-1), m_handSwipe(0), m_swipeCooldown(0), m_handHist(0), m_cheatDownload(0), m_stickCapture(0), m_stickCaptureFrames(0),
     m_hintsAllowed(true), m_quietChange(false), m_ctlForGame(false), m_cheatTypeIdx(0), m_dirtyFrames(2), m_bgCacheTheme(-1), m_bgCacheVeil(-1), m_listMatches(0), m_coverLoadsLeft(1)
 {
 }
@@ -361,6 +362,24 @@ void UiApp::update(unsigned int held)
 
   if (m_toastFrames > 0)
     m_toastFrames--;
+  // RetroAchievements: network replies; the menus follow the account's state.
+  m_host.raPump();
+  {
+    UiRaInfo ra;
+    m_host.raInfo(ra);
+    if (ra.state != m_raLastState) {
+      if (m_raWaiting && ra.state == UI_RA_LOGGED_IN) {
+        toast(std::string(tr("Sesi\xf3n iniciada: ", "Logged in: ")) + ra.user);
+        m_raWaiting = false;
+        saveAll();   // the access the site gave (not the password)
+      } else if (m_raWaiting && ra.state == UI_RA_FAILED) {
+        toast(std::string(tr("No se pudo iniciar sesi\xf3n: ", "Login failed: ")) + ra.message, 400);
+        m_raWaiting = false;
+      }
+      m_raLastState = ra.state;
+      rebuildMenus();
+    }
+  }
   if (m_netTest > 0 && --m_netTest == 0) {
     std::string report;
     m_host.netTest(report);
@@ -682,13 +701,61 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_SETTINGS_RA, ITEM_SUBMENU, "RetroAchievements");
     break;
 
-  case MENU_SETTINGS_RA:
+  case MENU_SETTINGS_RA: {
+    UiRaInfo ra;
+    m_host.raInfo(ra);
     m.title = "RetroAchievements";
-    m.subtitle = tr("En pruebas: primero, que la consola hable HTTPS", "Testing: first, the console speaking HTTPS");
+    m.subtitle = tr("Logros en modo normal (softcore): puedes usar estados y trucos",
+                    "Achievements in normal mode (softcore): states and cheats are allowed");
+    (m.add(RA_ENABLE, ITEM_OPTION, tr("Logros", "Achievements"), onOff[m_cfg.raEnabled],
+           tr("Con una cuenta de retroachievements.org: al jugar se desbloquean logros y aparecen arriba de la pantalla.",
+              "With a retroachievements.org account: achievements unlock as you play and show at the top of the screen."))).choice = m_cfg.raEnabled;
+    if (m_cfg.raEnabled) {
+      std::string st;
+      if (ra.state == UI_RA_LOGGED_IN) st = std::string(tr("Conectado como ", "Logged in as ")) + ra.user;
+      else if (ra.state == UI_RA_LOGGING_IN) st = tr("Iniciando sesi\xf3n...", "Logging in...");
+      else if (ra.state == UI_RA_FAILED) st = std::string(tr("No se pudo: ", "Failed: ")) + ra.message;
+      else st = tr("Sin sesi\xf3n", "Not logged in");
+      m.add(RA_STATUS, ITEM_INFO, std::string(tr("Cuenta: ", "Account: ")) + st);
+      if (ra.state == UI_RA_LOGGED_IN)
+        m.add(RA_LOGOUT, ITEM_ACTION, tr("Cerrar sesi\xf3n", "Log out"), "",
+              tr("Borra el permiso guardado; para volver hay que escribir la contrase\xf1""a.",
+                 "Forgets the saved access; logging in again needs the password."));
+      else
+        m.add(RA_LOGIN, ITEM_ACTION, tr("Iniciar sesi\xf3n", "Log in"), "",
+              tr("Usuario y contrase\xf1""a de retroachievements.org. La contrase\xf1""a no se guarda: solo el permiso que da el sitio.",
+                 "Your retroachievements.org user and password. The password isn't kept: only the access the site gives."));
+      (m.add(RA_SOUND, ITEM_OPTION, tr("Sonido al desbloquear", "Unlock sound"), onOff[m_cfg.raSound],
+             tr("Suena sounds\\unlock.wav (el de RetroArch, si lo pones ah\xed) o un tono propio.",
+                "Plays sounds\\unlock.wav (RetroArch's, if you put it there) or a chime of its own."))).choice = m_cfg.raSound;
+      if (!ra.game.empty())
+        m.add(RA_GAME, ITEM_INFO, ra.game + ":  " + intStr(ra.unlocked) + " / " + intStr(ra.total) + tr(" logros", " achievements"));
+    }
     m.add(U_RA_TEST, ITEM_ACTION, tr("Probar conexi\xf3n segura", "Test secure connection"), "",
           tr("Se conecta por HTTPS a RetroAchievements y a GitHub y dice si funcion\xf3 (tambi\xe9n queda en vba360.log).",
              "Connects over HTTPS to RetroAchievements and GitHub and tells whether it worked (also in vba360.log)."));
     break;
+  }
+
+  case MENU_RA_LIST: {
+    UiRaInfo ra;
+    m_host.raInfo(ra);
+    std::vector<UiRaAchievement> list;
+    m_host.raAchievements(list);
+    m.title = ra.game.empty() ? std::string(tr("Logros", "Achievements")) : ra.game;
+    m.subtitle = intStr(ra.unlocked) + tr(" de ", " of ") + intStr(ra.total) + tr(" logros  \xb7  ", " achievements  \xb7  ") +
+                 intStr(ra.points) + " / " + intStr(ra.pointsTotal) + tr(" puntos", " points");
+    for (size_t i = 0; i < list.size(); i++) {
+      const UiRaAchievement &a = list[i];
+      std::string value = a.unlocked ? std::string(tr("Desbloqueado", "Unlocked"))
+                        : !a.progress.empty() ? a.progress
+                        : intStr(a.points) + tr(" pts", " pts");
+      m.add(RA_ITEM_BASE + (int)i, ITEM_ACTION, a.title, value, a.description + "  (" + intStr(a.points) + tr(" puntos)", " points)"));
+    }
+    if (list.empty())
+      m.add(RA_STATUS, ITEM_INFO, tr("Sin logros para este juego", "No achievements for this game"));
+    break;
+  }
 
   case MENU_SETTINGS_KINECT: {
     // Nothing of the Kinect is used (or shown) until it is turned on here.
@@ -1160,6 +1227,11 @@ void UiApp::buildQuickMenu(UiMenuScreen &m)
         fastForward ? tr("Activado", "On") : tr("Desactivado", "Off"),
         std::string(tr("Tambi\xe9n con ", "Also with ")) + uiButtonName(*this, m_cfg.map[ACT_FAST_FORWARD]));
 
+  UiRaInfo ra;
+  m_host.raInfo(ra);
+  if (!ra.game.empty())
+    m.add(Q_RA, ITEM_SUBMENU, tr("Logros", "Achievements"), intStr(ra.unlocked) + " / " + intStr(ra.total),
+          std::string("RetroAchievements: ") + ra.game);
   m.add(Q_GAME_OPTIONS, ITEM_SUBMENU, tr("Opciones de este juego", "Options for this game"), "",
         tr("Imagen de este juego, trucos y c\xf3""digos, parche...",
            "This game's picture, cheats and codes, patch..."));
@@ -1453,6 +1525,9 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     case Q_SETTINGS:
       openMenu(MENU_SETTINGS_ROOT);
       break;
+    case Q_RA:
+      openMenu(MENU_RA_LIST);
+      break;
     case Q_SCREENSHOT: {
       std::string where;
       if (m_host.takeScreenshot(where))
@@ -1475,8 +1550,18 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     openMenu(id);
     return;
 
+  case MENU_RA_LIST:
+    return;   // just to read: the description shows below
+
   case MENU_SETTINGS_RA:
-    if (id == U_RA_TEST) {
+    if (id == RA_LOGIN) {
+      openKeyboard(tr("Usuario de RetroAchievements", "RetroAchievements user"), m_cfg.raUser, KEYBOARD_RA_USER);
+    } else if (id == RA_LOGOUT) {
+      m_host.raLogout();
+      saveAll();
+      rebuildMenus();
+      toast(tr("Sesi\xf3n cerrada", "Logged out"));
+    } else if (id == U_RA_TEST) {
       toast(tr("Conectando por HTTPS...", "Connecting over HTTPS..."), 600);
       m_netTest = 4;   // shown first, then the (blocking) test
     }
@@ -1653,6 +1738,10 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == S_AUTO_SAVE) m_cfg.autoSaveState ^= 1;
     else if (id == S_AUTO_LOAD) m_cfg.autoLoadState ^= 1;
     else if (id == S_BACKUPS) m_cfg.saveBackups ^= 1;
+    break;
+  case MENU_SETTINGS_RA:
+    if (id == RA_ENABLE) m_cfg.raEnabled ^= 1;   // applySettings() logs in / out
+    else if (id == RA_SOUND) m_cfg.raSound ^= 1;
     break;
   case MENU_SETTINGS_UI:
   case MENU_SETTINGS_LOOK:
@@ -1888,7 +1977,9 @@ void UiApp::onMenuClosed(UiMenuScreen &m)
 
 void UiApp::openKeyboard(const std::string &title, const std::string &initial, int purpose)
 {
-  push(new UiKeyboardScreen(title, initial, purpose, purpose != KEYBOARD_CHEAT, purpose == KEYBOARD_SEARCH));
+  bool account = purpose == KEYBOARD_RA_USER || purpose == KEYBOARD_RA_PASS;
+  push(new UiKeyboardScreen(title, initial, purpose, purpose != KEYBOARD_CHEAT, purpose == KEYBOARD_SEARCH,
+                            account, purpose == KEYBOARD_RA_PASS));
 }
 
 void UiApp::openSearch()
@@ -2017,6 +2108,23 @@ void UiApp::onKeyboardDone(int purpose, const std::string &text, bool accepted)
       f.erase(f.size() - 1);
     m_listFilter = f;
     return;   // the browser rebuilds its list when it is back on top
+  }
+  if (purpose == KEYBOARD_RA_USER) {   // then the password
+    m_raUserTyped = text;
+    while (!m_raUserTyped.empty() && m_raUserTyped[m_raUserTyped.size() - 1] == ' ')
+      m_raUserTyped.erase(m_raUserTyped.size() - 1);
+    if (!m_raUserTyped.empty())
+      openKeyboard(tr("Contrase\xf1""a de RetroAchievements", "RetroAchievements password"), "", KEYBOARD_RA_PASS);
+    return;
+  }
+  if (purpose == KEYBOARD_RA_PASS) {
+    if (text.empty())
+      return;
+    m_host.raLogin(m_raUserTyped, text);   // the password goes to the site and is forgotten here
+    m_raWaiting = true;
+    toast(tr("Iniciando sesi\xf3n en RetroAchievements...", "Logging in to RetroAchievements..."), 600);
+    rebuildMenus();
+    return;
   }
   if (purpose == KEYBOARD_CHEAT_DESC) {
     // Second step: the name. The code was checked in the first step.

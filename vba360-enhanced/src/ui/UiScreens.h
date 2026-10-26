@@ -177,8 +177,10 @@ public:
   // (0-9, A-F, ':' and '-').
   // search: the game list filters as you type (the list stays visible above
   // the keyboard), START / the Search key keep it and B puts the old one back.
+  // account: user names and passwords: lower case, upper case and symbols
+  // (LT changes between them); secret: the text shows as dots.
   UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full = false,
-                   bool search = false);
+                   bool search = false, bool account = false, bool secret = false);
   virtual void update(UiApp &app, const UiInputState &in);
   virtual void draw(UiApp &app, UiCanvas &c);
   virtual bool isOverlay() const { return true; }
@@ -191,6 +193,8 @@ private:
   bool m_full;
   bool m_search;
   std::string m_orig;     // search: the filter before the keyboard opened
+  bool m_account, m_secret;
+  int m_layer;            // account: 0 abc, 1 ABC, 2 symbols
   int keyRows() const { return m_full ? 4 : 3; }
   void drawSearch(UiApp &app, UiCanvas &c);
   int keyCols() const { return m_full ? 10 : 6; }

@@ -40,7 +40,7 @@ enum UiMenuId
   MENU_QUICK = 1, MENU_SETTINGS_VIDEO, MENU_SETTINGS_AUDIO, MENU_SETTINGS_EMU,
   MENU_SETTINGS_SAVES, MENU_SETTINGS_UI, MENU_CONTROLS, MENU_GAME_OPTIONS,
   MENU_CHEATS, MENU_ABOUT, MENU_SETTINGS_ROOT, MENU_CLOCK, MENU_SETTINGS_LOOK,
-  MENU_SETTINGS_KINECT, MENU_SETTINGS_RA
+  MENU_SETTINGS_KINECT, MENU_SETTINGS_RA, MENU_RA_LIST
 };
 
 class UiApp
@@ -184,11 +184,14 @@ private:
   int m_toastFrames;
   bool m_handOn, m_handUsed, m_handWasOn;
   int m_handX, m_handY, m_handTarget, m_handFrames;
-  int m_handStartIn;
+  int m_handStartIn;   // frames until the Kinect is started (its message shows first); -1 = not waiting
   int m_handSwipe, m_swipeCooldown, m_handHist;   // m_handHist: frames in m_rawX/Y
-  int m_rawX[8], m_rawY[8];   // frames until the Kinect is started (its message shows first); -1 = not waiting
-  int m_cheatDownload;
-  int m_netTest;         // frames until the HTTPS test runs (0 = none)   // frames until the online cheat search runs (0 = none)
+  int m_rawX[8], m_rawY[8];
+  int m_cheatDownload;   // frames until the online cheat search runs (0 = none)
+  int m_netTest;         // frames until the HTTPS test runs (0 = none)
+  bool m_raWaiting;      // a RetroAchievements login was sent: say how it went
+  int m_raLastState;     // UI_RA_* last seen: the menus follow its changes
+  std::string m_raUserTyped;
   // Sensor being mapped by moving the right stick (item id, 0 = none).
   int m_stickCapture;
   int m_stickCaptureFrames;

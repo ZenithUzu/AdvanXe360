@@ -1981,12 +1981,17 @@ const char *kKeys[4][6] = {
   { 0, 0, 0, 0, 0, 0 }   // bottom row: space / delete / OK (drawn specially)
 };
 const char *const kFullKeys[4] = { "ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ-'.&", "1234567890" };
+// User names and passwords (LT: the next layer).
+const char *const kAccountKeys[3][4] = {
+  { "abcdefghij", "klmnopqrst", "uvwxyz-_.@", "1234567890" },
+  { "ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ-_.@", "1234567890" },
+  { "!#$%&*+=?^", "()[]{}<>/\\", "~`'\",;:|-_", "1234567890" } };
 }
 
 UiKeyboardScreen::UiKeyboardScreen(const std::string &title, const std::string &text, int purpose, bool full,
-                                   bool search)
-  : m_title(title), m_text(text), m_purpose(purpose), m_row(0), m_col(0), m_full(full),
-    m_search(search), m_orig(text)
+                                   bool search, bool account, bool secret)
+  : m_title(title), m_text(text), m_purpose(purpose), m_row(0), m_col(0), m_full(full || account),
+    m_search(search), m_orig(text), m_account(account), m_secret(secret), m_layer(0)
 {
 }
 
@@ -2003,7 +2008,7 @@ const char *UiKeyboardScreen::keyLabel(int r, int c) const
   if (!m_full)
     return kKeys[r][c];
   static char buf[2];
-  buf[0] = kFullKeys[r][c];
+  buf[0] = m_account ? kAccountKeys[m_layer][r][c] : kFullKeys[r][c];
   buf[1] = 0;
   return buf;
 }
@@ -2033,6 +2038,8 @@ void UiKeyboardScreen::update(UiApp &app, const UiInputState &in)
   bool del = (in.repeat & PAD_BIT(PAD_X)) != 0;
   bool space = (in.pressed & PAD_BIT(PAD_Y)) != 0;
   bool ok = (in.pressed & PAD_BIT(PAD_START)) != 0;
+  if (m_account && (in.pressed & PAD_BIT(PAD_LT)))
+    m_layer = (m_layer + 1) % 3;
   std::string before = m_text;
   if (in.pressed & PAD_BIT(PAD_BACK))
     m_text.clear();   // erase everything
@@ -2147,7 +2154,12 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
 
   // Text field with a blinking caret
   c.fillRoundRect(x + 32, y + 66, w - 64, 52, 10, 0x40000000);
-  int tw = c.drawTextFit(UI_FONT_BODY, x + 48, y + 78, w - 110, m_text.c_str(), UI_COL_TEXT);
+  std::string shown = m_secret ? std::string(m_text.size(), '*') : m_text;   // a password isn't shown
+  int tw = c.drawTextFit(UI_FONT_BODY, x + 48, y + 78, w - 110, shown.c_str(), UI_COL_TEXT);
+  if (m_account) {
+    const char *layers[3] = { "abc", "ABC", "#+=" };
+    c.drawTextFit(UI_FONT_SMALL, x + w - 140, y + 26, 108, layers[m_layer], UI_COL_ACCENT, UI_ALIGN_RIGHT);
+  }
   if ((app.frameCount() / 30) % 2 == 0)
     c.fillRect(x + 50 + tw, y + 78, 2, 28, UI_COL_ACCENT);
 
@@ -2175,9 +2187,10 @@ void UiKeyboardScreen::draw(UiApp &app, UiCanvas &c)
   const char *hints[] = {
     app.tr("A:Escribir", "A:Type"), app.tr("X:Borrar", "X:Delete"),
     app.tr("Y:Espacio", "Y:Space"), app.tr("START:Aceptar", "START:Done"),
-    app.tr("BACK:Borrar todo", "BACK:Clear"), app.tr("B:Cancelar", "B:Cancel")
+    app.tr("BACK:Borrar todo", "BACK:Clear"), app.tr("B:Cancelar", "B:Cancel"),
+    app.tr("LT:abc / ABC / #+=", "LT:abc / ABC / #+=")
   };
-  app.drawHints(c, hints, 6);
+  app.drawHints(c, hints, m_account ? 7 : 6);
 }
 
 // --- UiCoverScreen -----------------------------------------------------------
