@@ -89,6 +89,8 @@ void xboxOverlayPlace(int x, int y, int shownWidth);
 // A short sound in the menus or the game: a 16-bit .wav, or a little chime
 // when path is "" or the file can't be read.
 void xboxPlaySound(const std::string &path);
+// Reads that sound and gets it ready, without playing it (while a game loads).
+void xboxPreloadSound(const std::string &path);
 // Size of the GBA ROM that was loaded (after patches), for RetroAchievements.
 extern int xboxGbaRomSize;   // the game picture needs point sampling (sharp, Scale2x/3x)
 // Show FPS (per-game value when the game has a custom picture).
