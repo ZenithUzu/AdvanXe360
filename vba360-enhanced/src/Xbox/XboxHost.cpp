@@ -1451,17 +1451,22 @@ void xboxOnGameStarted()
 // --- Rewind (XboxRewind.h) ------------------------------------------------------
 // A step is saved every REWIND_EVERY frames into REWIND_BUDGET bytes (seconds
 // to minutes: only what changed is kept). Held, one step goes back every
-// REWIND_SHOW frames: about 3x the game's speed, shown at 30 frames a second.
-enum { REWIND_STATE = 1 << 20, REWIND_BUDGET = 32 << 20, REWIND_EVERY = 6, REWIND_SHOW = 2 };
+// REWIND_SHOW frames: about 6x the game's speed, shown at 30 frames a second.
+// Saving a GBA state 10 times a second cost too much (15 fps in busy games).
+enum { REWIND_STATE = 1 << 20, REWIND_BUDGET = 32 << 20, REWIND_EVERY = 12, REWIND_SHOW = 2 };
 static std::vector<unsigned char> g_rwBuf;
 static int g_rwFrame = 0;
 static bool g_rwOk = false;   // on, and this core's state fits in REWIND_STATE
 static int g_rwSetting = -1;  // Settings > Emulation > Rewind when it started
+static DWORD g_rwMs = 0;      // time spent saving steps, for the log
+static int g_rwSaved = 0;
 bool xboxRewinding = false;
 
 void xboxRewindStart()
 {
   g_rwFrame = 0;
+  g_rwMs = 0;
+  g_rwSaved = 0;
   g_rwSetting = g_cfg.rewind;
   g_rwOk = g_cfg.rewind && emulator.emuWriteMemState && emulator.emuReadMemState;
   if (g_rwOk) {
@@ -1486,9 +1491,14 @@ bool xboxRewindStep()
     }
     if (g_rwOk && ++g_rwFrame >= REWIND_EVERY) {
       g_rwFrame = 0;
-      memset(&g_rwBuf[0], 0, REWIND_STATE);   // the tail past the state must be zero
+      // (no clearing: a game's state is the same size every time, so the
+      // tail past it stays as it was, zero)
+      DWORD t0 = GetTickCount();
       if (emulator.emuWriteMemState((char *)&g_rwBuf[0], REWIND_STATE)) {
         rewindPush(&g_rwBuf[0]);
+        g_rwMs += GetTickCount() - t0;
+        if (++g_rwSaved == 100)   // once a game: what rewind costs on this console
+          xboxLog("Rewind: %u ms per step (100 steps), %d kept", (unsigned)(g_rwMs / 100), rewindSteps());
       } else {
         g_rwOk = false;
         xboxLog("Rewind off: this game's state needs more than %d bytes", (int)REWIND_STATE);
