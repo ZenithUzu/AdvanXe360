@@ -39,6 +39,10 @@ int utilGzRead(gzFile file, voidp buffer, unsigned int len);
 int utilGzClose(gzFile file);
 z_off_t utilGzSeek(gzFile file, z_off_t offset, int whence);
 long utilGzMemTell(gzFile file);
+// A state in memory as plain bytes, no zlib (rewind); utilGzWrite / Read /
+// Seek / Close then work on it. Full: a write didn't fit.
+gzFile utilMemRawOpen(char *memory, int available);
+bool utilMemRawFull();
 void utilGBAFindSave(const u8 *, const int);
 void utilUpdateSystemColorMaps(bool lcd = false);
 bool utilFileExists( const char *filename );

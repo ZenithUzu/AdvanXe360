@@ -607,6 +607,59 @@ long utilGzMemTell(gzFile file)
   return memtell(file);
 }
 
+// A state in memory as plain bytes (rewind): the same writes as a .gz state,
+// copied straight in. zlib at level 0 compressed nothing and only cost time
+// (checksums, copies), a lot of it on the console.
+namespace {
+struct RawMem { char *p; int size, pos; bool full; } g_raw;
+
+int ZEXPORT rawWrite(gzFile, const voidp buf, unsigned int len)
+{
+  if (g_raw.pos + (int)len > g_raw.size) {
+    g_raw.full = true;
+    return 0;
+  }
+  memcpy(g_raw.p + g_raw.pos, buf, len);
+  g_raw.pos += (int)len;
+  return (int)len;
+}
+
+int ZEXPORT rawRead(gzFile, voidp buf, unsigned int len)
+{
+  int n = g_raw.size - g_raw.pos < (int)len ? g_raw.size - g_raw.pos : (int)len;
+  memcpy(buf, g_raw.p + g_raw.pos, n);
+  g_raw.pos += n;
+  return n;
+}
+
+int ZEXPORT rawClose(gzFile) { return 0; }
+
+z_off_t ZEXPORT rawSeek(gzFile, z_off_t offset, int whence)
+{
+  int to = whence == SEEK_CUR ? g_raw.pos + (int)offset : (int)offset;
+  g_raw.pos = to < 0 ? 0 : to > g_raw.size ? g_raw.size : to;
+  return g_raw.pos;
+}
+}
+
+gzFile utilMemRawOpen(char *memory, int available)
+{
+  g_raw.p = memory;
+  g_raw.size = available;
+  g_raw.pos = 0;
+  g_raw.full = false;
+  utilGzWriteFunc = rawWrite;
+  utilGzReadFunc = rawRead;
+  utilGzCloseFunc = rawClose;
+  utilGzSeekFunc = rawSeek;
+  return (gzFile)&g_raw;
+}
+
+bool utilMemRawFull()
+{
+  return g_raw.full;
+}
+
 void utilGBAFindSave(const u8 *data, const int size)
 {
   u32 *p = (u32 *)data;

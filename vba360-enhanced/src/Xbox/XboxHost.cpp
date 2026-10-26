@@ -1451,27 +1451,60 @@ void xboxOnGameStarted()
 // --- Rewind (XboxRewind.h) ------------------------------------------------------
 // A step is saved every REWIND_EVERY frames into REWIND_BUDGET bytes (seconds
 // to minutes: only what changed is kept). Held, one step goes back every
-// REWIND_SHOW frames: about 6x the game's speed, shown at 30 frames a second.
-// Saving a GBA state 10 times a second cost too much (15 fps in busy games).
-enum { REWIND_STATE = 1 << 20, REWIND_BUDGET = 32 << 20, REWIND_EVERY = 12, REWIND_SHOW = 2 };
-static std::vector<unsigned char> g_rwBuf;
+// REWIND_SHOW frames: about 3x the game's speed, shown at 30 frames a second.
+// The game's thread only copies the state out (plain bytes, no zlib); working
+// out what changed (45 ms a step on the console, it took the game to 40 fps)
+// happens on a thread of its own, on another core. Busy: that step is skipped.
+enum { REWIND_STATE = 1 << 20, REWIND_BUDGET = 32 << 20, REWIND_EVERY = 6, REWIND_SHOW = 2 };
+static std::vector<unsigned char> g_rwBuf;   // the state copied out / read back
 static int g_rwFrame = 0;
 static bool g_rwOk = false;   // on, and this core's state fits in REWIND_STATE
 static int g_rwSetting = -1;  // Settings > Emulation > Rewind when it started
-static DWORD g_rwMs = 0;      // time spent saving steps, for the log
-static int g_rwSaved = 0;
+static HANDLE g_rwThread = 0, g_rwWake = 0;
+static volatile LONG g_rwBusy = 0;           // the thread is saving g_rwBuf
+static DWORD g_rwCopyMs = 0, g_rwSaveMs = 0;  // for the log: the game's thread / the other core
+static int g_rwSaved = 0, g_rwSkipped = 0;
 bool xboxRewinding = false;
+
+static DWORD WINAPI rewindThread(void *)
+{
+  for (;;) {
+    WaitForSingleObject(g_rwWake, INFINITE);
+    DWORD t0 = GetTickCount();
+    rewindPush(&g_rwBuf[0]);
+    g_rwSaveMs += GetTickCount() - t0;
+    MemoryBarrier();   // the Xbox 360's Interlocked calls aren't barriers: the steps first, then "done"
+    InterlockedExchange(&g_rwBusy, 0);
+  }
+  return 0;
+}
+
+// Until the thread is done with g_rwBuf and the steps (before reading or
+// resetting them on the game's thread).
+static void rewindWaitIdle()
+{
+  while (InterlockedCompareExchange(&g_rwBusy, 0, 0))
+    Sleep(1);
+  MemoryBarrier();   // see what the thread wrote
+}
 
 void xboxRewindStart()
 {
+  rewindWaitIdle();
   g_rwFrame = 0;
-  g_rwMs = 0;
-  g_rwSaved = 0;
+  g_rwCopyMs = g_rwSaveMs = 0;
+  g_rwSaved = g_rwSkipped = 0;
   g_rwSetting = g_cfg.rewind;
   g_rwOk = g_cfg.rewind && emulator.emuWriteMemState && emulator.emuReadMemState;
   if (g_rwOk) {
     g_rwBuf.assign(REWIND_STATE, 0);
     rewindReset(REWIND_STATE, REWIND_BUDGET);
+    if (!g_rwThread) {
+      g_rwWake = CreateEvent(NULL, FALSE, FALSE, NULL);
+      g_rwThread = CreateThread(NULL, 64 * 1024, rewindThread, NULL, CREATE_SUSPENDED, NULL);
+      XSetThreadProcessor(g_rwThread, 4);   // away from the game (0), the sound (2) and the network (5)
+      ResumeThread(g_rwThread);
+    }
   } else {
     rewindReset(0, 0);
     std::vector<unsigned char>().swap(g_rwBuf);   // off: its memory back
@@ -1490,15 +1523,21 @@ bool xboxRewindStep()
       cheevosReset();   // its memory jumped: achievements wait for fresh conditions
     }
     if (g_rwOk && ++g_rwFrame >= REWIND_EVERY) {
+      if (InterlockedCompareExchange(&g_rwBusy, 0, 0)) {
+        g_rwSkipped++;   // still saving the last one: this one waits a frame
+        return false;
+      }
       g_rwFrame = 0;
-      // (no clearing: a game's state is the same size every time, so the
-      // tail past it stays as it was, zero)
+      MemoryBarrier();   // the thread is done reading g_rwBuf
       DWORD t0 = GetTickCount();
       if (emulator.emuWriteMemState((char *)&g_rwBuf[0], REWIND_STATE)) {
-        rewindPush(&g_rwBuf[0]);
-        g_rwMs += GetTickCount() - t0;
+        g_rwCopyMs += GetTickCount() - t0;
+        MemoryBarrier();   // the state written before the thread is woken
+        InterlockedExchange(&g_rwBusy, 1);
+        SetEvent(g_rwWake);
         if (++g_rwSaved == 100)   // once a game: what rewind costs on this console
-          xboxLog("Rewind: %u ms per step (100 steps), %d kept", (unsigned)(g_rwMs / 100), rewindSteps());
+          xboxLog("Rewind: copy %u ms (game), save %u ms (other core) per step; %d frames waited; %d kept",
+                  (unsigned)(g_rwCopyMs / 100), (unsigned)(g_rwSaveMs / 99), g_rwSkipped, rewindSteps());
       } else {
         g_rwOk = false;
         xboxLog("Rewind off: this game's state needs more than %d bytes", (int)REWIND_STATE);
@@ -1507,6 +1546,7 @@ bool xboxRewindStep()
     return false;
   }
   if (!xboxRewinding) {
+    rewindWaitIdle();   // the last step saved first
     xboxRewinding = true;
     applySoundFlags();
     g_rwFrame = 0;
