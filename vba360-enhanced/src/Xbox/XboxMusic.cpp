@@ -249,35 +249,25 @@ void makeChime(std::vector<unsigned char> &out)
     out[i * 2 + 1] = (unsigned char)(s & 0xFF);
   }
 }
-}
 
-void xboxPlaySound(const std::string &path)
+std::string g_sfxPath;   // the file g_sfx and g_sfxVoice were made from
+
+// Reads the sound and makes its voice, ready to play. The slow part (the file,
+// the voice): done once per sound, ideally while a game loads.
+bool loadSfx(const std::string &path)
 {
+  if (g_sfxVoice && !g_sfx.empty() && path == g_sfxPath)
+    return true;
   IXAudio2 *engine = XboxSDL_AudioEngine();
   if (!engine)
-    return;
-  // The same sound again (every achievement): just replay it, without reading
-  // the file or making a voice (both stall the game for a moment).
-  static std::string loaded;
-  if (g_sfxVoice && !g_sfx.empty() && path == loaded) {
-    g_sfxVoice->Stop(0);
-    g_sfxVoice->FlushSourceBuffers();
-    XAUDIO2_BUFFER again;
-    memset(&again, 0, sizeof(again));
-    again.AudioBytes = (UINT32)g_sfx.size();
-    again.pAudioData = &g_sfx[0];
-    again.Flags = XAUDIO2_END_OF_STREAM;
-    g_sfxVoice->SubmitSourceBuffer(&again);
-    g_sfxVoice->Start(0);
-    return;
-  }
-  loaded = path;
+    return false;
   if (g_sfxVoice) {
     g_sfxVoice->Stop(0);
     g_sfxVoice->FlushSourceBuffers();
     g_sfxVoice->DestroyVoice();
     g_sfxVoice = 0;
   }
+  g_sfxPath = path;
   g_sfx.clear();
   g_sfxRate = 44100;
   g_sfxChannels = 1;
@@ -314,8 +304,23 @@ void xboxPlaySound(const std::string &path)
   fmt.nAvgBytesPerSec = fmt.nSamplesPerSec * fmt.nBlockAlign;
   if (FAILED(engine->CreateSourceVoice(&g_sfxVoice, &fmt))) {
     g_sfxVoice = 0;
-    return;
+    return false;
   }
+  return true;
+}
+} // namespace
+
+void xboxPreloadSound(const std::string &path)
+{
+  loadSfx(path);
+}
+
+void xboxPlaySound(const std::string &path)
+{
+  if (!loadSfx(path))
+    return;
+  g_sfxVoice->Stop(0);
+  g_sfxVoice->FlushSourceBuffers();
   XAUDIO2_BUFFER b;
   memset(&b, 0, sizeof(b));
   b.AudioBytes = (UINT32)g_sfx.size();

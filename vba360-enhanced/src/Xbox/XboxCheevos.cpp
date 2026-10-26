@@ -40,6 +40,8 @@ void xboxOverlaySet(const UiCanvas *canvas);
 void xboxResetFrameTiming();
 void xboxOverlayPlace(int x, int y, int shownWidth);
 void xboxPlaySound(const std::string &path);
+void xboxPreloadSound(const std::string &path);
+void xboxWarmImageDecoder();
 #define CHEEVOS_LOG xboxLog
 #else
 #define CHEEVOS_LOG(...) ((void)0)
@@ -258,9 +260,19 @@ void popup(const std::string &title, const std::string &subtitle, const std::str
 
 // Draws the pop-up once into a canvas the size of the whole thing; the frames
 // only move it and show more or less of it.
+std::string unlockSound()
+{
+#ifdef _XBOX
+  return uiJoinPath(uiJoinPath(xboxEmulatorDir(), "sounds"), "unlock.wav");
+#else
+  return std::string();
+#endif
+}
+
 void buildPopup(const Popup &p)
 {
 #ifdef _XBOX
+  DWORD t0 = GetTickCount();
   UiCanvas probe;
   probe.create(4, 4);
   int tw = probe.textWidth(UI_FONT_SMALL, p.title.c_str());
@@ -276,6 +288,7 @@ void buildPopup(const Popup &p)
     c.blitAlpha(&px[0], POP_H, POP_H, 0, 0);
   else
     c.fillGradient(0, 0, POP_H, POP_H, 0xFF3A3F55, 0xFF1C1F2B);   // no badge (yet): a plain square
+  DWORD tBadge = GetTickCount();
   c.drawTextFit(UI_FONT_SMALL, POP_H + 20, 12, g_popupBoxW - 40, p.title.c_str(), 0xFF878787);
   c.drawTextFit(UI_FONT_BODY, POP_H + 20, 38, g_popupBoxW - 40, p.subtitle.c_str(), 0xFFF0F0F0);
   // RetroArch's see-through backdrop: the box lets the game show through,
@@ -290,8 +303,13 @@ void buildPopup(const Popup &p)
       q = (a << 24) | (q & 0xFFFFFF);
     }
   xboxOverlaySet(&c);
+  DWORD tPicture = GetTickCount();
   if (p.sound && g_cfg.raSound)
-    xboxPlaySound(uiJoinPath(uiJoinPath(xboxEmulatorDir(), "sounds"), "unlock.wav"));
+    xboxPlaySound(unlockSound());
+  DWORD tSound = GetTickCount();
+  // Where the time goes if a pop-up stalls the game (it should be ~0 ms each).
+  CHEEVOS_LOG("RetroAchievements pop-up: badge %u ms, picture %u ms, sound %u ms", (unsigned)(tBadge - t0),
+              (unsigned)(tPicture - tBadge), (unsigned)(tSound - tPicture));
   xboxResetFrameTiming();   // this frame was slower: don't let auto frame skip react to it
 #else
   (void)p;
@@ -503,6 +521,13 @@ void cheevosGameStarted(int console, const unsigned char *rom, unsigned size)
   g_console = console;
   if (!g_cfg.raEnabled || !g_client || !rom || !size || (g_state != UI_RA_LOGGED_IN && g_state != UI_RA_LOGGING_IN))
     return;   // not logged in: no "login required" message on every game
+#ifdef _XBOX
+  // The first pop-up's slow parts, done now while the game loads: D3DX's PNG
+  // decoder (the badge) and the unlock sound (its file and voice).
+  xboxWarmImageDecoder();
+  if (g_cfg.raSound)
+    xboxPreloadSound(unlockSound());
+#endif
   uint32_t id = console == CHEEVOS_GBA ? RC_CONSOLE_GAMEBOY_ADVANCE
               : console == CHEEVOS_GBC ? RC_CONSOLE_GAMEBOY_COLOR : RC_CONSOLE_GAMEBOY;
   // Identified by the hash of the ROM in memory (works for .zip / .7z too).
