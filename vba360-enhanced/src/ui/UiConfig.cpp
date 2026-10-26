@@ -92,6 +92,7 @@ struct ConfigReader
     else if (k == "ra_user") c.raUser = v;
     else if (k == "ra_token") c.raToken = v;
     else if (k == "ra_sound") c.raSound = clampInt(v, 0, 1, c.raSound);
+    else if (k == "ra_popup_style") c.raPopupStyle = clampInt(v, 0, 1, c.raPopupStyle);
     else if (k == "kinect_hands") c.kinectHands = clampInt(v, 0, 1, c.kinectHands);
     else if (k == "kinect_camera") c.kinectCamera = clampInt(v, 0, 1, c.kinectCamera);
     else if (k == "library_dir") c.libraryDir = v;
@@ -195,6 +196,7 @@ UiConfig::UiConfig()
   kinect = 0;
   raEnabled = 0;
   raSound = 1;
+  raPopupStyle = 0;
   kinectHands = 0;
   kinectCamera = 1;
   bgVisibility = 1;
@@ -257,7 +259,8 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "cover_server=%s\npreview_mode=%d\nlist_view=%d\nbg_effect=%d\n", coverServer.c_str(), previewMode, listView, bgEffect);
   fprintf(f, "start_screen=%d\nlibrary_dir=%s\nkinect=%d\nkinect_hands=%d\nkinect_camera=%d\n", startScreen, libraryDir.c_str(),
           kinect, kinectHands, kinectCamera);
-  fprintf(f, "ra_enabled=%d\nra_user=%s\nra_token=%s\nra_sound=%d\n", raEnabled, raUser.c_str(), raToken.c_str(), raSound);
+  fprintf(f, "ra_enabled=%d\nra_user=%s\nra_token=%s\nra_sound=%d\nra_popup_style=%d\n", raEnabled, raUser.c_str(), raToken.c_str(), raSound,
+          raPopupStyle);
   fprintf(f, "bg_visibility=%d\npanel_opacity=%d\naccent_tint=%d\nbubble_amount=%d\nwater_strength=%d\n",
           bgVisibility, panelOpacity, accentTint, bubbleAmount, waterStrength);
   fprintf(f, "menu_music=%d\nmusic_volume=%d\nmusic_song=%s\n", menuMusic, musicVolume, musicSong.c_str());

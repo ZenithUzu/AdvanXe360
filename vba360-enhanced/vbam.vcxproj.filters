@@ -365,6 +365,9 @@
     <ClCompile Include="src\ui\UiApp.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="src\ui\UiPopupXbox.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
     <ClCompile Include="src\ui\UiCanvas.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
@@ -530,6 +533,9 @@
       <Filter>Source Files\Xbox</Filter>
     </ClInclude>
     <ClInclude Include="src\ui\UiApp.h">
+      <Filter>Source Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\UiPopupXbox.h">
       <Filter>Source Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="src\ui\UiCanvas.h">

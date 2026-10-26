@@ -126,14 +126,17 @@ void drawGameBackground()
 }
 
 // The pop-up over the game (achievements): its picture, and where it goes.
-IDirect3DTexture9 *g_overlay = 0;
+// Two pictures, so an animated pop-up can redraw one while the GPU shows the other.
+IDirect3DTexture9 *g_overlay[2] = { 0, 0 };
+DWORD g_overlayFence[2] = { 0, 0 };
+int g_overlayCur = 0;
 int g_overlayW = 0, g_overlayH = 0;
 int g_overlayX = 0, g_overlayY = 0, g_overlayShown = 0;   // shown: how many columns, from the left
 
 // Called by libSDLx360 after the game picture, right before the frame shows.
 void drawGameOverlay()
 {
-  if (!g_overlay || !g_vs || g_overlayShown <= 0)
+  if (!g_overlay[g_overlayCur] || !g_vs || g_overlayShown <= 0)
     return;
   float x0 = g_overlayX - 0.5f, y0 = g_overlayY - 0.5f;
   float w = (float)g_overlayShown, h = (float)g_overlayH, u1 = w / g_overlayW;
@@ -148,12 +151,13 @@ void drawGameOverlay()
   pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
   pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
   pDevice->SetPixelShader(g_ps);
-  pDevice->SetTexture(0, g_overlay);
+  pDevice->SetTexture(0, g_overlay[g_overlayCur]);
   pDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);   // drawn at its own size: sharp
   pDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
   pDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
   pDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
   pDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(UiVertex));
+  g_overlayFence[g_overlayCur] = pDevice->InsertFence();
   pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
   XBOX_RestoreVideoState();
   xboxApplyGameSampler();
@@ -168,28 +172,43 @@ void xboxOverlaySet(const UiCanvas *canvas)
   if (!pDevice || (!g_vs && !xboxUiRendererInit()))
     return;
   XBOX_OverlayHook = drawGameOverlay;
-  g_overlayShown = 0;
-  if (g_overlay) {
-    pDevice->SetTexture(0, NULL);
-    pDevice->BlockUntilIdle();   // the GPU may still be drawing the old one
-    g_overlay->Release();
-    g_overlay = 0;
+  int w = canvas ? canvas->width() : 0, h = canvas ? canvas->height() : 0;
+  if (w <= 0 || h <= 0 || w != g_overlayW || h != g_overlayH) {
+    g_overlayShown = 0;
+    if (g_overlay[0]) {
+      pDevice->SetTexture(0, NULL);
+      pDevice->BlockUntilIdle();   // the GPU may still be drawing the old ones
+      for (int i = 0; i < 2; i++) {
+        g_overlay[i]->Release();
+        g_overlay[i] = 0;
+        g_overlayFence[i] = 0;
+      }
+    }
+    g_overlayW = g_overlayH = 0;
+    if (w <= 0 || h <= 0)
+      return;
+    for (int i = 0; i < 2; i++)
+      if (FAILED(pDevice->CreateTexture(w, h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT, &g_overlay[i], NULL))) {
+        if (i)
+          g_overlay[0]->Release();
+        g_overlay[0] = g_overlay[1] = 0;
+        return;
+      }
+    g_overlayW = w;
+    g_overlayH = h;
   }
-  if (!canvas || canvas->width() <= 0 || canvas->height() <= 0)
-    return;
-  int w = canvas->width(), h = canvas->height();
-  if (FAILED(pDevice->CreateTexture(w, h, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_DEFAULT, &g_overlay, NULL))) {
-    g_overlay = 0;
-    return;
-  }
+  // Same size (a new frame of the animation): into the picture not on screen,
+  // once the GPU is done with it.
+  int next = g_overlayCur ^ 1;
+  if (g_overlayFence[next])
+    pDevice->BlockOnFence(g_overlayFence[next]);
   D3DLOCKED_RECT lr;
-  if (SUCCEEDED(g_overlay->LockRect(0, &lr, NULL, 0))) {
+  if (SUCCEEDED(g_overlay[next]->LockRect(0, &lr, NULL, 0))) {
     for (int y = 0; y < h; y++)
       memcpy((BYTE *)lr.pBits + y * lr.Pitch, canvas->pixels() + y * w, w * 4);
-    g_overlay->UnlockRect(0);
+    g_overlay[next]->UnlockRect(0);
+    g_overlayCur = next;
   }
-  g_overlayW = w;
-  g_overlayH = h;
 }
 
 void xboxOverlayPlace(int x, int y, int shownWidth)

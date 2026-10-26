@@ -22,7 +22,7 @@ enum
   Q_RESUME = 1, Q_SAVE, Q_LOAD, Q_SLOT, Q_FF, Q_CHEATS, Q_GAME_OPTIONS,
   Q_SETTINGS, Q_SCREENSHOT, Q_RESET, Q_EXIT, Q_RA,
   AB_UPDATE = 900,
-  RA_ENABLE = 1, RA_LOGIN, RA_LOGOUT, RA_SOUND, RA_STATUS, RA_GAME, RA_ITEM_BASE = 100,
+  RA_ENABLE = 1, RA_LOGIN, RA_LOGOUT, RA_SOUND, RA_STYLE, RA_STATUS, RA_GAME, RA_ITEM_BASE = 100,
 
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_PRINTER, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   V_GBA_COLOR, V_BLEND,
@@ -739,6 +739,13 @@ void UiApp::buildMenu(UiMenuScreen &m)
       (m.add(RA_SOUND, ITEM_OPTION, tr("Sonido al desbloquear", "Unlock sound"), onOff[m_cfg.raSound],
              tr("Suena sounds\\unlock.wav (el de RetroArch, si lo pones ah\xed) o un tono propio.",
                 "Plays sounds\\unlock.wav (RetroArch's, if you put it there) or a chime of its own."))).choice = m_cfg.raSound;
+      {
+        static const char *styles[] = { "RetroArch", "Xbox One" };
+        (m.add(RA_STYLE, ITEM_OPTION, tr("Estilo del aviso", "Pop-up style"), styles[m_cfg.raPopupStyle],
+               tr("RetroArch: en la esquina, con la imagen del logro. Xbox One: el c\xedrculo verde que se abre abajo.",
+                  "RetroArch: in the corner, with the achievement's picture. Xbox One: the green circle opening at the bottom."))).choice =
+            m_cfg.raPopupStyle;
+      }
       if (!ra.game.empty())
         m.add(RA_GAME, ITEM_INFO, ra.game + ":  " + intStr(ra.unlocked) + " / " + intStr(ra.total) + tr(" logros", " achievements"));
     }
@@ -1190,6 +1197,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
         { "Aviso de logros", "Achievement pop-up", "RetroArch (libretro)",
           "Hecho como el de RetroArch. Su sonido (unlock, de ViRiX Dreamcore, CC BY-NC 3.0) no viene incluido.",
           "Made like RetroArch's. Its sound (unlock, by ViRiX Dreamcore, CC BY-NC 3.0) isn't included." },
+        { "Aviso estilo Xbox One", "Xbox One style pop-up", "Andrew Haine (CodePen), bigk98 (gist)",
+          "Animaci\xf3n basada en su \"Xbox One Achievement Popup\" (MIT). Sin logos de Microsoft: trofeo propio.",
+          "Animation based on their \"Xbox One Achievement Popup\" (MIT). No Microsoft logos: a trophy of its own." },
         { "Conexi\xf3n segura (HTTPS)", "Secure connection (HTTPS)", "BearSSL (Thomas Pornin)",
           "Cifrado TLS para hablar con RetroAchievements y GitHub, licencia MIT. Ra\xed""ces de Mozilla.",
           "TLS to talk to RetroAchievements and GitHub, MIT license. Mozilla's root certificates." },
@@ -1769,6 +1779,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
   case MENU_SETTINGS_RA:
     if (id == RA_ENABLE) m_cfg.raEnabled ^= 1;   // applySettings() logs in / out
     else if (id == RA_SOUND) m_cfg.raSound ^= 1;
+    else if (id == RA_STYLE) m_cfg.raPopupStyle ^= 1;
     break;
   case MENU_SETTINGS_UI:
   case MENU_SETTINGS_LOOK:

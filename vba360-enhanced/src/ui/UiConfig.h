@@ -103,6 +103,7 @@ struct UiConfig
   int raEnabled;                // RetroAchievements on (softcore)
   std::string raUser, raToken;  // the account, and the token the site gave at login (not the password)
   int raSound;                  // a sound with each achievement
+  int raPopupStyle;             // the pop-up: 0 = RetroArch, 1 = Xbox One
   int kinect;                   // Kinect connected: 0 = never touched, 1 = its features below can be used
   int kinectHands;              // move through the Library with your hand (Kinect)
   int kinectCamera;             // the Game Boy Camera sees through the Kinect
