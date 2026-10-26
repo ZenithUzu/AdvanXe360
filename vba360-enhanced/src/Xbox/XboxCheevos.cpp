@@ -33,7 +33,7 @@
 // which clash with the <stdint.h> ones rcheevos uses. What's needed from it:
 typedef unsigned char u8;
 extern u8 *internalRAM;
-extern u8 *workRAM;
+extern u8 * __restrict workRAM;   // as Globals.h has it: VS2010 tells them apart
 extern u8 flashSaveMemory[0x20000];
 std::string xboxEmulatorDir();
 bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out, bool smooth);

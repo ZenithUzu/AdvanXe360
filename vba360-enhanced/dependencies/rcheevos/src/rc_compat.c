@@ -83,6 +83,31 @@ int rc_snprintf(char* buffer, size_t size, const char* format, ...)
 
 #endif
 
+#ifdef RC_MSVC_SNPRINTF
+
+#include <stdarg.h>
+
+int rc_snprintf(char* buffer, size_t size, const char* format, ...)
+{
+  int result;
+  va_list args;
+
+  va_start(args, format);
+  result = _vscprintf(format, args);   /* the full length, as C99's snprintf returns */
+  va_end(args);
+
+  if (buffer && size) {
+    va_start(args, format);
+    _vsnprintf(buffer, size, format, args);
+    va_end(args);
+    buffer[size - 1] = '\0';
+  }
+
+  return result;
+}
+
+#endif
+
 #ifndef __STDC_SECURE_LIB__
 
 struct tm* rc_gmtime_s(struct tm* buf, const time_t* timer)

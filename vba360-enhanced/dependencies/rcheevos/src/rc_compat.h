@@ -26,6 +26,13 @@ RC_BEGIN_C_DECLS
 
 /* Visual Studio redefinitions */
 
+#if _MSC_VER < 1900 && !defined(snprintf)
+ /* AdvanXe360: VS2010 (Xbox 360 XDK) has no snprintf; _snprintf neither ends the text nor counts like it */
+ extern int rc_snprintf(char* buffer, size_t size, const char* format, ...);
+ #define snprintf rc_snprintf
+ #define RC_MSVC_SNPRINTF 1
+#endif
+
 #ifndef strcasecmp
  #define strcasecmp _stricmp
 #endif
