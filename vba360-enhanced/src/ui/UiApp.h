@@ -215,6 +215,7 @@ private:
   std::string m_cheatRom;
   int m_cheatTypeIdx;
   std::string m_pendingCheatCode, m_pendingCheatDesc;
+  int m_cheatEditIndex;   // the cheat whose value / code is being typed
   int m_dirtyFrames;
   std::map<std::string, std::vector<std::string> > m_imageCache;
   std::map<std::string, int> m_romInfoCache;

@@ -137,6 +137,10 @@ public:
   virtual bool addCheat(const std::string &rom, const std::string &code, int type,
                         const std::string &desc) = 0;
   virtual void removeCheat(const std::string &rom, int index) = 0;
+  // Changes a cheat's code in place (a value chosen, or a code edited) and
+  // turns it on, or off while it still has blanks to fill (uiCheatHasBlank).
+  // False if the code isn't valid.
+  virtual bool editCheat(const std::string &rom, int index, const std::string &code) { return false; }
   // Imports "<rom>.cht" / "<rom>.txt" style text lists; returns cheats added.
   virtual int importCheatFile(const std::string &rom, const std::string &path) = 0;
   // Looks the game up in libretro's online cheat database and imports what it

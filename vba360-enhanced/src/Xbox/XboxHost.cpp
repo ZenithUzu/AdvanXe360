@@ -267,6 +267,33 @@ std::string cheatKey(const std::string &code)
   return k;
 }
 
+// A code's letters and digits in upper case, every blank ('?', 'X') as '?'.
+std::string blankKey(const std::string &code)
+{
+  std::string k;
+  for (size_t i = 0; i < code.size(); i++) {
+    char c = (char)toupper((unsigned char)code[i]);
+    if (c == '?' || c == 'X')
+      k += '?';
+    else if (isalnum((unsigned char)c))
+      k += c;
+  }
+  return k;
+}
+
+// A code with blanks ("33002708+00??") and a stored one, its blanks filled
+// or not: the same cheat?
+bool sameBlankCode(const std::string &blank, const std::string &code)
+{
+  std::string a = blankKey(blank), b = blankKey(code);
+  if (a.size() != b.size())
+    return false;
+  for (size_t i = 0; i < a.size(); i++)
+    if (a[i] != '?' && a[i] != b[i])
+      return false;
+  return true;
+}
+
 bool romIsGb(const std::string &rom)
 {
   std::string ext = uiExtension(rom);
@@ -790,6 +817,24 @@ public:
     return true;
   }
 
+  virtual bool editCheat(const std::string &rom, int index, const std::string &code)
+  {
+    std::vector<UiStoredCheat> list;
+    loadCheatStore(rom, list);
+    if (index < 0 || index >= (int)list.size())
+      return false;
+    bool blank = uiCheatHasBlank(code);
+    std::vector<UiParsedCode> codes;
+    if (!uiParseCheatCodesAs(blank ? uiCheatFillBlank(code, "0") : code, !romIsGb(rom), list[index].type, codes))
+      return false;
+    list[index].code = code;
+    list[index].enabled = !blank;
+    saveCheatStore(rom, list);
+    if (rom == g_rom)
+      syncCoreCheats();
+    return true;
+  }
+
   virtual void removeCheat(const std::string &rom, int index)
   {
     std::vector<UiStoredCheat> list;
@@ -865,12 +910,14 @@ public:
       if (entries[i].codes.empty())
         continue;
       // Already there (imported before, or typed by the player): skip it.
+      // One with a value to fill matches the same code with any value chosen.
+      const std::string &blank = entries[i].blank;
       std::string key;
       for (size_t k = 0; k < entries[i].codes.size(); k++)
         key += cheatKey(entries[i].codes[k].code);
       bool have = false;
       for (size_t k = 0; k < list.size() && !have; k++)
-        have = cheatKey(list[k].code) == key;
+        have = blank.empty() ? cheatKey(list[k].code) == key : sameBlankCode(blank, list[k].code);
       if (have)
         continue;
       UiStoredCheat c;
@@ -883,12 +930,14 @@ public:
       c.desc = safeDesc(c.desc);
       // Imported cheats start off unless the file says otherwise: turning
       // dozens of codes on at once tends to crash games.
-      c.enabled = entries[i].enabled;
+      c.enabled = entries[i].enabled && blank.empty();
       c.type = CT_AUTO;
       for (size_t k = 0; k < entries[i].codes.size(); k++) {
         if (k) c.code += " ";
         c.code += entries[i].codes[k].code;
       }
+      if (!blank.empty())
+        c.code = blank;   // as written: the player picks the value when turning it on
       list.push_back(c);
       added++;
     }
