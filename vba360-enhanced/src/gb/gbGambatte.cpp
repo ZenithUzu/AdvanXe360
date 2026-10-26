@@ -16,6 +16,8 @@
 #include "../gba/Sound.h"
 #include "../apu/Multi_Buffer.h"
 #include "gb.h"
+
+double xboxShakeY();   // Xbox/XboxHost.cpp: Kirby Tilt 'n' Tumble's jump, as extra tilt
 #include "gbGlobals.h"
 #include "gbCheats.h"
 #include "gbGambatte.h"
@@ -265,7 +267,7 @@ void gmbEmulate(int)
     // (sensor values are 2047 at rest, about 300 per full push).
     systemUpdateMotionSensor();
     gmbBridge::setAccelerometer((systemGetSensorX() - 2047) / 300.0,
-                                (2047 - systemGetSensorY()) / 300.0);
+                                (2047 - systemGetSensorY()) / 300.0 + xboxShakeY());   // + the jump flick
   }
   // Run until Gambatte finishes a frame. With the screen off it may not
   // signal one, so stop after two frames' worth of time anyway.

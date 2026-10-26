@@ -27,7 +27,7 @@ enum
   V_FILTER = 1, V_STRETCH, V_EFFECT, V_GB_COLORS, V_SGB, V_PRINTER, V_BORDER, V_BORDER_FIT, V_FPS, V_FRAMESKIP,
   V_GBA_COLOR, V_BLEND,
   A_SOUND = 1, A_MUTE_FF, A_VOLUME, A_LATENCY,
-  E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA,
+  E_FF_SPEED = 1, E_FF_MODE, E_BIOS, E_GSA, E_REWIND,
   SN_MAP_BASE = 50, SN_SENS = 60,   // in Controls: SN_MAP_BASE + UiSensorAction
   K_MODE = 1, K_YEAR, K_MONTH, K_DAY, K_HOUR, K_MINUTE, K_NOW,
   S_SAVE_DIR = 1, S_STATE_DIR, S_AUTO_SAVE, S_AUTO_LOAD, S_BACKUPS, S_DELETE_STATES,
@@ -949,6 +949,11 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(E_GSA, ITEM_OPTION, tr("C\xf3""digos de 16 d\xedgitos", "16-digit codes"), gsa[m_cfg.gsaV3],
           tr("Formato de los trucos XXXXXXXX YYYYYYYY que agregues.",
              "Format of the XXXXXXXX YYYYYYYY cheats you add."));
+    m.add(E_REWIND, ITEM_OPTION, tr("Rebobinar", "Rewind"), onOff[m_cfg.rewind],
+          std::string(tr("Guarda los \xfaltimos segundos para volver atr\xe1s manteniendo ",
+                         "Keeps the last seconds to go back to by holding ")) +
+              uiButtonName(*this, m_cfg.map[ACT_REWIND]) + tr(". Usa algo de memoria y CPU.", ". Uses some memory and CPU."))
+        .choice = m_cfg.rewind;
     break;
   }
 
@@ -1304,7 +1309,14 @@ void UiApp::buildControlsMenu(UiMenuScreen &m)
     UiMenuItem &it = m.add(C_ACTION_BASE + a, ITEM_OPTION, uiActionName(*this, a),
                            uiButtonName(*this, ctlMap()[a]));
     if (a == ACT_MENU)
-      it.help = tr("Este bot\xf3n no se puede dejar sin asignar.", "This button can't be left unassigned.");
+      it.help = tr("Sin asignar, el clic del stick derecho lo sigue abriendo.",
+                   "Unassigned, the right stick click still opens it.");
+    else if (a == ACT_REWIND)
+      it.help = tr("Mantenlo y el juego va hacia atr\xe1s. Se activa en Emulaci\xf3n.",
+                   "Hold it and the game goes backwards. Turned on under Emulation.");
+    else if (a == ACT_SHAKE)
+      it.help = tr("Kirby Tilt 'n' Tumble: como sacudir la consola hacia arriba (Kirby salta).",
+                   "Kirby Tilt 'n' Tumble: like flicking the console up (Kirby jumps).");
     else if (a == ACT_FAST_FORWARD)
       it.help = tr("El modo (mantener o alternar) est\xe1 en Emulaci\xf3n.",
                    "The mode (hold or toggle) is under Emulation.");
@@ -1770,6 +1782,7 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == E_FF_MODE) m_cfg.ffToggle ^= 1;
     else if (id == E_BIOS) m_cfg.useBios ^= 1;
     else if (id == E_GSA) m_cfg.gsaV3 ^= 1;
+    else if (id == E_REWIND) m_cfg.rewind ^= 1;
 
     break;
   case MENU_SETTINGS_SAVES:
@@ -1984,7 +1997,7 @@ void UiApp::openPicker(UiMenuScreen &m, int id)
 void UiApp::onMenuSecondary(UiMenuScreen &m, int id, int button)
 {
   if (m.menuId == MENU_CONTROLS) {
-    if (button == PAD_X && id >= C_ACTION_BASE && id - C_ACTION_BASE != ACT_MENU) {
+    if (button == PAD_X && id >= C_ACTION_BASE) {   // any: the menu keeps the right stick click
       ctlMap()[id - C_ACTION_BASE] = PAD_NONE;
       if (m_ctlForGame)
         m_gameCfg.save(gameConfigPath(m_gameCfgRom));

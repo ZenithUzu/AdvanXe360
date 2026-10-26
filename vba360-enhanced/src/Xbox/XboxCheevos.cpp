@@ -39,6 +39,7 @@ std::string xboxEmulatorDir();
 bool xboxLoadImagePixels(const char *path, int w, int h, std::vector<UiColor> &out, bool smooth);
 void xboxOverlaySet(const UiCanvas *canvas);
 void xboxResetFrameTiming();
+extern bool xboxRewinding;   // XboxHost.cpp: the game is going backwards
 void xboxOverlayPlace(int x, int y, int shownWidth);
 void xboxPlaySound(const std::string &path);
 void xboxPreloadSound(const std::string &path);
@@ -632,7 +633,13 @@ void cheevosGameStarted(int console, const unsigned char *rom, unsigned size)
 void cheevosFrame()
 {
   cheevosPump();
+#ifdef _XBOX
+  // Going backwards: no achievements checked (their conditions would see
+  // time run in reverse); cheevosReset() when it stops.
+  if (g_client && g_console >= 0 && !xboxRewinding)
+#else
   if (g_client && g_console >= 0)
+#endif
     rc_client_do_frame(g_client);
   tickPopup();
 }

@@ -573,6 +573,7 @@
     <ClCompile Include="src\sdl\text.cpp" />
     <ClCompile Include="src\Xbox\XboxCovers.cpp" />
     <ClCompile Include="src\Xbox\XboxTls.cpp" />
+    <ClCompile Include="src\Xbox\XboxRewind.cpp" />
     <ClCompile Include="src\Xbox\XboxCheevos.cpp" />
     <ClCompile Include="src\Xbox\XboxHost.cpp" />
     <ClCompile Include="src\Xbox\XboxLog.cpp" />
@@ -702,6 +703,7 @@
     <ClInclude Include="libSDLx360\SDL\include\SDL.h" />
     <ClInclude Include="src\Xbox\XboxCovers.h" />
     <ClInclude Include="src\Xbox\XboxTls.h" />
+    <ClInclude Include="src\Xbox\XboxRewind.h" />
     <ClInclude Include="src\Xbox\XboxCheevos.h" />
     <ClInclude Include="src\Xbox\XboxMusic.h" />
     <ClInclude Include="src\Xbox\XboxHost.h" />

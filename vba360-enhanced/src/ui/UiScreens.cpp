@@ -463,6 +463,8 @@ const char *uiActionName(UiApp &app, int action)
   case ACT_MENU: return app.tr("Abrir men\xfa", "Open menu");
   case ACT_QUICK_SAVE: return app.tr("Guardado r\xe1pido", "Quick save");
   case ACT_QUICK_LOAD: return app.tr("Carga r\xe1pida", "Quick load");
+  case ACT_REWIND: return app.tr("Rebobinar", "Rewind");
+  case ACT_SHAKE: return app.tr("Sacudir (salto de Kirby)", "Shake (Kirby's jump)");
   default: return "";
   }
 }

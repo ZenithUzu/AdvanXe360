@@ -1862,7 +1862,8 @@ int gba_main(char *path, char *fname)
   sdlFirstFrameLogged = false;
   fprintf(stdout, "Emulation loop starting (%dx%d)\n", srcWidth, srcHeight);
   while(emulating) {
-     emulator.emuMain(emulator.emuCount);
+     if (!xboxRewindStep())   // the rewind button held: one step back instead
+       emulator.emuMain(emulator.emuCount);
      sdlPollEvents();
   }
 

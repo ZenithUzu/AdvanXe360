@@ -689,7 +689,9 @@ bool CPUWriteState(const char *file)
 
 bool CPUWriteMemState(char *memory, int available)
 {
-  gzFile gzFile = utilMemGzOpen(memory, available, "w");
+  // Stored, not compressed ("w0"): only rewind uses it, and it keeps what
+  // changed between two states, which compression would scramble.
+  gzFile gzFile = utilMemGzOpen(memory, available, "w0");
 
   if(gzFile == NULL) {
     return false;

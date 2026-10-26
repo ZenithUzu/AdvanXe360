@@ -26,6 +26,8 @@ enum UiAction
   ACT_GBA_UP, ACT_GBA_DOWN, ACT_GBA_LEFT, ACT_GBA_RIGHT,
   ACT_TURBO_A, ACT_TURBO_B,
   ACT_FAST_FORWARD, ACT_MENU, ACT_QUICK_SAVE, ACT_QUICK_LOAD,
+  ACT_REWIND,          // hold: the game goes backwards
+  ACT_SHAKE,           // a quick flick of the console (Kirby Tilt 'n' Tumble's jump)
   ACT_COUNT
 };
 
@@ -140,6 +142,7 @@ struct UiConfig
   // Emulation
   int ffSpeed;           // index into uiFastForwardSpeeds
   int ffToggle;          // 0 = hold, 1 = toggle
+  int rewind;            // keep the last seconds to go back to (ACT_REWIND)
   int useBios;
   int gsaV3;             // treat 16-digit codes as GameShark v3 / Action Replay
   int sunLevel;          // Boktai solar sensor: 0 = dark ... 10 = full sun
