@@ -12,6 +12,7 @@
 #include "XboxCovers.h"
 #include "XboxCheevos.h"
 #include "XboxRewind.h"
+#include "XboxLink.h"
 #include "fex/fex.h"
 #include <zlib.h>   // crc32: Game Boy cheats found by the ROM's CRC
 #include <map>
@@ -48,6 +49,7 @@ static bool kinectHand(int &sx, int &sy);
 #include "../gb/gbCheats.h"
 #include "../gb/gbGambatte.h"
 #include "../gb/gbPrinter.h"
+extern u8 (*gbSerialFunction)(u8);   // the Game Boy link port device (gbGambatte.cpp)
 #include "../Util.h"
 #include "../sdl/filters.h"
 
@@ -467,6 +469,16 @@ void applySampler()
 }
 
 void resetFrameTiming();
+
+// Game Boy link port: the link cable, the printer or nothing.
+void applySerialDevice()
+{
+  bool link = g_cfg.linkMode != LINK_MODE_OFF;
+  gbSerialFunction = link ? xboxLinkGbSend : g_cfg.gbPrinter ? gbPrinterSend : 0;
+  gmbBridge::setSerialPoll(link ? xboxLinkGbPoll : 0);
+  if (gambatteActive())
+    gmbBridge::setSerialDevice(gbSerialFunction);   // changed in the in-game menu
+}
 static bool g_rwHeld = false;   // the rewind button is held (xboxPollEvents)
 static int g_shakeFrames = 0;   // frames left of a console flick (ACT_SHAKE)
 
@@ -478,7 +490,8 @@ void applySoundFlags()
   if (soundNoThrottle && !ff)
     resetFrameTiming();
   soundMuted = !g_cfg.sound || (ff && g_cfg.muteFastForward) || xboxRewinding;   // backwards: no sound
-  soundNoThrottle = ff;
+  // The link cable's client keeps pace with the host's game, not with the sound.
+  soundNoThrottle = ff || xboxLinkIsClient();
   soundVolumePercent = uiVolumeLevels[g_cfg.volume];
   soundBufferMs = uiAudioLatencyMs[g_cfg.audioLatency];
 }
@@ -625,6 +638,8 @@ public:
 
   virtual bool loadState(int slot)
   {
+    if (xboxLinkConnected())
+      return false;   // the other console's game would be somewhere else
     if (!pathExists(xboxStatePath(slot)))
       return false;
     sdlReadState(slot);
@@ -1053,6 +1068,8 @@ public:
   virtual void raInfo(UiRaInfo &out) { cheevosInfo(out); }
   virtual void raLogin(const std::string &user, const std::string &password) { cheevosLogin(user, password); }
   virtual void raLogout() { cheevosLogout(); }
+  virtual std::string linkLocalIp() { return xboxLinkLocalIp(); }
+  virtual int linkStatus() { return xboxLinkStatus(); }   // LINK_STATUS_* has UI_LINK_*'s order
   virtual void raAchievements(std::vector<UiRaAchievement> &out) { cheevosList(out); }
 };
 
@@ -1215,8 +1232,7 @@ void xboxOnGameLoading(const char *romPath)
   strcpy(gambatteCgbBiosFileName, g_cfg.useBios && pathExists(gbcBios) ? gbcBios.c_str() : "");
   // Super Game Boy borders and colors: Settings > Video, or this game's
   // own choice (its game options, "Custom").
-  extern u8 (*gbSerialFunction)(u8);
-  gbSerialFunction = g_cfg.gbPrinter ? gbPrinterSend : 0;
+  applySerialDevice();
   kinectStop();
   gmbBridge::setCamera(g_cfg.kinect && g_cfg.kinectCamera ? kinectCapture : 0);   // no Kinect: a gray picture
   gambatteSgbMode = g_gameCfg.custom ? (g_gameCfg.sgbMode ? 2 : 0) : g_cfg.sgbBorders;
@@ -1446,6 +1462,7 @@ void xboxOnGameStarted()
   else
     cheevosGameStarted(gambatteIsCgb() ? CHEEVOS_GBC : CHEEVOS_GB, gbRom, (unsigned)gbRomSize);
   xboxRewindStart();
+  xboxLinkStart(g_cfg.linkMode, g_cfg.linkHost, cartridgeType == 0);
 }
 
 // --- Rewind (XboxRewind.h) ------------------------------------------------------
@@ -1571,6 +1588,7 @@ double xboxShakeY()
 
 void xboxOnGameExiting()
 {
+  xboxLinkStop();
   cheevosGameExited();
   xboxCartridgeRumble(false);
   if (g_ui)
@@ -1592,6 +1610,8 @@ void xboxOnGameExiting()
 
 bool xboxFastForwardActive()
 {
+  if (xboxLinkConnected())
+    return false;   // the other console can't keep up
   bool toggled = g_ui && g_ui->fastForward;
   return toggled || g_ffHeld;
 }
@@ -1611,6 +1631,20 @@ bool xboxSkipFrame()
 
 void xboxPollEvents()
 {
+  switch (xboxLinkFrame()) {
+  case LINK_EVENT_CONNECTED:
+    systemScreenMessage(g_cfg.language ? "Link cable: connected" : "Cable link: conectado");
+    applySoundFlags();
+    break;
+  case LINK_EVENT_LOST:
+    systemScreenMessage(g_cfg.language ? "Link cable: disconnected" : "Cable link: desconectado");
+    applySoundFlags();
+    break;
+  case LINK_EVENT_MISMATCH:
+    systemScreenMessage(g_cfg.language ? "Link cable: open a game of the same console on both"
+                                       : "Cable link: abran un juego de la misma consola");
+    break;
+  }
   if (g_settleFrames > 0 && --g_settleFrames == 0) {
     // Same as closing the menu: restart the audio stream and the frame
     // timing, which the slow first frames (video setup) threw off.
@@ -1646,7 +1680,7 @@ void xboxPollEvents()
   applySoundFlags();
 
   // Rewind (held) and the console flick (Kirby Tilt 'n' Tumble's jump).
-  g_rwHeld = padDown(pads, ACT_REWIND);
+  g_rwHeld = padDown(pads, ACT_REWIND) && !xboxLinkConnected();
   if (ctlMap()[ACT_SHAKE] < PAD_BUTTON_COUNT && (pressed & PAD_BIT(ctlMap()[ACT_SHAKE])))
     g_shakeFrames = 8;
 
@@ -1964,6 +1998,8 @@ void xboxApplySettings()
   applyBorder();
   applyGbPalette();
   rtcSetTimeOffset(g_cfg.clockMode ? g_cfg.clockOffset : 0);   // GBA
+  applySerialDevice();
+  xboxLinkSettings(g_cfg.linkMode, g_cfg.linkHost);
   gambatte::rtcTimeOffset = g_cfg.clockMode ? g_cfg.clockOffset : 0;   // GB / GBC (Pokemon Gold, Silver, Crystal...)
   XBOX_ScreenEffect = videoEffect();
   XBOX_ShaderFilter = shaderFilterFor(xboxVideoFilter());

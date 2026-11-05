@@ -52,7 +52,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7B1424BB-650C-44F3-9C42-014820DAE314}</ProjectGuid>
-    <RootNamespace>vbam</RootNamespace>
+    <RootNamespace>AdvanXe360</RootNamespace>
     <Keyword>Xbox360Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -573,6 +573,7 @@
     <ClCompile Include="src\sdl\text.cpp" />
     <ClCompile Include="src\Xbox\XboxCovers.cpp" />
     <ClCompile Include="src\Xbox\XboxTls.cpp" />
+    <ClCompile Include="src\Xbox\XboxLink.cpp" />
     <ClCompile Include="src\Xbox\XboxRewind.cpp" />
     <ClCompile Include="src\Xbox\XboxCheevos.cpp" />
     <ClCompile Include="src\Xbox\XboxHost.cpp" />
@@ -703,6 +704,7 @@
     <ClInclude Include="libSDLx360\SDL\include\SDL.h" />
     <ClInclude Include="src\Xbox\XboxCovers.h" />
     <ClInclude Include="src\Xbox\XboxTls.h" />
+    <ClInclude Include="src\Xbox\XboxLink.h" />
     <ClInclude Include="src\Xbox\XboxRewind.h" />
     <ClInclude Include="src\Xbox\XboxCheevos.h" />
     <ClInclude Include="src\Xbox\XboxMusic.h" />

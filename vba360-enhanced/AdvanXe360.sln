@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vbam", "vbam.vcxproj", "{7B1424BB-650C-44F3-9C42-014820DAE314}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AdvanXe360", "AdvanXe360.vcxproj", "{7B1424BB-650C-44F3-9C42-014820DAE314}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "File_Extractor", "dependencies\File_Extractor-1.0.0\File_Extractor2008.vcxproj", "{7AEC599C-7C82-4F00-AA60-411E0A359CB0}"
 EndProject

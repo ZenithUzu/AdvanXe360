@@ -105,6 +105,8 @@ struct UiConfig
   int raEnabled;                // RetroAchievements on (softcore)
   std::string raUser, raToken;  // the account, and the token the site gave at login (not the password)
   int raSound;                  // a sound with each achievement
+  int linkMode;                 // link cable: 0 off, 1 wait for the other console, 2 connect to it
+  std::string linkHost;         // the other console's IP (linkMode 2)
   int kinect;                   // Kinect connected: 0 = never touched, 1 = its features below can be used
   int kinectHands;              // move through the Library with your hand (Kinect)
   int kinectCamera;             // the Game Boy Camera sees through the Kinect

@@ -50,10 +50,12 @@ namespace gambatte {
 extern void (*sgbJoypWriteHook)(unsigned data, unsigned oldValue);
 extern unsigned (*sgbJoypIdleHook)();
 extern unsigned char (*serialDeviceHook)(unsigned char);
+extern bool (*serialPollHook)(unsigned char out, unsigned char *in);
 }
 
 void gmbBridge::setCamera(void (*capture)(unsigned char *)) { gambatte::cameraCaptureHook = capture; }
 void gmbBridge::setSerialDevice(unsigned char (*send)(unsigned char)) { gambatte::serialDeviceHook = send; }
+void gmbBridge::setSerialPoll(bool (*poll)(unsigned char, unsigned char *)) { gambatte::serialPollHook = poll; }
 
 // Called by Gambatte's MBC5 for rumble cartridges (Pokemon Pinball...).
 void cartridge_set_rumble(unsigned active)

@@ -21,17 +21,7 @@ void LinkSStop()
  
 }
 
-void StartLink(unsigned short)
-{
- 
-}
-
 void LinkSSend(unsigned short)
-{
- 
-}
-
-void StartGPLink(unsigned short)
 {
  
 }
@@ -41,8 +31,5 @@ void StartJOYLink(unsigned short)
  
 }
 
-void LinkUpdate(int)
-{
- 
-}
+// StartLink, StartGPLink and LinkUpdate: Xbox/XboxLink.cpp
 

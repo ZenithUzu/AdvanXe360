@@ -31,6 +31,9 @@ struct UiCheatInfo
   bool enabled;
 };
 
+// Link cable state (UiHost::linkStatus).
+enum { UI_LINK_OFF = 0, UI_LINK_NO_GAME, UI_LINK_NO_NET, UI_LINK_BAD_IP, UI_LINK_WAITING, UI_LINK_ONLINE };
+
 // Box art download (Game options -> Cover).
 enum { UI_COVER_GBA = 0, UI_COVER_GB = 1, UI_COVER_GBC = 2, UI_COVER_SYSTEMS = 3 };
 
@@ -115,6 +118,9 @@ public:
   virtual void raInfo(UiRaInfo &out) { out = UiRaInfo(); }
   virtual void raLogin(const std::string &user, const std::string &password) {}
   virtual void raLogout() {}
+  // Link cable: this console's IP ("" while the network starts) and UI_LINK_*.
+  virtual std::string linkLocalIp() { return ""; }
+  virtual int linkStatus() { return UI_LINK_OFF; }
   virtual void raAchievements(std::vector<UiRaAchievement> &out) { out.clear(); }
   // The latest release on the emulator's GitHub ("v0.5.0"); false with err if it can't tell.
   virtual bool latestRelease(std::string &tag, std::string &err) { err = "-"; return false; }

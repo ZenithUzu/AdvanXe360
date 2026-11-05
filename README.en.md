@@ -28,6 +28,7 @@ Fork of [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba
 - **Game Boy and Game Boy Color** on **Gambatte** (RetroArch's core), including Color-only games.
 - **Super Game Boy:** the border and colors each game came with.
 - **Hacks:** automatic **BPS / UPS / IPS** patches and save type read from the ROM (Pokémon hacks save properly).
+- **Link cable** between two Xbox 360s on the same network: Game Boy / Color (Pokémon trades and battles...) and GBA's Multiplayer and Normal modes. See [Link cable](#link-cable).
 - **Cartridge sensors** on the right stick: sun (Boktai), tilt (Yoshi, Koro Koro, Kirby Tilt 'n' Tumble), gyroscope and rumble (WarioWare: Twisted!, Drill Dozer).
 - **States** in 9 slots with thumbnails, save on exit and **continue where you left off**.
 - **Fast forward** from 2x to 8x or max (hold or toggle), **cheats** (GameShark, Action Replay, CodeBreaker, Game Genie) and an adjustable **clock**.
@@ -154,6 +155,20 @@ These show **Appearance** (theme, background, panel transparency, highlight colo
 3. Open it from Aurora (`default.xex`). The other folders are created on their own.
 4. Put your ROMs anywhere (hard drive or USB) and browse to them from the emulator. `.zip` and `.7z` work too.
 
+# Link cable
+
+Connects two Xbox 360s on the **same network** (wired or Wi-Fi), as if the two Game Boys had the link cable between them.
+
+1. On both: **Settings → Link cable**. On one pick **Wait for the other console**; that screen shows its **IP**.
+2. On the other pick **Connect to the other console** and type that IP.
+3. Open a game on each (GBA with GBA, or GB/GBC with GB/GBC). Once connected, *Link cable: connected* shows up.
+
+- **GB / GBC:** trades, battles and everything else that uses the cable (Pokémon Red/Blue/Yellow/Gold/Silver/Crystal, Tetris...). With the link cable on, the Game Boy Printer is not used.
+- **GBA:** **Multiplayer** and **Normal** modes, for **2 consoles** (Pokémon Ruby/Sapphire/Emerald/FireRed/LeafGreen trades and battles, among others). The waiting console is the parent.
+- While connected there is no fast-forward, rewind or loading states (each game would end up somewhere else).
+- Uses TCP port 16728. It is for the home network, not over the internet.
+- **Not:** the GBA wireless adapter (Union Room), more than 2 consoles, or GB with GBA.
+
 # Usage
 
 **In the game list**
@@ -252,10 +267,11 @@ Folders created next to `default.xex`: `saves\`, `states\`, `cheats\`, `screensh
 - Game Boy Advance, including **Classic NES Series / Famicom Mini**.
 - Game Boy and Game Boy Color (Color-only games too), with clock and rumble.
 - Super Game Boy (each game's borders and colors).
+- **Link cable** between two Xbox 360s over the network (GB/GBC, and GBA in Multiplayer and Normal modes).
 - Sensors: sun (Boktai), tilt (Yoshi Topsy-Turvy, Koro Koro Puzzle, **Kirby Tilt 'n' Tumble**), gyroscope and rumble (WarioWare: Twisted!, Drill Dozer).
 
 **Not (yet):**
-- **Link cable** and **wireless adapter** (multiplayer and trading).
+- GBA **wireless adapter** and link cable for more than 2 consoles.
 - **e-Reader**, **Game Boy Camera**, **Game Boy Printer** and the Game Boy Color's **infrared**.
 - Bandai's **TAMA5** cartridge (Tamagotchi).
 - Full Super Game Boy: the generic border, the boot animation and sounds, and the extra sound of a few games are missing.
@@ -263,8 +279,8 @@ Folders created next to `default.xex`: `saves\`, `states\`, `cheats\`, `screensh
 # Building
 
 1. Visual Studio 2010 with the Xbox 360 SDK (tested with 21256.3).
-2. Open `vba360-enhanced/vbam.sln`, pick **Release | Xbox 360** and use **Rebuild Solution** (it builds `libSDLx360` too).
-3. The result is `default.xex`.
+2. Open `vba360-enhanced/AdvanXe360.sln`, pick **Release | Xbox 360** and use **Rebuild Solution** (it builds `libSDLx360` too).
+3. The result is `Release\AdvanXe360.xex` (called `default.xex` in the package).
 
 More technical details in the [original README](docs/README-original.md).
 

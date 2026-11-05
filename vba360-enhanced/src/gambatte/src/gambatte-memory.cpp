@@ -30,6 +30,10 @@ namespace gambatte {
 // sends, returns the one it receives at the end of the transfer.
 unsigned char (*serialDeviceHook)(unsigned char) = 0;
 static unsigned char s_serialIn = 0xFF;
+// VBA360: link cable. Asked while the game waits on the external clock (SC =
+// 0x80): true when the other console sent a byte; out is the one going back.
+bool (*serialPollHook)(unsigned char out, unsigned char *in) = 0;
+static unsigned long s_serialPollCc = 0;
 
 Memory::Memory(Interrupter const &interrupter) :
 #ifdef HAVE_NETWORK
@@ -180,6 +184,22 @@ void Memory::checkSerial(unsigned long const cc) {
 	}
 }
 #endif
+
+void Memory::pollSerialSlow(unsigned long const cc) {
+	if ((ioamhram_[0x102] & 0x81) != 0x80 || intreq_.eventTime(intevent_serial) != disabled_time)
+		return;
+	if (cc - s_serialPollCc < 1024 && cc >= s_serialPollCc)
+		return;   // about 4000 times a second is enough
+	s_serialPollCc = cc;
+	unsigned char in;
+	if (!serialPollHook(ioamhram_[0x101], &in))
+		return;
+	s_serialIn = in;
+	serialCnt_ = 8;
+	intreq_.setEventTime<intevent_serial>((ioamhram_[0x102] & isCgb() * 2)
+		? (cc & ~0x07ul) + 0x010 * 8
+		: (cc & ~0xFFul) + 0x200 * 8);
+}
 
 void Memory::updateSerial(unsigned long const cc) {
 	if (intreq_.eventTime(intevent_serial) != disabled_time) {

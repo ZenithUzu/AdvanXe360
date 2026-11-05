@@ -28,6 +28,7 @@ Fork de [frankischilling/vba360-enhanced](https://github.com/frankischilling/vba
 - **Game Boy y Game Boy Color** con **Gambatte** (el núcleo de RetroArch), incluidos los juegos que son sólo de Color.
 - **Super Game Boy:** el marco y los colores que cada juego traía.
 - **Hacks:** parches **BPS / UPS / IPS** automáticos y guardado detectado leyendo la ROM (los hacks de Pokémon guardan bien).
+- **Cable link** entre dos Xbox 360 de la misma red: Game Boy / Color (intercambios y combates de Pokémon...) y los modos Multijugador y Normal de GBA. Ver [Cable link](#cable-link).
 - **Sensores de cartucho** con el stick derecho: sol (Boktai), inclinación (Yoshi, Koro Koro, Kirby Tilt 'n' Tumble), giroscopio y vibración (WarioWare: Twisted!, Drill Dozer).
 - **Estados** en 9 ranuras con miniatura, guardar al salir y **continuar donde lo dejaste**.
 - **Avance rápido** de 2x a 8x o máximo (mantener o alternar), **trucos** (GameShark, Action Replay, CodeBreaker, Game Genie) y **reloj** ajustable.
@@ -154,6 +155,20 @@ Estas muestran **Apariencia** (tema, fondo, transparencia de los paneles, tono d
 3. Ábrela desde Aurora (`default.xex`). Las demás carpetas se crean solas.
 4. Pon tus ROMs donde quieras (disco duro o USB) y búscalas desde el emulador. También abre `.zip` y `.7z`.
 
+# Cable link
+
+Une dos Xbox 360 conectadas a la **misma red** (cable de red o Wi-Fi), como si tuvieran el cable link entre los dos Game Boy.
+
+1. En las dos: **Ajustes → Cable link**. En una elige **Esperar a la otra consola**; esa pantalla muestra su **IP**.
+2. En la otra elige **Conectarse a la otra consola** y escribe esa IP.
+3. Abran un juego en cada una (GBA con GBA, o GB/GBC con GB/GBC). Al conectarse aparece *Cable link: conectado*.
+
+- **GB / GBC:** intercambios, combates y todo lo que usa el cable (Pokémon Rojo/Azul/Amarillo/Oro/Plata/Cristal, Tetris...). Con el cable link activado no se usa la Game Boy Printer.
+- **GBA:** modos **Multijugador** y **Normal**, para **2 consolas** (intercambios y combates de Pokémon Rubí/Zafiro/Esmeralda/Rojo Fuego/Verde Hoja, entre otros). La consola que espera es la principal.
+- Mientras están conectadas no hay avance rápido, rebobinar ni cargar estados (cada juego quedaría en otro momento).
+- Usa el puerto TCP 16728. Es para la red de casa, no por internet.
+- **No:** el adaptador inalámbrico de GBA (Union Room), más de 2 consolas, ni GB con GBA.
+
 # Uso
 
 **En la lista de juegos**
@@ -252,10 +267,11 @@ Carpetas que crea junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screen
 - Game Boy Advance, incluidos **Classic NES Series / Famicom Mini**.
 - Game Boy y Game Boy Color (también juegos sólo de Color), con reloj y vibración.
 - Super Game Boy (marcos y colores de cada juego).
+- **Cable link** entre dos Xbox 360 por red (GB/GBC, y GBA en modos Multijugador y Normal).
 - Sensores: sol (Boktai), inclinación (Yoshi Topsy-Turvy, Koro Koro Puzzle, **Kirby Tilt 'n' Tumble**), giroscopio y vibración (WarioWare: Twisted!, Drill Dozer).
 
 **No (todavía):**
-- **Cable link** y **adaptador inalámbrico** (multijugador e intercambios).
+- **Adaptador inalámbrico** de GBA y cable link para más de 2 consolas.
 - **e-Reader**, **Game Boy Camera**, **Game Boy Printer** e **infrarrojo** del Game Boy Color.
 - El cartucho **TAMA5** de Bandai (Tamagotchi).
 - Super Game Boy completo: falta el marco genérico, la animación y los sonidos de arranque, y el sonido extra de unos pocos juegos.
@@ -263,8 +279,8 @@ Carpetas que crea junto a `default.xex`: `saves\`, `states\`, `cheats\`, `screen
 # Compilar
 
 1. Visual Studio 2010 con el Xbox 360 SDK (probado con 21256.3).
-2. Abre `vba360-enhanced/vbam.sln`, elige **Release | Xbox 360** y usa **Rebuild Solution** (compila también `libSDLx360`).
-3. El resultado es `default.xex`.
+2. Abre `vba360-enhanced/AdvanXe360.sln`, elige **Release | Xbox 360** y usa **Rebuild Solution** (compila también `libSDLx360`).
+3. El resultado es `Release\AdvanXe360.xex` (en el paquete se llama `default.xex`).
 
 Más detalles técnicos en el [README original](docs/README-original.md).
 

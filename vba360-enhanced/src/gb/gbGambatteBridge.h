@@ -34,6 +34,8 @@ void setBootloader(bool (*get)(bool isCgb, unsigned char *data, unsigned size));
 unsigned char peek(unsigned address);
 void setCamera(void (*capture)(unsigned char *gray128x112));
 void setSerialDevice(unsigned char (*send)(unsigned char));
+// Link cable: asked when the other console's clock may have sent a byte.
+void setSerialPoll(bool (*poll)(unsigned char out, unsigned char *in));
 void setRumble(void (*set)(bool on));   // rumble cartridges
 // MBC7 cartridges (Kirby Tilt 'n' Tumble): accelerometer in g (about -1..1;
 // x > 0 = tilted left, y > 0 = tilted away / up, as on the real cartridge).

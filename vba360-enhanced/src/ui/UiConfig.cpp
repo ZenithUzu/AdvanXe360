@@ -93,6 +93,8 @@ struct ConfigReader
 #endif
     else if (k == "ra_enabled") c.raEnabled = clampInt(v, 0, 1, c.raEnabled);
     else if (k == "ra_user") c.raUser = v;
+    else if (k == "link_mode") c.linkMode = clampInt(v, 0, 2, c.linkMode);
+    else if (k == "link_host") c.linkHost = v;
     else if (k == "ra_token") c.raToken = v;
     else if (k == "ra_sound") c.raSound = clampInt(v, 0, 1, c.raSound);
     else if (k == "kinect_hands") c.kinectHands = clampInt(v, 0, 1, c.kinectHands);
@@ -187,7 +189,7 @@ UiConfig::UiConfig()
     screenEffect(EFFECT_NONE), gbPalette(0), sgbBorders(0), gbPrinter(0), gbaColor(0), frameBlend(0), showFps(0), frameSkip(0),
     sound(1), muteFastForward(1), volume(VOLUME_DEFAULT), audioLatency(0),
     ffSpeed(1), ffToggle(0), rewind(0), useBios(0), gsaV3(0), sunLevel(7),
-    sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0),
+    sensorSens(2), sensorDeadzone(1), clockMode(0), clockOffset(0), linkMode(0),
     saveDirMode(DIR_NEXT_TO_ROM), stateDirMode(DIR_EMULATOR),
     autoSaveState(0), autoLoadState(0), stateSlot(1), saveBackups(1)
 {
@@ -264,6 +266,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "start_screen=%d\nlibrary_dir=%s\nkinect=%d\nkinect_hands=%d\nkinect_camera=%d\n", startScreen, libraryDir.c_str(),
           kinect, kinectHands, kinectCamera);
   fprintf(f, "ra_enabled=%d\nra_user=%s\nra_token=%s\nra_sound=%d\n", raEnabled, raUser.c_str(), raToken.c_str(), raSound);
+  fprintf(f, "link_mode=%d\nlink_host=%s\n", linkMode, linkHost.c_str());
   fprintf(f, "bg_visibility=%d\npanel_opacity=%d\naccent_tint=%d\nbubble_amount=%d\nwater_strength=%d\n",
           bgVisibility, panelOpacity, accentTint, bubbleAmount, waterStrength);
   fprintf(f, "menu_music=%d\nmusic_volume=%d\nmusic_song=%s\n", menuMusic, musicVolume, musicSong.c_str());

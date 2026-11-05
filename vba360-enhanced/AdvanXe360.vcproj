@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="vbam"
+	Name="AdvanXe360"
 	ProjectGUID="{7B1424BB-650C-44F3-9C42-014820DAE314}"
-	RootNamespace="vbam"
+	RootNamespace="AdvanXe360"
 	Keyword="Xbox360Proj"
 	TargetFrameworkVersion="0"
 	>

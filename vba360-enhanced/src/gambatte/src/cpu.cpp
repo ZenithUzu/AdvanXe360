@@ -507,6 +507,8 @@ void CPU::process(unsigned long const cycles) {
 
 #ifdef HAVE_NETWORK
 		mem_.checkSerial(cycleCounter);
+#else
+		mem_.pollSerial(cycleCounter);
 #endif
 
 		if (mem_.halted()) {

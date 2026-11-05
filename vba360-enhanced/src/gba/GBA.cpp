@@ -2937,7 +2937,7 @@ void CPUUpdateRegister(u32 address, u16 value)
 
 
   case COMM_SIOCNT:
-	  //StartLink(value);
+	  StartLink(value);   // Xbox/XboxLink.cpp; does nothing with the link cable off
 	  /*
 	  // old code path for no linking...
 	  {
@@ -2958,7 +2958,11 @@ void CPUUpdateRegister(u32 address, u16 value)
   case COMM_SIODATA8:
 	  //if (gba_link_enabled && lspeed)
 		//  LinkSSend(value);
-	  UPDATE_REG(COMM_RCNT, value);
+	  if (gba_link_enabled) {
+		  UPDATE_REG(COMM_SIODATA8, value);
+	  } else {
+		  UPDATE_REG(COMM_RCNT, value);   // as it always was without the link cable
+	  }
 	  break;
 
   case 0x130:
@@ -2971,7 +2975,7 @@ void CPUUpdateRegister(u32 address, u16 value)
 	  break;
 
   case COMM_RCNT:
-	  //StartGPLink(value);
+	  StartGPLink(value);
 	  break;
 
   case COMM_JOYCNT:

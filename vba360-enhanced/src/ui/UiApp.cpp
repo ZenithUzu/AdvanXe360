@@ -34,6 +34,7 @@ enum
   U_LANGUAGE = 1, U_HIDE, U_HOME_DIR, U_THEME, U_BACKGROUND, U_OPTION_STYLE, U_RESET_ALL, U_PREVIEW, U_START, U_RA_TEST, U_KINECT, U_KINECT_HANDS, U_KINECT_CAMERA, U_EFFECT,
   U_BG_VIS, U_PANELS, U_ACCENT, U_COVERS, U_BUBBLES, U_WATER, U_MUSIC, U_MUSIC_VOL, U_MUSIC_SONG,
   C_RESET = 1, C_ACTION_BASE = 100,
+  L_MODE = 1, L_HOST, L_IP,
   G_SAVE_TYPE = 1, G_RTC, G_PATCH, G_PLAY, G_SAVE_PATCHED,
   G_CUSTOM, G_FILTER, G_STRETCH, G_EFFECT, G_GB_COLORS, G_SGB_MODE,
   G_GBA_COLOR, G_BLEND, G_FPS, G_FRAMESKIP,
@@ -47,7 +48,7 @@ enum
   CONFIRM_QUIT = 1, CONFIRM_DELETE_CHEAT, CONFIRM_RESET_CONTROLS, CONFIRM_RESET_GAME,
   CONFIRM_DELETE_STATES, CONFIRM_RESET_ALL,
   KEYBOARD_CHEAT = 1, KEYBOARD_CHEAT_DESC, KEYBOARD_SEARCH, KEYBOARD_RA_USER, KEYBOARD_RA_PASS,
-  KEYBOARD_CHEAT_VALUE, KEYBOARD_CHEAT_EDIT
+  KEYBOARD_CHEAT_VALUE, KEYBOARD_CHEAT_EDIT, KEYBOARD_LINK_HOST
 };
 
 const int kStateSlots = 9;   // slots 1..9 (0 is the automatic one)
@@ -722,6 +723,7 @@ void UiApp::buildMenu(UiMenuScreen &m)
     m.add(MENU_SETTINGS_SAVES, ITEM_SUBMENU, tr("Guardado", "Saving"));
     m.add(MENU_CONTROLS, ITEM_SUBMENU, tr("Controles", "Controls"));
     m.add(MENU_CLOCK, ITEM_SUBMENU, tr("Reloj de los juegos", "Game clock"));
+    m.add(MENU_SETTINGS_LINK, ITEM_SUBMENU, tr("Cable link", "Link cable"));
     m.add(MENU_SETTINGS_UI, ITEM_SUBMENU, tr("Interfaz e idioma", "Interface & language"));
     m.add(MENU_SETTINGS_LOOK, ITEM_SUBMENU, tr("Apariencia", "Appearance"));
 #ifndef XBOX_NO_KINECT
@@ -729,6 +731,42 @@ void UiApp::buildMenu(UiMenuScreen &m)
 #endif
     m.add(MENU_SETTINGS_RA, ITEM_SUBMENU, "RetroAchievements");
     break;
+
+  case MENU_SETTINGS_LINK: {
+    m.title = tr("Cable link", "Link cable");
+    m.subtitle = tr("Entre dos Xbox 360 de la misma red", "Between two Xbox 360 consoles on the same network");
+    const char *modes[3] = { tr("Desactivado", "Off"), tr("Esperar a la otra consola", "Wait for the other console"),
+                             tr("Conectarse a la otra consola", "Connect to the other console") };
+    (m.add(L_MODE, ITEM_OPTION, tr("Modo", "Mode"), modes[m_cfg.linkMode],
+           tr("Una consola espera y la otra se conecta a su IP. Se conectan al abrir un juego.",
+              "One console waits and the other connects to its IP. They connect when a game is opened.")))
+        .choice = m_cfg.linkMode;
+    if (m_cfg.linkMode == 2)
+      m.add(L_HOST, ITEM_ACTION, tr("IP de la otra consola", "The other console's IP"),
+            m_cfg.linkHost.empty() ? std::string(tr("Escribirla...", "Type it...")) : m_cfg.linkHost,
+            tr("La que muestra la otra consola en esta misma pantalla.", "The one the other console shows on this same screen."));
+    std::string ip = m_host.linkLocalIp();
+    m.add(L_IP, ITEM_ACTION, tr("IP de esta consola", "This console's IP"),
+          ip.empty() ? std::string(tr("Buscando...", "Looking...")) : ip, tr("A: actualizar.", "A: refresh."));
+    if (m_cfg.linkMode) {
+      const char *status;
+      switch (m_host.linkStatus()) {
+      case UI_LINK_ONLINE: status = tr("Estado: conectadas.", "Status: connected."); break;
+      case UI_LINK_WAITING: status = tr("Estado: buscando a la otra consola...", "Status: looking for the other console..."); break;
+      case UI_LINK_NO_NET: status = tr("Estado: sin red. \xbf""Est\xe1 conectado el cable de red?", "Status: no network. Is the network cable plugged in?"); break;
+      case UI_LINK_BAD_IP: status = tr("Estado: la IP no es v\xe1lida (ej. 192.168.1.20).", "Status: that IP isn't valid (e.g. 192.168.1.20)."); break;
+      default: status = tr("Estado: se conecta al abrir un juego.", "Status: connects when a game is opened."); break;
+      }
+      m.addInfo(status);
+    }
+    m.addInfo(tr("Abran el mismo tipo de juego en las dos: GBA con GBA, o GB/GBC con GB/GBC.",
+                 "Open the same kind of game on both: GBA with GBA, or GB/GBC with GB/GBC."));
+    m.addInfo(tr("GBA: modos Multijugador y Normal, para 2 consolas. Sin adaptador inal\xe1mbrico.",
+                 "GBA: Multiplayer and Normal modes, for 2 consoles. No wireless adapter."));
+    m.addInfo(tr("Conectadas no hay avance r\xe1pido, rebobinar ni cargar estados.",
+                 "While connected there is no fast-forward, rewind or loading states."));
+    break;
+  }
 
   case MENU_SETTINGS_RA: {
     UiRaInfo ra;
@@ -1137,6 +1175,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
         { "RetroAchievements", "RetroAchievements", "Softcore", "Softcore",
           "Logros con tu cuenta de retroachievements.org, avisos y lista de logros.",
           "Achievements with your retroachievements.org account, pop-ups and list." },
+        { "Cable link", "Link cable", "Por red", "Over the network",
+          "Entre dos Xbox 360: GB/GBC y los modos Multijugador y Normal de GBA (Ajustes > Cable link).",
+          "Between two Xbox 360s: GB/GBC and GBA's Multiplayer and Normal modes (Settings > Link cable)." },
         { "Game Boy Printer", "Game Boy Printer", "S\xed", "Yes",
           "Lo que imprime el juego se guarda en screenshots\\ (en grises, como el papel).",
           "What the game prints is saved in screenshots\\ (in gray, like the paper)." },
@@ -1154,8 +1195,9 @@ void UiApp::buildMenu(UiMenuScreen &m)
           "States, cheats, rewind, CRT and LCD effects, frame blending, color correction and themes." },
       };
       static const char *const no[][6] = {
-        { "Cable link y adaptador inal\xe1mbrico", "Link cable and wireless adapter", "No", "No",
-          "Multijugador e intercambios, en GBA y en GB/GBC.", "Multiplayer and trading, on GBA and on GB/GBC." },
+        { "Adaptador inal\xe1mbrico de GBA", "GBA wireless adapter", "No", "No",
+          "Lo usan Pok\xe9mon Rojo Fuego / Verde Hoja y Esmeralda en la Union Room, entre otros.",
+          "Used by Pokemon FireRed / LeafGreen and Emerald in the Union Room, among others." },
         { "e-Reader", "e-Reader", "No", "No", "Ni el lector ni sus tarjetas.", "Neither the reader nor its cards." },
         { "Modo hardcore de RetroAchievements", "RetroAchievements hardcore mode", "No", "No",
           "Solo lo permiten en emuladores aprobados por el sitio; aqu\xed, modo softcore.",
@@ -1630,6 +1672,14 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
     }
     return;
 
+  case MENU_SETTINGS_LINK:
+    if (id == L_HOST)
+      openKeyboard(tr("IP de la otra consola (ej. 192.168.1.20)", "The other console's IP (e.g. 192.168.1.20)"),
+                   m_cfg.linkHost, KEYBOARD_LINK_HOST);
+    else if (id == L_IP)
+      rebuildMenus();
+    return;
+
   case MENU_SETTINGS_RA:
     if (id == RA_LOGIN) {
       openKeyboard(tr("Usuario de RetroAchievements", "RetroAchievements user"), m_cfg.raUser, KEYBOARD_RA_USER);
@@ -1816,6 +1866,9 @@ void UiApp::onMenuChange(UiMenuScreen &m, int id, int delta)
     else if (id == S_AUTO_SAVE) m_cfg.autoSaveState ^= 1;
     else if (id == S_AUTO_LOAD) m_cfg.autoLoadState ^= 1;
     else if (id == S_BACKUPS) m_cfg.saveBackups ^= 1;
+    break;
+  case MENU_SETTINGS_LINK:
+    if (id == L_MODE) m_cfg.linkMode = wrapIndex(m_cfg.linkMode, delta, 3);
     break;
   case MENU_SETTINGS_RA:
     if (id == RA_ENABLE) m_cfg.raEnabled ^= 1;   // applySettings() logs in / out
@@ -2202,6 +2255,17 @@ void UiApp::onKeyboardDone(int purpose, const std::string &text, bool accepted)
       f.erase(f.size() - 1);
     m_listFilter = f;
     return;   // the browser rebuilds its list when it is back on top
+  }
+  if (purpose == KEYBOARD_LINK_HOST) {
+    std::string ip;
+    for (size_t i = 0; i < text.size(); i++)
+      if (text[i] != ' ')
+        ip += text[i];
+    m_cfg.linkHost = ip;
+    saveAll();
+    rebuildMenus();
+    m_host.applySettings();
+    return;
   }
   if (purpose == KEYBOARD_RA_USER) {   // then the password
     m_raUserTyped = text;

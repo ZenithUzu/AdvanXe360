@@ -33,6 +33,9 @@ class InputGetter;
 class SerialIO;
 #endif
 
+// VBA360: link cable (gambatte-memory.cpp).
+extern bool (*serialPollHook)(unsigned char out, unsigned char *in);
+
 class Memory {
 public:
    Bootloader bootloader;
@@ -176,6 +179,12 @@ public:
 #ifdef HAVE_NETWORK
 	void checkSerial(unsigned long cc);
 #endif
+	// VBA360: link cable (the other console's clock); see gambatte-memory.cpp.
+	void pollSerial(unsigned long cc) {
+		if (serialPollHook)
+			pollSerialSlow(cc);
+	}
+	void pollSerialSlow(unsigned long cc);
 	void updateInput();
 
    int loadROM(const void *romdata, unsigned int romsize, unsigned int forceModel, const bool multicartCompat);
