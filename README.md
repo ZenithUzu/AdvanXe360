@@ -159,14 +159,18 @@ Estas muestran **Apariencia** (tema, fondo, transparencia de los paneles, tono d
 
 Une dos Xbox 360 conectadas a la **misma red** (cable de red o Wi-Fi), como si tuvieran el cable link entre los dos Game Boy.
 
-1. En las dos: **Ajustes → Cable link**. En una elige **Esperar a la otra consola**; esa pantalla muestra su **IP**.
-2. En la otra elige **Conectarse a la otra consola** y escribe esa IP.
-3. Abran un juego en cada una (GBA con GBA, o GB/GBC con GB/GBC). Al conectarse aparece *Cable link: conectado*.
+Funciona como el juego en red local de RetroArch: una consola es **Anfitrión** y la otra **Cliente**, y el cliente encuentra solo al anfitrión.
+
+1. En una consola: **Ajustes → Cable link → Esta consola es: Anfitrión**.
+2. En la otra: **Ajustes → Cable link → Esta consola es: Cliente** (deja *Anfitrión: Automático*).
+3. Abran un juego en cada una (GBA con GBA, o GB/GBC con GB/GBC). Al conectarse aparece *Cable link: conectado*. También se puede activar desde el menú dentro del juego.
+
+Si no se encuentran solas (algunos routers bloquean los avisos), en el cliente entra en *Anfitrión* y escribe la **IP** que muestra el anfitrión en esa misma pantalla. Lo que pasa al conectar queda en `vba360.log`, junto a `default.xex`.
 
 - **GB / GBC:** intercambios, combates y todo lo que usa el cable (Pokémon Rojo/Azul/Amarillo/Oro/Plata/Cristal, Tetris...). Con el cable link activado no se usa la Game Boy Printer.
-- **GBA:** modos **Multijugador** y **Normal**, para **2 consolas** (intercambios y combates de Pokémon Rubí/Zafiro/Esmeralda/Rojo Fuego/Verde Hoja, entre otros). La consola que espera es la principal.
+- **GBA:** modos **Multijugador** y **Normal**, para **2 consolas** (intercambios y combates de Pokémon Rubí/Zafiro/Esmeralda/Rojo Fuego/Verde Hoja, entre otros). El anfitrión es la consola principal.
 - Mientras están conectadas no hay avance rápido, rebobinar ni cargar estados (cada juego quedaría en otro momento).
-- Usa el puerto TCP 16728. Es para la red de casa, no por internet.
+- Usa los puertos 16728 (TCP) y 16729 (UDP, para encontrarse). Es para la red de casa, no por internet.
 - **No:** el adaptador inalámbrico de GBA (Union Room), más de 2 consolas, ni GB con GBA.
 
 # Uso

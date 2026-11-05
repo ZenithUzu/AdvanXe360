@@ -159,14 +159,18 @@ These show **Appearance** (theme, background, panel transparency, highlight colo
 
 Connects two Xbox 360s on the **same network** (wired or Wi-Fi), as if the two Game Boys had the link cable between them.
 
-1. On both: **Settings → Link cable**. On one pick **Wait for the other console**; that screen shows its **IP**.
-2. On the other pick **Connect to the other console** and type that IP.
-3. Open a game on each (GBA with GBA, or GB/GBC with GB/GBC). Once connected, *Link cable: connected* shows up.
+It works like RetroArch's LAN netplay: one console is the **Host** and the other the **Client**, and the client finds the host by itself.
+
+1. On one console: **Settings → Link cable → This console is: Host**.
+2. On the other: **Settings → Link cable → This console is: Client** (leave *Host: Automatic*).
+3. Open a game on each (GBA with GBA, or GB/GBC with GB/GBC). Once connected, *Link cable: connected* shows up. It can also be turned on from the in-game menu.
+
+If they don't find each other (some routers block the announcements), on the client open *Host* and type the **IP** the host shows on that same screen. What happens while connecting goes to `vba360.log`, next to `default.xex`.
 
 - **GB / GBC:** trades, battles and everything else that uses the cable (Pokémon Red/Blue/Yellow/Gold/Silver/Crystal, Tetris...). With the link cable on, the Game Boy Printer is not used.
-- **GBA:** **Multiplayer** and **Normal** modes, for **2 consoles** (Pokémon Ruby/Sapphire/Emerald/FireRed/LeafGreen trades and battles, among others). The waiting console is the parent.
+- **GBA:** **Multiplayer** and **Normal** modes, for **2 consoles** (Pokémon Ruby/Sapphire/Emerald/FireRed/LeafGreen trades and battles, among others). The host is the parent.
 - While connected there is no fast-forward, rewind or loading states (each game would end up somewhere else).
-- Uses TCP port 16728. It is for the home network, not over the internet.
+- Uses ports 16728 (TCP) and 16729 (UDP, to find each other). It is for the home network, not over the internet.
 - **Not:** the GBA wireless adapter (Union Room), more than 2 consoles, or GB with GBA.
 
 # Usage
