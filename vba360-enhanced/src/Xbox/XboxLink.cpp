@@ -29,6 +29,12 @@
 #include <string.h>
 
 #include "XboxCovers.h"   // xboxNetStart
+#ifdef _XBOX
+#include "XboxLog.h"
+#define LINK_LOG xboxLog   // vba360.log next to default.xex; only from the emulator thread
+#else
+#define LINK_LOG(...) (printf(__VA_ARGS__), printf("\n"))
+#endif
 
 // --- GBA core ------------------------------------------------------------------------
 extern unsigned char *ioMem;
@@ -61,9 +67,10 @@ const DWORD GRANT_WAIT_MS = 100;    // the child stops waiting and runs alone
 const DWORD GB_REPLY_MS = 40;       // two frames: the other game may be busy
 const DWORD GB_SHORT_REPLY_MS = 2;  // the other game isn't listening: don't crawl
 const DWORD GB_SHORT_FOR_MS = 500;
-const DWORD HANDSHAKE_MS = 5000;
+const DWORD HANDSHAKE_MS = 15000;   // the other side may be in its menu
 
 int g_state = STATE_OFF;
+bool g_gameOpen = false;   // between xboxLinkStart and xboxLinkStop, whatever the mode
 int g_mode = LINK_MODE_OFF;
 std::string g_host;
 bool g_isGba = false;
@@ -118,12 +125,30 @@ void wr16(int a, unsigned short v)
 }
 
 // --- Connecting (on its own thread) --------------------------------------------------
+//
+// The host listens on TCP LINK_PORT and, while it waits, says so once a second
+// with a UDP broadcast on DISCOVERY_PORT (like RetroArch's LAN netplay). A
+// client with no IP set listens for that and connects to the first host with
+// the same kind of game; with an IP it goes straight there.
+
+const unsigned short DISCOVERY_PORT = LINK_PORT + 1;   // 16729
+const char DISCOVERY_TAG[4] = { 'A', 'X', 'L', '1' };
+
+// What the thread is doing, for the log and the menu (written by the thread,
+// read by the emulator thread: plain words, no strings).
+enum { STEP_IDLE, STEP_NET, STEP_LISTEN, STEP_SEARCH, STEP_CONNECT, STEP_FAILED };
+volatile int g_step = STEP_IDLE;
+volatile int g_stepError = 0;          // WSAGetLastError() of the last failure
+volatile unsigned long g_peerIp = 0;   // the host found / being connected to
+int g_loggedStep = -1, g_loggedError = 0;
+unsigned long g_loggedPeer = 0;
 
 struct ConnectJob
 {
   LONG gen;
   int mode;
-  unsigned long ip;
+  unsigned long ip;   // 0: search the network
+  int system;
   DWORD delayMs;
 };
 
@@ -141,6 +166,23 @@ bool setNonBlocking(SOCKET s)
 {
   u_long on = 1;
   return ioctlsocket(s, FIONBIO, &on) == 0;
+}
+
+// Homebrew talks to ordinary machines: without this the Xbox's network stack
+// only lets secure (Xbox Live / System Link) traffic through on a retail or
+// RGH console, and every connect / accept fails. XboxCovers.cpp does the same.
+void markInsecure(SOCKET s)
+{
+#ifdef _XBOX
+  BOOL yes = TRUE;
+  setsockopt(s, SOL_SOCKET, 0x5801, (const char *)&yes, sizeof(yes));   // SO_MARKINSECURE
+#endif
+}
+
+void fail(int step)
+{
+  g_stepError = WSAGetLastError();
+  g_step = step;
 }
 
 // 0 nothing yet, >0 ready, <0 failed
@@ -166,14 +208,63 @@ void sleepUnlessStale(LONG gen, DWORD ms)
     Sleep(50);
 }
 
-SOCKET hostAccept(LONG gen)
+SOCKET udpSocket(bool listen)
+{
+  SOCKET u = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  if (u == INVALID_SOCKET)
+    return u;
+  markInsecure(u);
+  BOOL yes = TRUE;
+  setsockopt(u, SOL_SOCKET, SO_BROADCAST, (const char *)&yes, sizeof(yes));
+  setsockopt(u, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(yes));
+  if (listen) {
+    sockaddr_in a;
+    memset(&a, 0, sizeof(a));
+    a.sin_family = AF_INET;
+    a.sin_port = htons(DISCOVERY_PORT);
+    a.sin_addr.s_addr = INADDR_ANY;
+    if (bind(u, (sockaddr *)&a, sizeof(a)) != 0) {
+      closeSock(u);
+      return INVALID_SOCKET;
+    }
+  }
+  setNonBlocking(u);
+  return u;
+}
+
+void announce(SOCKET u, int system)
+{
+  char msg[5];
+  memcpy(msg, DISCOVERY_TAG, 4);
+  msg[4] = (char)system;
+  sockaddr_in a;
+  memset(&a, 0, sizeof(a));
+  a.sin_family = AF_INET;
+  a.sin_port = htons(DISCOVERY_PORT);
+  a.sin_addr.s_addr = INADDR_BROADCAST;
+  sendto(u, msg, sizeof(msg), 0, (sockaddr *)&a, sizeof(a));
+#ifdef _XBOX
+  XNADDR addr;
+  DWORD st = XNetGetTitleXnAddr(&addr);
+  if (st != XNET_GET_XNADDR_PENDING && st != XNET_GET_XNADDR_NONE && addr.ina.s_addr) {
+    unsigned char *b = (unsigned char *)&a.sin_addr.s_addr;   // network order
+    a.sin_addr.s_addr = addr.ina.s_addr;
+    b[3] = 255;   // home networks are /24 (192.168.x.255)
+    sendto(u, msg, sizeof(msg), 0, (sockaddr *)&a, sizeof(a));
+  }
+#endif
+}
+
+SOCKET hostAccept(LONG gen, int system)
 {
   while (gen == g_threadGen) {
     SOCKET l = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (l == INVALID_SOCKET) {
+      fail(STEP_FAILED);
       sleepUnlessStale(gen, 1000);
       continue;
     }
+    markInsecure(l);
     BOOL yes = TRUE;
     setsockopt(l, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(yes));
     sockaddr_in a;
@@ -182,32 +273,114 @@ SOCKET hostAccept(LONG gen)
     a.sin_port = htons(LINK_PORT);
     a.sin_addr.s_addr = INADDR_ANY;
     if (bind(l, (sockaddr *)&a, sizeof(a)) != 0 || listen(l, 1) != 0 || !setNonBlocking(l)) {
+      fail(STEP_FAILED);
       closeSock(l);
       sleepUnlessStale(gen, 1000);
       continue;
     }
+    g_step = STEP_LISTEN;
+    SOCKET u = udpSocket(false);
+    DWORD lastAnnounce = GetTickCount() - 1000;
     while (gen == g_threadGen) {
+      if (u != INVALID_SOCKET && GetTickCount() - lastAnnounce >= 1000) {
+        announce(u, system);
+        lastAnnounce = GetTickCount();
+      }
       int r = waitSock(l, false, 250);
-      if (r < 0)
+      if (r < 0) {
+        fail(STEP_FAILED);
         break;
+      }
       if (r == 0)
         continue;
-      SOCKET s = accept(l, 0, 0);
+      sockaddr_in from;
+      int fromLen = sizeof(from);
+      SOCKET s = accept(l, (sockaddr *)&from, &fromLen);
       if (s != INVALID_SOCKET) {
+        markInsecure(s);
+        g_peerIp = from.sin_addr.s_addr;
+        closeSock(u);
         closeSock(l);
         return s;
       }
     }
+    closeSock(u);
     closeSock(l);
   }
   return INVALID_SOCKET;
 }
 
-SOCKET joinConnect(LONG gen, unsigned long ip)
+// Waits for a host's broadcast with the same kind of game; 0 if stopped.
+unsigned long searchHost(LONG gen, int system)
 {
+  g_step = STEP_SEARCH;
   while (gen == g_threadGen) {
+    SOCKET u = udpSocket(true);
+    if (u == INVALID_SOCKET) {
+      fail(STEP_SEARCH);
+      sleepUnlessStale(gen, 1000);
+      continue;
+    }
+    while (gen == g_threadGen) {
+      int r = waitSock(u, false, 250);
+      if (r < 0)
+        break;
+      if (r == 0)
+        continue;
+      char msg[16];
+      sockaddr_in from;
+      int fromLen = sizeof(from);
+      int n = recvfrom(u, msg, sizeof(msg), 0, (sockaddr *)&from, &fromLen);
+      if (n == 5 && !memcmp(msg, DISCOVERY_TAG, 4) && msg[4] == system) {
+        closeSock(u);
+        return from.sin_addr.s_addr;
+      }
+    }
+    closeSock(u);
+  }
+  return 0;
+}
+
+// A host's announcement if one arrives within ms; 0 if not.
+unsigned long peekHost(int system, int ms)
+{
+  SOCKET u = udpSocket(true);
+  if (u == INVALID_SOCKET)
+    return 0;
+  unsigned long found = 0;
+  DWORD start = GetTickCount();
+  while (!found && GetTickCount() - start < (DWORD)ms) {
+    if (waitSock(u, false, 100) <= 0)
+      continue;
+    char msg[16];
+    sockaddr_in from;
+    int fromLen = sizeof(from);
+    int n = recvfrom(u, msg, sizeof(msg), 0, (sockaddr *)&from, &fromLen);
+    if (n == 5 && !memcmp(msg, DISCOVERY_TAG, 4) && msg[4] == system)
+      found = from.sin_addr.s_addr;
+  }
+  closeSock(u);
+  return found;
+}
+
+SOCKET joinConnect(LONG gen, unsigned long fixedIp, int system)
+{
+  int failures = 0;
+  while (gen == g_threadGen) {
+    unsigned long ip = fixedIp ? fixedIp : searchHost(gen, system);
+    if (fixedIp && failures >= 3) {
+      unsigned long other = peekHost(system, 1500);
+      if (other)
+        ip = other;   // the typed IP doesn't answer, but a host is announcing itself
+    }
+    if (!ip)
+      break;
+    g_peerIp = ip;
+    g_step = STEP_CONNECT;
     SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (s != INVALID_SOCKET && setNonBlocking(s)) {
+    if (s != INVALID_SOCKET) {
+      markInsecure(s);
+      setNonBlocking(s);
       sockaddr_in a;
       memset(&a, 0, sizeof(a));
       a.sin_family = AF_INET;
@@ -216,7 +389,7 @@ SOCKET joinConnect(LONG gen, unsigned long ip)
       int r = connect(s, (sockaddr *)&a, sizeof(a));
       if (r != 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
         r = -1;
-        for (int i = 0; i < 8 && gen == g_threadGen; i++) {
+        for (int i = 0; i < 12 && gen == g_threadGen; i++) {
           int w = waitSock(s, true, 250);
           if (w != 0) {
             r = w > 0 ? 0 : -1;
@@ -227,7 +400,9 @@ SOCKET joinConnect(LONG gen, unsigned long ip)
       if (r == 0)
         return s;
     }
+    fail(STEP_FAILED);
     closeSock(s);
+    failures++;
     sleepUnlessStale(gen, 1000);
   }
   return INVALID_SOCKET;
@@ -239,6 +414,7 @@ DWORD WINAPI connectThread(void *param)
   delete (ConnectJob *)param;
   sleepUnlessStale(job.gen, job.delayMs);
 
+  g_step = STEP_NET;
   std::string err;
   while (job.gen == g_threadGen && !xboxNetStart(err)) {
     g_noNet = true;
@@ -246,7 +422,8 @@ DWORD WINAPI connectThread(void *param)
   }
   g_noNet = false;
 
-  SOCKET s = job.mode == LINK_MODE_HOST ? hostAccept(job.gen) : joinConnect(job.gen, job.ip);
+  SOCKET s = job.mode == LINK_MODE_HOST ? hostAccept(job.gen, job.system)
+                                        : joinConnect(job.gen, job.ip, job.system);
   if (s == INVALID_SOCKET)
     return 0;
   BOOL yes = TRUE;
@@ -264,8 +441,10 @@ void startThread(DWORD delayMs)
   InterlockedIncrement(&g_threadGen);   // an older thread sees this and gives up
   g_state = STATE_CONNECTING;
   g_badIp = false;
+  g_step = STEP_IDLE;
+  g_peerIp = 0;
   unsigned long ip = 0;
-  if (g_mode == LINK_MODE_JOIN) {
+  if (g_mode == LINK_MODE_JOIN && !g_host.empty()) {
     ip = inet_addr(g_host.c_str());
     if (ip == (unsigned long)INADDR_NONE || ip == 0) {
       g_badIp = true;
@@ -276,12 +455,21 @@ void startThread(DWORD delayMs)
   job->gen = g_threadGen;
   job->mode = g_mode;
   job->ip = ip;
+  job->system = g_isGba ? SYSTEM_GBA : SYSTEM_GB;
   job->delayMs = delayMs;
   HANDLE h = CreateThread(0, 64 * 1024, connectThread, job, 0, 0);
   if (h)
     CloseHandle(h);
   else
     delete job;
+}
+
+std::string ipText(unsigned long ip)
+{
+  const unsigned char *b = (const unsigned char *)&ip;   // network order
+  char t[16];
+  sprintf(t, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
+  return t;
 }
 
 // --- Messages ------------------------------------------------------------------------
@@ -724,7 +912,8 @@ bool xboxLinkGbPoll(unsigned char out, unsigned char *in)
 
 // --- Session -------------------------------------------------------------------------
 
-void xboxLinkStop()
+namespace {
+void closeSession()
 {
   InterlockedIncrement(&g_threadGen);
   closeSock(g_sock);
@@ -738,10 +927,18 @@ void xboxLinkStop()
   gba_link_enabled = false;
   resetSession();
 }
+}
+
+void xboxLinkStop()
+{
+  closeSession();
+  g_gameOpen = false;
+}
 
 void xboxLinkStart(int mode, const std::string &host, bool isGba)
 {
-  xboxLinkStop();
+  closeSession();
+  g_gameOpen = true;
   g_mode = mode;
   g_host = host;
   g_isGba = isGba;
@@ -751,26 +948,49 @@ void xboxLinkStart(int mode, const std::string &host, bool isGba)
   startThread(0);
 }
 
+// Changed in the menu: with a game open it applies right away (the option
+// turned on in the in-game menu connects without reopening the game).
 void xboxLinkSettings(int mode, const std::string &host)
 {
-  if (mode == g_mode && (mode != LINK_MODE_JOIN || host == g_host))
+  if (mode == g_mode && host == g_host)
     return;
-  bool running = g_state != STATE_OFF;
-  g_mode = mode;
-  g_host = host;
-  // Nothing is running yet (or the option was off, with a game open: it can't
-  // know whether that's a GBA game; it starts with the next game).
-  if (running) {
-    bool isGba = g_isGba;
-    xboxLinkStart(mode, host, isGba);
-    refreshLines();
+  if (!g_gameOpen) {
+    g_mode = mode;
+    g_host = host;
+    return;
   }
+  xboxLinkStart(mode, host, g_isGba);
+  refreshLines();
+}
+
+namespace {
+// What the connecting thread did since the last frame, into the log.
+void logProgress()
+{
+  int step = g_step, error = g_stepError;
+  unsigned long peer = g_peerIp;
+  if (step == g_loggedStep && error == g_loggedError && peer == g_loggedPeer)
+    return;
+  g_loggedStep = step;
+  g_loggedError = error;
+  g_loggedPeer = peer;
+  switch (step) {
+  case STEP_NET: LINK_LOG("Link cable: starting the network"); break;
+  case STEP_LISTEN: LINK_LOG("Link cable: host, waiting on port %d (this console: %s)", LINK_PORT, xboxLinkLocalIp().c_str()); break;
+  case STEP_SEARCH: LINK_LOG("Link cable: client, looking for a host on the network"); break;
+  case STEP_CONNECT: LINK_LOG("Link cable: connecting to %s", ipText(peer).c_str()); break;
+  case STEP_FAILED: LINK_LOG("Link cable: failed (error %d), trying again", error); break;
+  default: break;
+  }
+}
 }
 
 int xboxLinkFrame()
 {
   if (g_state == STATE_OFF)
     return LINK_EVENT_NONE;
+  if (g_state == STATE_CONNECTING)
+    logProgress();
   if (g_state == STATE_CONNECTING) {
     SOCKET s = (SOCKET)InterlockedExchange(&g_readySock, (LONG)INVALID_SOCKET);
     if (s != INVALID_SOCKET) {
@@ -779,18 +999,29 @@ int xboxLinkFrame()
       g_state = STATE_HANDSHAKE;
       g_handshakeStart = g_lastRx = GetTickCount();
       resetSession();
+      LINK_LOG("Link cable: TCP connected with %s, handshake", ipText(g_peerIp).c_str());
       sendMsg(MSG_HELLO, PROTOCOL, 0, g_isGba ? SYSTEM_GBA : SYSTEM_GB);
     }
   }
   if (g_state >= STATE_HANDSHAKE) {
     pump();
-    if (g_state == STATE_HANDSHAKE && GetTickCount() - g_handshakeStart > HANDSHAKE_MS)
+    if (g_state == STATE_HANDSHAKE && GetTickCount() - g_handshakeStart > HANDSHAKE_MS) {
+      LINK_LOG("Link cable: no answer to the handshake (is the other console in a game?)");
       dropConnection(LINK_EVENT_NONE, 0);
+    }
     else if (online() && !g_isGba)
       sendMsg(MSG_HEARTBEAT, 0, 0, 0);
   }
   int e = g_event;
   g_event = LINK_EVENT_NONE;
+  if (e == LINK_EVENT_CONNECTED)
+    LINK_LOG("Link cable: connected (%s, %s)", isClient() ? "client" : "host", g_isGba ? "GBA" : "GB");
+  else if (e == LINK_EVENT_LOST)
+    LINK_LOG("Link cable: connection lost");
+  else if (e == LINK_EVENT_MISMATCH)
+    LINK_LOG("Link cable: the other console has a different kind of game (or another AdvanXe360 version)");
+  if (e != LINK_EVENT_NONE)
+    g_loggedStep = -1;
   return e;
 }
 
@@ -807,7 +1038,19 @@ int xboxLinkStatus()
     return LINK_STATUS_BAD_IP;
   if (online())
     return LINK_STATUS_ONLINE;
-  return g_noNet ? LINK_STATUS_NO_NET : LINK_STATUS_WAITING;
+  if (g_noNet)
+    return LINK_STATUS_NO_NET;
+  if (!isClient())
+    return LINK_STATUS_WAITING;
+  if (g_state == STATE_HANDSHAKE || g_step == STEP_CONNECT || g_step == STEP_FAILED)
+    return LINK_STATUS_CONNECTING;
+  return LINK_STATUS_SEARCHING;
+}
+
+std::string xboxLinkPeer()
+{
+  unsigned long ip = g_peerIp;
+  return ip ? ipText(ip) : std::string();
 }
 
 namespace {

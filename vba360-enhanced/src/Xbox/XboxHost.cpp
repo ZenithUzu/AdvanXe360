@@ -1070,6 +1070,7 @@ public:
   virtual void raLogout() { cheevosLogout(); }
   virtual std::string linkLocalIp() { return xboxLinkLocalIp(); }
   virtual int linkStatus() { return xboxLinkStatus(); }   // LINK_STATUS_* has UI_LINK_*'s order
+  virtual std::string linkPeer() { return xboxLinkPeer(); }
   virtual void raAchievements(std::vector<UiRaAchievement> &out) { cheevosList(out); }
 };
 
@@ -1463,6 +1464,10 @@ void xboxOnGameStarted()
     cheevosGameStarted(gambatteIsCgb() ? CHEEVOS_GBC : CHEEVOS_GB, gbRom, (unsigned)gbRomSize);
   xboxRewindStart();
   xboxLinkStart(g_cfg.linkMode, g_cfg.linkHost, cartridgeType == 0);
+  if (g_cfg.linkMode == LINK_MODE_HOST)
+    systemScreenMessage(g_cfg.language ? "Link cable: host, waiting for the client" : "Cable link: anfitrion, esperando al cliente");
+  else if (g_cfg.linkMode == LINK_MODE_JOIN)
+    systemScreenMessage(g_cfg.language ? "Link cable: client, looking for the host" : "Cable link: cliente, buscando al anfitrion");
 }
 
 // --- Rewind (XboxRewind.h) ------------------------------------------------------

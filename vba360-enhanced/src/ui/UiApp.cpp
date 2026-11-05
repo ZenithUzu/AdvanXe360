@@ -734,35 +734,58 @@ void UiApp::buildMenu(UiMenuScreen &m)
 
   case MENU_SETTINGS_LINK: {
     m.title = tr("Cable link", "Link cable");
-    m.subtitle = tr("Entre dos Xbox 360 de la misma red", "Between two Xbox 360 consoles on the same network");
-    const char *modes[3] = { tr("Desactivado", "Off"), tr("Esperar a la otra consola", "Wait for the other console"),
-                             tr("Conectarse a la otra consola", "Connect to the other console") };
-    (m.add(L_MODE, ITEM_OPTION, tr("Modo", "Mode"), modes[m_cfg.linkMode],
-           tr("Una consola espera y la otra se conecta a su IP. Se conectan al abrir un juego.",
-              "One console waits and the other connects to its IP. They connect when a game is opened.")))
+    m.subtitle = tr("Como el cable entre dos Game Boy, por la red de casa",
+                    "Like the cable between two Game Boys, over your home network");
+    const char *modes[3] = { tr("Desactivado", "Off"), tr("Anfitri\xf3n (crea la partida)", "Host (starts the session)"),
+                             tr("Cliente (se une a la partida)", "Client (joins the session)") };
+    (m.add(L_MODE, ITEM_OPTION, tr("Esta consola es", "This console is"), modes[m_cfg.linkMode],
+           tr("Una consola es Anfitri\xf3n y la otra Cliente. El cliente encuentra solo al anfitri\xf3n.",
+              "One console is the Host and the other the Client. The client finds the host by itself.")))
         .choice = m_cfg.linkMode;
     if (m_cfg.linkMode == 2)
-      m.add(L_HOST, ITEM_ACTION, tr("IP de la otra consola", "The other console's IP"),
-            m_cfg.linkHost.empty() ? std::string(tr("Escribirla...", "Type it...")) : m_cfg.linkHost,
-            tr("La que muestra la otra consola en esta misma pantalla.", "The one the other console shows on this same screen."));
+      m.add(L_HOST, ITEM_ACTION, tr("Anfitri\xf3n", "Host"),
+            m_cfg.linkHost.empty() ? std::string(tr("Autom\xe1tico (lo busca en la red)", "Automatic (finds it on the network)"))
+                                   : m_cfg.linkHost,
+            tr("A: escribir la IP del anfitri\xf3n. D\xe9jala vac\xed""a para que lo busque solo.",
+               "A: type the host's IP. Leave it empty to find it automatically."));
     std::string ip = m_host.linkLocalIp();
     m.add(L_IP, ITEM_ACTION, tr("IP de esta consola", "This console's IP"),
           ip.empty() ? std::string(tr("Buscando...", "Looking...")) : ip, tr("A: actualizar.", "A: refresh."));
     if (m_cfg.linkMode) {
-      const char *status;
+      std::string peer = m_host.linkPeer();
+      std::string status;
       switch (m_host.linkStatus()) {
-      case UI_LINK_ONLINE: status = tr("Estado: conectadas.", "Status: connected."); break;
-      case UI_LINK_WAITING: status = tr("Estado: buscando a la otra consola...", "Status: looking for the other console..."); break;
-      case UI_LINK_NO_NET: status = tr("Estado: sin red. \xbf""Est\xe1 conectado el cable de red?", "Status: no network. Is the network cable plugged in?"); break;
-      case UI_LINK_BAD_IP: status = tr("Estado: la IP no es v\xe1lida (ej. 192.168.1.20).", "Status: that IP isn't valid (e.g. 192.168.1.20)."); break;
-      default: status = tr("Estado: se conecta al abrir un juego.", "Status: connects when a game is opened."); break;
+      case UI_LINK_ONLINE:
+        status = std::string(tr("Estado: conectadas con ", "Status: connected to ")) + peer + ".";
+        break;
+      case UI_LINK_WAITING:
+        status = tr("Estado: esperando a que se una el cliente...", "Status: waiting for the client to join...");
+        break;
+      case UI_LINK_SEARCHING:
+        status = tr("Estado: buscando un anfitri\xf3n en la red...", "Status: looking for a host on the network...");
+        break;
+      case UI_LINK_CONNECTING:
+        status = std::string(tr("Estado: conectando con ", "Status: connecting to ")) + peer + "...";
+        break;
+      case UI_LINK_NO_NET:
+        status = tr("Estado: sin red. \xbf""Est\xe1 conectado el cable de red o el Wi-Fi?", "Status: no network. Is the cable or Wi-Fi connected?");
+        break;
+      case UI_LINK_BAD_IP:
+        status = tr("Estado: la IP no es v\xe1lida (ej. 192.168.1.20).", "Status: that IP isn't valid (e.g. 192.168.1.20).");
+        break;
+      default:
+        status = tr("Estado: se conecta al abrir un juego.", "Status: connects when a game is opened.");
+        break;
       }
       m.addInfo(status);
     }
-    m.addInfo(tr("Abran el mismo tipo de juego en las dos: GBA con GBA, o GB/GBC con GB/GBC.",
-                 "Open the same kind of game on both: GBA with GBA, or GB/GBC with GB/GBC."));
-    m.addInfo(tr("GBA: modos Multijugador y Normal, para 2 consolas. Sin adaptador inal\xe1mbrico.",
-                 "GBA: Multiplayer and Normal modes, for 2 consoles. No wireless adapter."));
+    m.addInfo(tr("1. Una consola en Anfitri\xf3n y la otra en Cliente.", "1. One console as Host and the other as Client."));
+    m.addInfo(tr("2. Abran un juego en las dos: GBA con GBA, o GB/GBC con GB/GBC.",
+                 "2. Open a game on both: GBA with GBA, or GB/GBC with GB/GBC."));
+    m.addInfo(tr("3. Esperen el aviso \"Cable link: conectado\" y usen el cable en el juego.",
+                 "3. Wait for \"Link cable: connected\" and use the cable in the game."));
+    m.addInfo(tr("GBA: modos Multijugador y Normal, 2 consolas. Sin adaptador inal\xe1mbrico.",
+                 "GBA: Multiplayer and Normal modes, 2 consoles. No wireless adapter."));
     m.addInfo(tr("Conectadas no hay avance r\xe1pido, rebobinar ni cargar estados.",
                  "While connected there is no fast-forward, rewind or loading states."));
     break;
@@ -1674,7 +1697,7 @@ void UiApp::onMenuActivate(UiMenuScreen &m, int id)
 
   case MENU_SETTINGS_LINK:
     if (id == L_HOST)
-      openKeyboard(tr("IP de la otra consola (ej. 192.168.1.20)", "The other console's IP (e.g. 192.168.1.20)"),
+      openKeyboard(tr("IP del anfitri\xf3n (vac\xed""a = buscarlo solo)", "The host's IP (empty = find it automatically)"),
                    m_cfg.linkHost, KEYBOARD_LINK_HOST);
     else if (id == L_IP)
       rebuildMenus();

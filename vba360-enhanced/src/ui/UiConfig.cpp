@@ -94,7 +94,7 @@ struct ConfigReader
     else if (k == "ra_enabled") c.raEnabled = clampInt(v, 0, 1, c.raEnabled);
     else if (k == "ra_user") c.raUser = v;
     else if (k == "link_mode") c.linkMode = clampInt(v, 0, 2, c.linkMode);
-    else if (k == "link_host") c.linkHost = v;
+    else if (k == "link_ip") c.linkHost = v;   // ("link_host" of the first version is ignored: search instead)
     else if (k == "ra_token") c.raToken = v;
     else if (k == "ra_sound") c.raSound = clampInt(v, 0, 1, c.raSound);
     else if (k == "kinect_hands") c.kinectHands = clampInt(v, 0, 1, c.kinectHands);
@@ -266,7 +266,7 @@ bool UiConfig::save(const std::string &path) const
   fprintf(f, "start_screen=%d\nlibrary_dir=%s\nkinect=%d\nkinect_hands=%d\nkinect_camera=%d\n", startScreen, libraryDir.c_str(),
           kinect, kinectHands, kinectCamera);
   fprintf(f, "ra_enabled=%d\nra_user=%s\nra_token=%s\nra_sound=%d\n", raEnabled, raUser.c_str(), raToken.c_str(), raSound);
-  fprintf(f, "link_mode=%d\nlink_host=%s\n", linkMode, linkHost.c_str());
+  fprintf(f, "link_mode=%d\nlink_ip=%s\n", linkMode, linkHost.c_str());
   fprintf(f, "bg_visibility=%d\npanel_opacity=%d\naccent_tint=%d\nbubble_amount=%d\nwater_strength=%d\n",
           bgVisibility, panelOpacity, accentTint, bubbleAmount, waterStrength);
   fprintf(f, "menu_music=%d\nmusic_volume=%d\nmusic_song=%s\n", menuMusic, musicVolume, musicSong.c_str());
