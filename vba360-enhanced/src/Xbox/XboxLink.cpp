@@ -13,7 +13,9 @@
 // burst and then idles, so the child could be idle just when the parent needs
 // it: the host hands out cycles (MSG_GRANT) and the child stops at the limit, so
 // the two run together. If they stop coming (the host's menu is open) the child
-// carries on alone.
+// carries on alone. This only happens while the games use the cable (a transfer
+// in the last 3 seconds): the rest of the time each console runs on its own at
+// full speed and the socket is read once a frame.
 //
 // With the option off the GBA core behaves exactly as it did without any of this.
 #include "XboxLink.h"
@@ -59,8 +61,9 @@ enum {
 enum { SIO_NORMAL8, SIO_NORMAL32, SIO_MULTI, SIO_OTHER };
 
 const int GBA_FRAME_TICKS = 280896;
-const int GRANT_TICKS = 16384;      // the child is never further ahead than this
-const int POLL_TICKS = 2048;        // how often a running GBA looks at the socket
+const int GRANT_TICKS = GBA_FRAME_TICKS / 8;   // the child is never further ahead than this
+const int POLL_TICKS = 4096;        // how often a GBA in lockstep looks at the socket
+const int ACTIVE_FRAMES = 180;      // lockstep lasts this long after the last transfer
 const DWORD STALL_MS = 250;         // nothing heard for this long: its menu is open
 const DWORD GBA_REPLY_MS = 100;     // a transfer gives up after this
 const DWORD GRANT_WAIT_MS = 100;    // the child stops waiting and runs alone
@@ -95,7 +98,10 @@ unsigned g_replyValue = 0;
 
 // GBA
 bool g_transfer = false;
-int g_xMode = SIO_OTHER, g_transferLeft = 0, g_pollLeft = 0, g_heartbeatLeft = 0;
+int g_xMode = SIO_OTHER, g_transferLeft = 0, g_pollLeft = 0;
+int g_activeFrames = 0;     // host: frames of lockstep left (0 = each runs alone)
+bool g_pacedReported = false;   // what xboxLinkIsClient() said last frame
+DWORD g_lastGbPump = 0;
 unsigned g_xIn = 0, g_xOut = 0;
 unsigned g_clock = 0, g_nextGrant = 0, g_limit = 0;
 bool g_limitValid = false;
@@ -628,11 +634,26 @@ void beginTransfer(int mode, unsigned short cnt, unsigned out, unsigned in)
   g_transferLeft = transferTicks(mode, cnt);
 }
 
+// Host: the games are using the cable. The first time, the child gets a grant
+// before the transfer, so it joins the lockstep from this moment.
+void hostActive()
+{
+  if (isClient() || !online())
+    return;
+  if (g_activeFrames == 0) {
+    g_nextGrant = g_clock + GRANT_TICKS;
+    sendMsg(MSG_GRANT, 0, 0, g_nextGrant);
+    LINK_LOG("Link cable: the games use the cable, running together");
+  }
+  g_activeFrames = ACTIVE_FRAMES;
+}
+
 // This side's clock starts a transfer.
 void startAsMaster(int mode, unsigned short cnt)
 {
   unsigned out = dataOut(mode), in = idleValue(mode);
   if (online() && !stalled()) {
+    hostActive();
     g_waiting = true;
     g_gotReply = false;
     g_waitSeq = ++g_seq;
@@ -672,6 +693,7 @@ void onXfer(int mode, unsigned short seq, unsigned value, unsigned time)
     g_gotReply = true;
     return;
   }
+  hostActive();              // (Normal mode: the client's clock started it)
   if (g_deferred)           // the one before had to wait: it can't any more
     runXfer(g_dMode, g_dSeq, g_dValue);
   g_deferred = false;
@@ -710,7 +732,8 @@ void resetSession()
   g_deferred = false;
   g_gbPending = false;
   g_gbShortUntil = 0;
-  g_pollLeft = g_heartbeatLeft = 0;
+  g_pollLeft = 0;
+  g_activeFrames = 0;
   g_nextGrant = g_clock;
 }
 
@@ -746,6 +769,11 @@ void dispatch(const unsigned char *m)
     }
     break;
   case MSG_GRANT:
+    if (flag == 1) {   // the games stopped using the cable: run alone, at full speed
+      g_limitValid = false;
+      g_resync = true;
+      break;
+    }
     g_limit = value;
     g_limitValid = true;
     if (g_resync) {   // first one, or back from a pause: start from the host's time
@@ -829,22 +857,18 @@ void LinkUpdate(int ticks)
     if (online())
       runXfer(g_dMode, g_dSeq, g_dValue);
   }
-  if (g_state < STATE_HANDSHAKE)
+  if (!online())
     return;
+  bool lockstep = isClient() ? g_limitValid : g_activeFrames > 0;
+  if (!lockstep && !g_deferred)
+    return;   // each console on its own: xboxLinkFrame reads the socket once a frame
   g_pollLeft -= ticks;
   if (g_pollLeft <= 0) {
     g_pollLeft = POLL_TICKS;
     pump();
   }
-  if (!online())
-    return;
-  g_heartbeatLeft -= ticks;
-  if (g_heartbeatLeft <= 0) {
-    g_heartbeatLeft = GBA_FRAME_TICKS / 2;
-    sendMsg(MSG_HEARTBEAT, 0, 0, 0);
-  }
   if (!isClient()) {
-    if ((int)(g_clock - g_nextGrant) >= 0) {
+    if (g_activeFrames > 0 && (int)(g_clock - g_nextGrant) >= 0) {
       g_nextGrant = g_clock + GRANT_TICKS;
       if (!stalled())
         sendMsg(MSG_GRANT, 0, 0, g_nextGrant);
@@ -901,7 +925,13 @@ bool xboxLinkGbPoll(unsigned char out, unsigned char *in)
 {
   if (g_state < STATE_HANDSHAKE)
     return false;
-  pump();
+  if (!g_gbPending) {
+    DWORD now = GetTickCount();
+    if (now == g_lastGbPump)
+      return false;
+    g_lastGbPump = now;
+    pump();
+  }
   if (!g_gbPending || !online())
     return false;
   g_gbPending = false;
@@ -1009,11 +1039,20 @@ int xboxLinkFrame()
       LINK_LOG("Link cable: no answer to the handshake (is the other console in a game?)");
       dropConnection(LINK_EVENT_NONE, 0);
     }
-    else if (online() && !g_isGba)
+    else if (online()) {
       sendMsg(MSG_HEARTBEAT, 0, 0, 0);
+      if (!isClient() && g_activeFrames > 0 && --g_activeFrames == 0) {
+        sendMsg(MSG_GRANT, 1, 0, 0);
+        LINK_LOG("Link cable: the games stopped using the cable, each runs alone");
+      }
+    }
   }
   int e = g_event;
   g_event = LINK_EVENT_NONE;
+  bool paced = xboxLinkIsClient();
+  if (e == LINK_EVENT_NONE && paced != g_pacedReported)
+    e = LINK_EVENT_PACE;
+  g_pacedReported = paced;
   if (e == LINK_EVENT_CONNECTED)
     LINK_LOG("Link cable: connected (%s, %s)", isClient() ? "client" : "host", g_isGba ? "GBA" : "GB");
   else if (e == LINK_EVENT_LOST)
@@ -1026,7 +1065,8 @@ int xboxLinkFrame()
 }
 
 bool xboxLinkConnected() { return online(); }
-bool xboxLinkIsClient() { return online() && isClient(); }
+// The client keeps pace with the host (not with its sound) only during the lockstep.
+bool xboxLinkIsClient() { return online() && isClient() && g_limitValid; }
 
 int xboxLinkStatus()
 {

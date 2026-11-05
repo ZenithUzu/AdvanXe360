@@ -14,7 +14,8 @@ enum { LINK_STATUS_OFF = 0, LINK_STATUS_NO_GAME, LINK_STATUS_NO_NET, LINK_STATUS
        LINK_STATUS_WAITING, LINK_STATUS_ONLINE, LINK_STATUS_SEARCHING, LINK_STATUS_CONNECTING };
 
 // What xboxLinkFrame() has to tell the player.
-enum { LINK_EVENT_NONE = 0, LINK_EVENT_CONNECTED, LINK_EVENT_LOST, LINK_EVENT_MISMATCH };
+enum { LINK_EVENT_NONE = 0, LINK_EVENT_CONNECTED, LINK_EVENT_LOST, LINK_EVENT_MISMATCH,
+       LINK_EVENT_PACE };   // PACE: xboxLinkIsClient() changed (nothing to show)
 
 // A game started (isGba: else Game Boy / Color). Starts looking for the other console.
 void xboxLinkStart(int mode, const std::string &host, bool isGba);
@@ -24,7 +25,7 @@ void xboxLinkStop();
 int xboxLinkFrame();   // once a frame: LINK_EVENT_*
 
 bool xboxLinkConnected();
-bool xboxLinkIsClient();   // connected, and the other console sets the pace
+bool xboxLinkIsClient();   // connected client in lockstep: the host sets the pace
 int xboxLinkStatus();
 // This console's address; "" while the network is still starting.
 std::string xboxLinkLocalIp();

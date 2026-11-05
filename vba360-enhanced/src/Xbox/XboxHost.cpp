@@ -1645,6 +1645,9 @@ void xboxPollEvents()
     systemScreenMessage(g_cfg.language ? "Link cable: disconnected" : "Cable link: desconectado");
     applySoundFlags();
     break;
+  case LINK_EVENT_PACE:
+    applySoundFlags();   // the client follows the host during transfers, its sound otherwise
+    break;
   case LINK_EVENT_MISMATCH:
     systemScreenMessage(g_cfg.language ? "Link cable: open a game of the same console on both"
                                        : "Cable link: abran un juego de la misma consola");
